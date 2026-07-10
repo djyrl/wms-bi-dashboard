@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- <title>主题二：结构指标 · 定位库存来源</title> -->
+  <title>主题二</title>
+  <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+  <script>if(typeof echarts==='undefined'){var s=document.createElement('script');s.src='https://unpkg.com/echarts@5.5.0/dist/echarts.min.js';document.head.appendChild(s);}</script>
+  <style>
+    :root { --bg-deep:#0a0e17;--bg-panel:#111827;--border:#1e293b;--text-primary:#e2e8f0;--text-secondary:#94a3b8;--accent-blue:#3b82f6;--accent-cyan:#06b6d4;--accent-green:#10b981;--accent-amber:#f59e0b;--accent-rose:#f43f5e;--accent-purple:#8b5cf6;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg-deep);color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;min-height:100vh}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--bg-panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .logo{width:38px;height:38px;background:linear-gradient(135deg,var(--accent-amber),#f97316);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+    .title{font-size:18px;font-weight:700;color:var(--accent-amber)}
+    .subtitle{font-size:12px;color:var(--text-secondary);margin-top:2px}
+    .header-right{display:flex;align-items:center;gap:24px}
+    .stat-pill{display:flex;flex-direction:column;align-items:flex-end}
+    .stat-pill .label{font-size:10px;color:var(--text-secondary);letter-spacing:1px}
+    .stat-pill .value{font-size:16px;font-weight:700;font-family:var(--font-mono)}
+    .section-row{display:flex;align-items:center;gap:12px;padding:24px 28px 8px}
+    .section-num{width:32px;height:32px;border-radius:8px;background:var(--accent-amber);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff}
+    .section-title{font-size:17px;font-weight:700}
+    .section-desc{font-size:12px;color:var(--text-secondary);margin-left:4px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:10px 28px}
+    .panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+    .panel:hover{border-color:rgba(245,158,11,0.3)}
+    .panel-header{display:flex;align-items:center;gap:8px;padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .panel-header h3{font-size:13px;font-weight:600;flex:1}
+    .panel-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+    .chart{flex:1;min-height:280px;width:100%}
+    .data-section{max-height:130px;overflow-y:auto;flex-shrink:0;border-top:1px solid var(--border);font-size:10px;background:var(--bg-panel)}
+    .data-section summary{cursor:pointer;padding:5px 12px;color:var(--text-secondary);user-select:none;position:sticky;top:0;background:var(--bg-panel);z-index:1}
+    .data-section summary:hover{color:var(--text-primary)}
+    .data-section table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:10px}
+    .data-section th{position:sticky;top:0;background:var(--bg-panel);text-align:left;padding:4px 8px;color:var(--text-secondary);font-weight:500;border-bottom:1px solid var(--border)}
+    .data-section td{padding:3px 8px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text-primary)}
+    .data-section tr:hover td{background:rgba(245,158,11,0.05)}
+    .data-section .num{text-align:right;font-feature-settings:"tnum"}
+    @media(max-width:1024px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">🔍</div>
+    <div>
+      <div class="title">主题二：结构指标 · 定位库存来源</div>
+      <div class="subtitle">按项目/采购人/类别逐层下钻，找到库存形成的关键来源</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill"><span class="label">库存来源项目数</span><span class="value" style="color:var(--accent-amber)">28个</span></div>
+    <div class="stat-pill"><span class="label">刷新时间</span><span class="value" style="color:var(--accent-amber)" id="refresh-time">--</span></div>
+  </div>
+</div>
+
+<div class="section-row">
+  <span class="section-num">2</span>
+  <span class="section-title" style="color:var(--accent-amber)">结构指标 · 定位库存来源</span>
+  <span class="section-desc">按项目/采购人/类别逐层下钻，找到库存形成的关键来源</span>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <div class="panel-header"><h3>🌳 按项目维度 · 库存金额分布</h3><span style="font-size:10px;color:var(--text-secondary)">矩形面积=库存金额</span></div>
+    <div class="panel-body"><div class="chart" id="chart-treemap"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><h3>👤 按采购负责人 · 库存贡献排行</h3><span style="font-size:10px;color:var(--text-secondary)">定位高库存责任主体</span></div>
+    <div class="panel-body"><div class="chart" id="chart-buyer"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><h3>🏷 按物料类别 · 库存金额与领用率</h3><span style="font-size:10px;color:var(--text-secondary)">气泡大小=库存金额，颜色=领用率</span></div>
+    <div class="panel-body"><div class="chart" id="chart-category-bubble"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><h3>📦 按入库批次 · 库存消化进度</h3><span style="font-size:10px;color:var(--text-secondary)">批次入库后逐月剩余库存占比</span></div>
+    <div class="panel-body"><div class="chart" id="chart-batch"></div></div>
+  </div>
+</div>
+
+<script>
+if(typeof echarts==='undefined'){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0e17;color:#e2e8f0;font-family:sans-serif"><h1>⚠️ ECharts 加载失败，请检查网络后刷新</h1></div>';throw new Error('ECharts not loaded')}
+const $={rose:'#f43f5e',amber:'#f59e0b',purple:'#8b5cf6',green:'#10b981',blue:'#3b82f6',cyan:'#06b6d4',textSub:'#94a3b8',textPri:'#e2e8f0',border:'#1e293b',bgPanel:'#111827'};
+function initChart(id){var dom=document.getElementById(id);if(!dom)return null;try{var c=echarts.init(dom,null,{devicePixelRatio:window.devicePixelRatio});new ResizeObserver(function(){c.resize()}).observe(dom);return c}catch(e){return null}}
+function tip(){return{backgroundColor:'rgba(17,24,39,0.95)',borderColor:$.border,textStyle:{color:$.textPri,fontSize:12}}}
+function sLine(){return{lineStyle:{color:'rgba(255,255,255,0.06)'}}}
+function aLine(){return{lineStyle:{color:'rgba(255,255,255,0.15)'}}}
+function fillData(chartId,headers,rows){var chart=document.getElementById(chartId);if(!chart)return;var panelBody=chart.closest('.panel-body');if(!panelBody)return;var ds=panelBody.querySelector('.data-section');if(!ds){ds=document.createElement('details');ds.className='data-section';ds.setAttribute('open','');ds.innerHTML='<summary>📊 数据明细</summary><div class="data-inner"></div>';panelBody.appendChild(ds)}var inner=ds.querySelector('.data-inner');if(!inner)return;var h='<table><thead><tr>';headers.forEach(function(hd){h+='<th>'+hd+'</th>'});h+='</tr></thead><tbody>';rows.forEach(function(row){h+='<tr>';row.forEach(function(cell,i){var cls=(i>0&&typeof cell==='number')?'num':'';h+='<td class="'+cls+'">'+cell+'</td>'});h+='</tr>'});h+='</tbody></table>';inner.innerHTML=h}
+
+// ═══════════════ Data ═══════════════
+const projectTreeData=[{name:'A-扩建',value:3200,usageRate:68},{name:'B-技改',value:2800,usageRate:75},{name:'C-检修',value:2100,usageRate:58},{name:'D-新建',value:1500,usageRate:82},{name:'E-运维',value:1200,usageRate:71},{name:'F-安环',value:950,usageRate:90},{name:'G-研发',value:780,usageRate:45},{name:'H-备品',value:650,usageRate:55},{name:'I-基建',value:520,usageRate:88},{name:'J-IT',value:380,usageRate:92},{name:'K-消防',value:320,usageRate:62},{name:'L-绿化',value:180,usageRate:95}];
+const buyerData=[{name:'张建国',value:4500,usageRate:65},{name:'李明辉',value:3800,usageRate:72},{name:'王建华',value:2900,usageRate:58},{name:'赵志强',value:2400,usageRate:81},{name:'陈伟明',value:2100,usageRate:69},{name:'刘永刚',value:1850,usageRate:74},{name:'杨海峰',value:1200,usageRate:53},{name:'周文博',value:950,usageRate:88}];
+const categoryBubbleData=[{name:'钢材',value:[3200,68,320]},{name:'电缆',value:[2800,72,280]},{name:'阀门',value:[2100,55,210]},{name:'泵类',value:[1500,82,150]},{name:'仪表',value:[2400,60,240]},{name:'管件',value:[1800,75,180]},{name:'紧固件',value:[900,88,90]},{name:'密封件',value:[650,90,65]},{name:'电器',value:[2800,52,280]},{name:'轴承',value:[1200,78,120]}];
+const batchLabels=['入库月','+1月','+2月','+3月','+4月','+5月','+6月'];
+const batchData=[{name:'批次2401',data:[100,82,65,48,35,22,15],color:$.blue},{name:'批次2403',data:[100,88,78,65,55,48,40],color:$.amber},{name:'批次2405',data:[100,92,85,80,75,72,68],color:$.rose},{name:'批次2407',data:[100,75,55,40,30,22,18],color:$.green}];
+
+console.log('📦 主题二：结构指标 · 数据已加载');
+
+// ═══════════════ 2.1 项目库存树图 ═══════════════
+(function(){
+  var c=initChart('chart-treemap');
+  function usageColor(r){return r<50?$.rose:r<70?$.amber:r<85?$.blue:$.green}
+  c.setOption({
+    tooltip:{...tip(),formatter:function(p){return p.name+'<br/>库存金额: <b>¥'+p.value+'万</b><br/>领用率: '+(p.data?p.data.usageRate:'-')+'%'}},
+    series:[{type:'treemap',roam:false,width:'96%',height:'85%',left:'2%',top:10,
+      label:{show:true,formatter:function(p){return p.name+'\n¥'+p.value+'万'},fontSize:11,color:'#fff'},
+      upperLabel:{show:true,height:24,color:$.textSub,fontSize:11},
+      itemStyle:{borderColor:$.bgPanel,borderWidth:3,gapWidth:2},
+      levels:[{itemStyle:{borderColor:'#0a0e17',borderWidth:4,gapWidth:2},upperLabel:{show:true}}],
+      data:projectTreeData.map(function(d){return{name:d.name,value:d.value,usageRate:d.usageRate,itemStyle:{color:usageColor(d.usageRate)}}})}],
+  });
+  fillData('chart-treemap',['项目','库存金额(万)','领用率(%)'],projectTreeData.map(function(d){return[d.name,d.value,d.usageRate]}));
+})();
+
+// ═══════════════ 2.2 采购人排行 ═══════════════
+(function(){
+  var c=initChart('chart-buyer');
+  c.setOption({
+    tooltip:{...tip(),formatter:function(p){return p.name+'<br/>库存: <b>¥'+p.value+'万</b><br/>领用率: '+(p.data?p.data.usageRate:'-')+'%'}},
+    grid:{top:10,right:60,bottom:20,left:100},
+    xAxis:{type:'value',name:'万元',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:sLine()},
+    yAxis:{type:'category',data:buyerData.map(function(d){return d.name}),axisLabel:{color:$.textSub,fontSize:11},axisLine:aLine(),inverse:true},
+    series:[{type:'bar',data:buyerData,
+      itemStyle:{color:function(p){return buyerData[p.dataIndex].usageRate<60?$.rose:buyerData[p.dataIndex].usageRate<75?$.amber:$.green},borderRadius:[0,6,6,0]},
+      barWidth:18,label:{show:true,position:'right',color:$.textSub,fontSize:10,formatter:'{c}万'}}],
+  });
+  fillData('chart-buyer',['采购人','库存(万)','领用率(%)'],buyerData.map(function(d){return[d.name,d.value,d.usageRate]}));
+})();
+
+// ═══════════════ 2.3 物料类别气泡 ═══════════════
+(function(){
+  var c=initChart('chart-category-bubble');
+  c.setOption({
+    tooltip:{...tip(),formatter:function(p){return p.name+'<br/>库存: <b>¥'+p.value[0]+'万</b><br/>领用率: '+p.value[1]+'%<br/>SKU数: '+p.value[2]}},
+    grid:{top:15,right:20,bottom:30,left:65},
+    xAxis:{name:'领用率 %',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:sLine(),axisLine:aLine()},
+    yAxis:{name:'SKU数',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:sLine(),axisLine:aLine()},
+    series:[{type:'scatter',data:categoryBubbleData,
+      symbolSize:function(p){return Math.sqrt(p[0])*0.7},
+      itemStyle:{shadowBlur:8,shadowColor:'rgba(0,0,0,0.4)'},
+      label:{show:true,position:'top',color:$.textSub,fontSize:10,formatter:'{b}'},emphasis:{scale:1.3}}],
+    visualMap:{show:false,dimension:1,min:45,max:95,inRange:{color:[$.rose,$.amber,$.green]}},
+  });
+  fillData('chart-category-bubble',['物料类别','库存(万)','领用率(%)','SKU数'],categoryBubbleData.map(function(d){return[d.name,d.value[0],d.value[1],d.value[2]]}));
+})();
+
+// ═══════════════ 2.4 批次消化进度 ═══════════════
+(function(){
+  var c=initChart('chart-batch');
+  c.setOption({
+    tooltip:{...tip(),trigger:'axis'},
+    legend:{top:0,textStyle:{color:$.textSub,fontSize:10},data:batchData.map(function(d){return d.name})},
+    grid:{top:40,right:20,bottom:20,left:55},
+    xAxis:{type:'category',data:batchLabels,axisLabel:{color:$.textSub,fontSize:10},axisLine:aLine()},
+    yAxis:{type:'value',name:'剩余占比 %',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub,formatter:'{value}%'},splitLine:sLine()},
+    series:batchData.map(function(d){return{name:d.name,type:'line',data:d.data,smooth:true,lineStyle:{color:d.color,width:d.name==='批次2405'?2.5:2},itemStyle:{color:d.color},areaStyle:d.name==='批次2405'?{color:'rgba(244,63,94,0.1)'}:undefined}}),
+  });
+  var rows=[['批次'].concat(batchLabels)];
+  batchData.forEach(function(d){rows.push([d.name].concat(d.data.map(function(v){return v+'%'})))});
+  fillData('chart-batch',rows[0],rows.slice(1));
+})();
+
+(function loop(){var now=new Date(),el=document.getElementById('refresh-time');if(el)el.textContent=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');setTimeout(loop,1000)})();
+</script>
+</body>
+</html>

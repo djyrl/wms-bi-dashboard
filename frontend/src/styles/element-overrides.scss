@@ -1,0 +1,30 @@
+// ============================================
+// Element Plus 样式覆盖 & CSS 自定义属性
+// ============================================
+
+:root {
+  --el-color-primary: #4f46e5;
+  --el-border-radius-base: 8px;
+}
+
+// 卡片标题
+.el-card__header {
+  padding: 12px 20px !important;
+  font-weight: 600;
+}
+
+// 图表卡片 body 不需要默认 padding
+.chart-card .el-card__body,
+.table-card .el-card__body {
+  padding: 0 !important;
+}
+
+// KPI 卡片 body 内边距
+.kpi-card .el-card__body {
+  padding: 20px 24px !important;
+}
+
+// 全屏 loading
+#app > .el-loading-mask {
+  z-index: 300;
+}

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>主题四：TOP指标 · 问题清单 & 行动计划</title>
+  <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+  <script>if(typeof echarts==='undefined'){var s=document.createElement('script');s.src='https://unpkg.com/echarts@5.5.0/dist/echarts.min.js';document.head.appendChild(s);}</script>
+  <style>
+    :root { --bg-deep:#0a0e17;--bg-panel:#111827;--border:#1e293b;--text-primary:#e2e8f0;--text-secondary:#94a3b8;--accent-blue:#3b82f6;--accent-cyan:#06b6d4;--accent-green:#10b981;--accent-amber:#f59e0b;--accent-rose:#f43f5e;--accent-purple:#8b5cf6;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg-deep);color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;min-height:100vh}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--bg-panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .logo{width:38px;height:38px;background:linear-gradient(135deg,var(--accent-green),#34d399);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+    .title{font-size:18px;font-weight:700;color:var(--accent-green)}
+    .subtitle{font-size:12px;color:var(--text-secondary);margin-top:2px}
+    .header-right{display:flex;align-items:center;gap:24px}
+    .stat-pill{display:flex;flex-direction:column;align-items:flex-end}
+    .stat-pill .label{font-size:10px;color:var(--text-secondary);letter-spacing:1px}
+    .stat-pill .value{font-size:16px;font-weight:700;font-family:var(--font-mono)}
+    .section-row{display:flex;align-items:center;gap:12px;padding:24px 28px 8px}
+    .section-num{width:32px;height:32px;border-radius:8px;background:var(--accent-green);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff}
+    .section-title{font-size:17px;font-weight:700}
+    .section-desc{font-size:12px;color:var(--text-secondary);margin-left:4px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:10px 28px}
+    .panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+    .panel:hover{border-color:rgba(16,185,129,0.3)}
+    .panel-header{display:flex;align-items:center;gap:8px;padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .panel-header h3{font-size:13px;font-weight:600;flex:1}
+    .panel-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+    .chart{flex:1;min-height:280px;width:100%}
+    .data-section{max-height:130px;overflow-y:auto;flex-shrink:0;border-top:1px solid var(--border);font-size:10px;background:var(--bg-panel)}
+    .data-section summary{cursor:pointer;padding:5px 12px;color:var(--text-secondary);user-select:none;position:sticky;top:0;background:var(--bg-panel);z-index:1}
+    .data-section summary:hover{color:var(--text-primary)}
+    .data-section table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:10px}
+    .data-section th{position:sticky;top:0;background:var(--bg-panel);text-align:left;padding:4px 8px;color:var(--text-secondary);font-weight:500;border-bottom:1px solid var(--border)}
+    .data-section td{padding:3px 8px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text-primary)}
+    .data-section tr:hover td{background:rgba(16,185,129,0.05)}
+    .data-section .num{text-align:right;font-feature-settings:"tnum"}
+
+    /* Table Panel (4.1) */
+    .full-width{grid-column:span 2}
+    .simple-table{width:100%;border-collapse:collapse;font-size:12px}
+    .simple-table th{text-align:left;padding:8px 12px;color:var(--text-secondary);font-weight:500;border-bottom:1px solid var(--border);font-size:11px;position:sticky;top:0;background:var(--bg-panel)}
+    .simple-table td{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:var(--font-mono);font-size:11px}
+    .simple-table tr:hover td{background:rgba(16,185,129,0.05)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+    .badge.red{background:rgba(244,63,94,0.15);color:var(--accent-rose)}
+    .badge.amber{background:rgba(245,158,11,0.15);color:var(--accent-amber)}
+    .badge.green{background:rgba(16,185,129,0.15);color:var(--accent-green)}
+    .badge.purple{background:rgba(139,92,246,0.15);color:var(--accent-purple)}
+    @media(max-width:1024px){.grid{grid-template-columns:1fr}.full-width{grid-column:span 1}}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📋</div>
+    <div>
+      <div class="title">主题四：TOP指标 · 问题清单 & 行动计划</div>
+      <div class="subtitle">按优先级排序，每一项都有明确的处置建议</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill"><span class="label">呆滞待处置项</span><span class="value" style="color:var(--accent-green)">17项</span></div>
+    <div class="stat-pill"><span class="label">刷新时间</span><span class="value" style="color:var(--accent-amber)" id="refresh-time">--</span></div>
+  </div>
+</div>
+
+<div class="section-row">
+  <span class="section-num">4</span>
+  <span class="section-title" style="color:var(--accent-green)">TOP指标 · 问题清单 & 行动计划</span>
+  <span class="section-desc">按优先级排序，每一项都有明确的处置建议</span>
+</div>
+
+<div class="grid">
+  <!-- 4.1 TOP15 呆滞物料清单 Table -->
+  <div class="panel full-width" style="min-height:400px">
+    <div class="panel-header"><h3>📋 TOP15 呆滞物料 · 处置优先级清单</h3><span style="font-size:10px;color:var(--text-secondary)">按「金额×库龄」综合评分排序</span></div>
+    <div class="panel-body" style="overflow-y:auto">
+      <table class="simple-table" id="table-sluggish"></table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h3>📊 TOP10 超量备货物料</h3><span style="font-size:10px;color:var(--text-secondary)">当前库存 / 安全库存上限</span></div>
+    <div class="panel-body"><div class="chart" id="chart-overstock"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h3>✅ 处置计划执行进度</h3><span style="font-size:10px;color:var(--text-secondary)">各项目呆滞物资清理完成率</span></div>
+    <div class="panel-body"><div class="chart" id="chart-cleanup"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h3>💡 智能备货优化建议</h3><span style="font-size:10px;color:var(--text-secondary)">基于日均消耗量推荐安全库存调整</span></div>
+    <div class="panel-body"><div class="chart" id="chart-suggest"></div></div>
+  </div>
+</div>
+
+<script>
+if(typeof echarts==='undefined'){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0e17;color:#e2e8f0;font-family:sans-serif"><h1>⚠️ ECharts 加载失败，请检查网络后刷新</h1></div>';throw new Error('ECharts not loaded')}
+const $={rose:'#f43f5e',amber:'#f59e0b',purple:'#8b5cf6',green:'#10b981',blue:'#3b82f6',cyan:'#06b6d4',textSub:'#94a3b8',textPri:'#e2e8f0',border:'#1e293b',bgPanel:'#111827'};
+function initChart(id){var dom=document.getElementById(id);if(!dom)return null;try{var c=echarts.init(dom,null,{devicePixelRatio:window.devicePixelRatio});new ResizeObserver(function(){c.resize()}).observe(dom);return c}catch(e){return null}}
+function tip(){return{backgroundColor:'rgba(17,24,39,0.95)',borderColor:$.border,textStyle:{color:$.textPri,fontSize:12}}}
+function sLine(){return{lineStyle:{color:'rgba(255,255,255,0.06)'}}}
+function aLine(){return{lineStyle:{color:'rgba(255,255,255,0.15)'}}}
+function fillData(chartId,headers,rows){var chart=document.getElementById(chartId);if(!chart)return;var panelBody=chart.closest('.panel-body');if(!panelBody)return;var ds=panelBody.querySelector('.data-section');if(!ds){ds=document.createElement('details');ds.className='data-section';ds.setAttribute('open','');ds.innerHTML='<summary>📊 数据明细</summary><div class="data-inner"></div>';panelBody.appendChild(ds)}var inner=ds.querySelector('.data-inner');if(!inner)return;var h='<table><thead><tr>';headers.forEach(function(hd){h+='<th>'+hd+'</th>'});h+='</tr></thead><tbody>';rows.forEach(function(row){h+='<tr>';row.forEach(function(cell,i){var cls=(i>0&&typeof cell==='number')?'num':'';h+='<td class="'+cls+'">'+cell+'</td>'});h+='</tr>'});h+='</tbody></table>';inner.innerHTML=h}
+
+// ═══════════════ Data ═══════════════
+const sluggishItems=[{code:'MAT-2023-0892',name:'高压开关柜配件',age:385,amt:186,project:'C-检修',buyer:'王建华',suggest:'报废处置',level:'red'},{code:'MAT-2024-0156',name:'特种阀门DN200',age:312,amt:152,project:'A-扩建',buyer:'张建国',suggest:'折价转让',level:'red'},{code:'MAT-2024-0234',name:'防爆电缆YJV22',age:298,amt:138,project:'G-研发',buyer:'杨海峰',suggest:'项目间调拨',level:'red'},{code:'MAT-2024-0412',name:'进口轴承SKF',age:265,amt:95,project:'B-技改',buyer:'李明辉',suggest:'降级使用',level:'amber'},{code:'MAT-2024-0567',name:'不锈钢管件Φ108',age:242,amt:88,project:'C-检修',buyer:'王建华',suggest:'折价转让',level:'amber'},{code:'MAT-2024-0721',name:'PLC控制模块',age:228,amt:76,project:'D-新建',buyer:'赵志强',suggest:'退回供应商',level:'amber'},{code:'MAT-2024-0892',name:'仪表变送器',age:205,amt:65,project:'E-运维',buyer:'陈伟明',suggest:'降级使用',level:'amber'},{code:'MAT-2024-1034',name:'密封垫片组件',age:185,amt:52,project:'B-技改',buyer:'李明辉',suggest:'加速领用',level:'amber'},{code:'MAT-2024-1156',name:'高压螺栓M30',age:168,amt:48,project:'A-扩建',buyer:'张建国',suggest:'加速领用',level:'amber'},{code:'MAT-2024-1278',name:'电缆桥架',age:155,amt:42,project:'H-备品',buyer:'周文博',suggest:'项目间调拨',level:'green'},{code:'MAT-2025-0034',name:'防腐涂料',age:142,amt:38,project:'F-安环',buyer:'刘永刚',suggest:'加速领用',level:'green'},{code:'MAT-2025-0123',name:'气动执行器',age:128,amt:35,project:'G-研发',buyer:'杨海峰',suggest:'降级使用',level:'green'},{code:'MAT-2025-0234',name:'配电柜配件',age:115,amt:32,project:'C-检修',buyer:'王建华',suggest:'保留观察',level:'green'},{code:'MAT-2025-0345',name:'焊接管件',age:98,amt:28,project:'I-基建',buyer:'张建国',suggest:'加速领用',level:'green'},{code:'MAT-2025-0456',name:'液位计',age:85,amt:22,project:'E-运维',buyer:'陈伟明',suggest:'保留观察',level:'green'}];
+const overstockItems=['高压开关柜配件','特种阀门DN200','防爆电缆','进口轴承','不锈钢管件','PLC模块','仪表变送器','密封垫片','高压螺栓','电缆桥架'];
+const overstockCurrent=[480,380,350,220,200,180,165,140,125,110];
+const overstockSafeMax=[200,160,180,120,100,90,85,70,65,60];
+const cleanupProjects=['A-扩建','B-技改','C-检修','D-新建','E-运维','F-安环','G-研发','H-备品','I-基建','J-IT'];
+const cleanupTotal=[3200,2800,2100,1500,1200,950,780,650,520,380];
+const cleanupCleaned=[1200,1800,600,1100,800,850,200,350,450,350];
+const suggestItems=['阀门DN200','电缆YJV','轴承SKF','管件Φ108','变送器','螺栓M30','涂料','执行器'];
+const suggestCurrent=[380,350,220,200,165,125,85,70];
+const suggestDailyUse=[2.5,4.0,1.2,3.0,1.5,2.0,0.8,0.6];
+const suggestMaxStock=[180,140,100,120,80,70,35,30];
+
+console.log('📦 主题四：TOP指标 · 数据已加载');
+
+// ═══════════════ 4.1 TOP15 呆滞物料清单 Table ═══════════════
+(function(){
+  var badgeMap={red:'<span class="badge red">紧急</span>',amber:'<span class="badge amber">关注</span>',green:'<span class="badge green">跟踪</span>'};
+  var suggestColor={'报废处置':'badge red','折价转让':'badge amber','项目间调拨':'badge purple','降级使用':'badge amber','退回供应商':'badge amber','加速领用':'badge green','保留观察':'badge green'};
+  var h='<thead><tr><th>#</th><th>物料编码</th><th>物料名称</th><th>库龄(天)</th><th>金额(万)</th><th>来源项目</th><th>采购人</th><th>优先级</th><th>处置建议</th></tr></thead><tbody>';
+  sluggishItems.forEach(function(it,i){
+    h+='<tr><td style="color:'+$.textSub+'">'+(i+1)+'</td><td style="font-size:10px">'+it.code+'</td><td>'+it.name+'</td><td style="color:'+(it.age>300?$.rose:it.age>200?$.amber:$.textSub)+'">'+it.age+'天</td><td>¥'+it.amt+'万</td><td style="font-size:10px">'+it.project+'</td><td style="font-size:10px">'+it.buyer+'</td><td>'+badgeMap[it.level]+'</td><td><span class="'+suggestColor[it.suggest]+'">'+it.suggest+'</span></td></tr>';
+  });
+  h+='</tbody>';
+  document.getElementById('table-sluggish').innerHTML=h;
+})();
+
+// ═══════════════ 4.2 TOP10 超量备货 ═══════════════
+(function(){
+  var c=initChart('chart-overstock');
+  var ratio=overstockCurrent.map(function(v,i){return +(v/overstockSafeMax[i]).toFixed(1)});
+  c.setOption({
+    tooltip:{...tip(),formatter:function(p){return p.name+'<br/>当前库存: <b>¥'+overstockCurrent[p.dataIndex]+'万</b><br/>安全上限: ¥'+overstockSafeMax[p.dataIndex]+'万<br/>超标倍数: <b>'+ratio[p.dataIndex]+'x</b>'}},
+    grid:{top:5,right:30,bottom:20,left:130},
+    xAxis:{type:'value',name:'万元',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:sLine()},
+    yAxis:{type:'category',data:overstockItems,axisLabel:{color:$.textSub,fontSize:10,width:120,overflow:'truncate'},axisLine:aLine(),inverse:true},
+    series:[
+      {name:'安全上限',type:'bar',data:overstockSafeMax,itemStyle:{color:'rgba(255,255,255,0.06)',borderColor:'rgba(255,255,255,0.15)',borderWidth:1},barWidth:12,barGap:'-100%',z:1},
+      {name:'当前库存',type:'bar',data:overstockCurrent,itemStyle:{color:function(p){return ratio[p.dataIndex]>2.5?$.rose:$.amber},borderRadius:[0,5,5,0]},barWidth:12,z:2,
+        label:{show:true,position:'right',color:$.textSub,fontSize:10,formatter:function(p){return ratio[p.dataIndex]+'x'}}},
+    ],
+  });
+  fillData('chart-overstock',['物料','当前库存(万)','安全上限(万)','超标倍数'],overstockItems.map(function(item,i){return[item,overstockCurrent[i],overstockSafeMax[i],(overstockCurrent[i]/overstockSafeMax[i]).toFixed(1)+'x']}));
+})();
+
+// ═══════════════ 4.3 处置计划执行进度 ═══════════════
+(function(){
+  var c=initChart('chart-cleanup');
+  var remain=cleanupTotal.map(function(v,i){return v-cleanupCleaned[i]});
+  c.setOption({
+    tooltip:{...tip(),trigger:'axis',formatter:function(p){var i=p[0].dataIndex;return cleanupProjects[i]+'<br/>已处置: ¥'+cleanupCleaned[i]+'万 ('+(cleanupCleaned[i]/cleanupTotal[i]*100).toFixed(0)+'%)<br/>待处置: ¥'+remain[i]+'万'}},
+    legend:{top:0,textStyle:{color:$.textSub,fontSize:10},data:['已处置','待处置']},
+    grid:{top:40,right:20,bottom:20,left:60},
+    xAxis:{type:'value',axisLabel:{color:$.textSub},splitLine:sLine()},
+    yAxis:{type:'category',data:cleanupProjects,axisLabel:{color:$.textSub,fontSize:10},axisLine:aLine(),inverse:true},
+    series:[
+      {name:'已处置',type:'bar',stack:'total',data:cleanupCleaned,itemStyle:{color:$.green,borderRadius:[0,0,0,0]},barWidth:16,
+        label:{show:true,position:'inside',color:'#fff',fontSize:9,formatter:function(p){return cleanupCleaned[p.dataIndex]>400?(cleanupCleaned[p.dataIndex]/cleanupTotal[p.dataIndex]*100).toFixed(0)+'%':''}}},
+      {name:'待处置',type:'bar',stack:'total',data:remain,itemStyle:{color:'rgba(255,255,255,0.06)',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,borderRadius:[0,6,6,0]},
+        label:{show:true,position:'right',color:$.textSub,fontSize:9,formatter:function(p){return(remain[p.dataIndex]/cleanupTotal[p.dataIndex]*100).toFixed(0)+'%'}}},
+    ],
+  });
+  fillData('chart-cleanup',['项目','总库存(万)','已处置(万)','待处置(万)','完成率'],cleanupProjects.map(function(p,i){return[p,cleanupTotal[i],cleanupCleaned[i],remain[i],(cleanupCleaned[i]/cleanupTotal[i]*100).toFixed(0)+'%']}));
+})();
+
+// ═══════════════ 4.4 智能备货优化建议 ═══════════════
+(function(){
+  var c=initChart('chart-suggest');
+  c.setOption({
+    tooltip:{...tip(),trigger:'axis'},
+    legend:{top:0,textStyle:{color:$.textSub,fontSize:10},data:['当前库存','建议上限','日均消耗(右轴)']},
+    grid:{top:40,right:55,bottom:20,left:55},
+    xAxis:{type:'category',data:suggestItems,axisLabel:{color:$.textSub,fontSize:9,rotate:25},axisLine:aLine()},
+    yAxis:[
+      {type:'value',name:'万元',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:sLine()},
+      {type:'value',name:'万/天',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:{show:false}},
+    ],
+    series:[
+      {name:'当前库存',type:'bar',data:suggestCurrent,itemStyle:{color:$.amber,borderRadius:[6,6,0,0]},barWidth:18,barGap:'30%'},
+      {name:'建议上限',type:'bar',data:suggestMaxStock,itemStyle:{color:$.green,borderRadius:[6,6,0,0]},barWidth:18},
+      {name:'日均消耗(右轴)',type:'line',yAxisIndex:1,data:suggestDailyUse,lineStyle:{color:$.cyan,width:1.5},itemStyle:{color:$.cyan},symbol:'circle',symbolSize:5},
+    ],
+  });
+  fillData('chart-suggest',['物料','当前库存(万)','建议上限(万)','日均消耗(万)'],suggestItems.map(function(item,i){return[item,suggestCurrent[i],suggestMaxStock[i],suggestDailyUse[i]]}));
+})();
+
+(function loop(){var now=new Date(),el=document.getElementById('refresh-time');if(el)el.textContent=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');setTimeout(loop,1000)})();
+</script>
+</body>
+</html>

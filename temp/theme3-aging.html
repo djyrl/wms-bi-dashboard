@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>主题三：时间指标 · 识别滞留库存</title>
+  <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+  <script>if(typeof echarts==='undefined'){var s=document.createElement('script');s.src='https://unpkg.com/echarts@5.5.0/dist/echarts.min.js';document.head.appendChild(s);}</script>
+  <style>
+    :root { --bg-deep:#0a0e17;--bg-panel:#111827;--border:#1e293b;--text-primary:#e2e8f0;--text-secondary:#94a3b8;--accent-blue:#3b82f6;--accent-cyan:#06b6d4;--accent-green:#10b981;--accent-amber:#f59e0b;--accent-rose:#f43f5e;--accent-purple:#8b5cf6;--font-mono:'SF Mono','Fira Code','Cascadia Code',monospace; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg-deep);color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;min-height:100vh}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:var(--bg-panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .header-left{display:flex;align-items:center;gap:14px}
+    .logo{width:38px;height:38px;background:linear-gradient(135deg,var(--accent-purple),#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+    .title{font-size:18px;font-weight:700;color:var(--accent-purple)}
+    .subtitle{font-size:12px;color:var(--text-secondary);margin-top:2px}
+    .header-right{display:flex;align-items:center;gap:24px}
+    .stat-pill{display:flex;flex-direction:column;align-items:flex-end}
+    .stat-pill .label{font-size:10px;color:var(--text-secondary);letter-spacing:1px}
+    .stat-pill .value{font-size:16px;font-weight:700;font-family:var(--font-mono)}
+    .section-row{display:flex;align-items:center;gap:12px;padding:24px 28px 8px}
+    .section-num{width:32px;height:32px;border-radius:8px;background:var(--accent-purple);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff}
+    .section-title{font-size:17px;font-weight:700}
+    .section-desc{font-size:12px;color:var(--text-secondary);margin-left:4px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:10px 28px}
+    .panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+    .panel:hover{border-color:rgba(139,92,246,0.3)}
+    .panel-header{display:flex;align-items:center;gap:8px;padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .panel-header h3{font-size:13px;font-weight:600;flex:1}
+    .panel-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+    .chart{flex:1;min-height:280px;width:100%}
+    .data-section{max-height:130px;overflow-y:auto;flex-shrink:0;border-top:1px solid var(--border);font-size:10px;background:var(--bg-panel)}
+    .data-section summary{cursor:pointer;padding:5px 12px;color:var(--text-secondary);user-select:none;position:sticky;top:0;background:var(--bg-panel);z-index:1}
+    .data-section summary:hover{color:var(--text-primary)}
+    .data-section table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:10px}
+    .data-section th{position:sticky;top:0;background:var(--bg-panel);text-align:left;padding:4px 8px;color:var(--text-secondary);font-weight:500;border-bottom:1px solid var(--border)}
+    .data-section td{padding:3px 8px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text-primary)}
+    .data-section tr:hover td{background:rgba(139,92,246,0.05)}
+    .data-section .num{text-align:right;font-feature-settings:"tnum"}
+    @media(max-width:1024px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">⏱</div>
+    <div>
+      <div class="title">主题三：时间指标 · 识别滞留库存</div>
+      <div class="subtitle">库龄结构变化，精准定位长期未动物料</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill"><span class="label">全库平均库龄</span><span class="value" style="color:var(--accent-purple)">52天</span></div>
+    <div class="stat-pill"><span class="label">刷新时间</span><span class="value" style="color:var(--accent-amber)" id="refresh-time">--</span></div>
+  </div>
+</div>
+
+<div class="section-row">
+  <span class="section-num">3</span>
+  <span class="section-title" style="color:var(--accent-purple)">时间指标 · 识别滞留库存</span>
+  <span class="section-desc">库龄结构变化，精准定位长期未动物料</span>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <div class="panel-header"><h3>⏳ 库存库龄分布 · 金字塔</h3><span style="font-size:10px;color:var(--text-secondary)">横向对比库龄段金额与SKU数</span></div>
+    <div class="panel-body"><div class="chart" id="chart-age-pyramid"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><h3>📈 平均库龄月度趋势</h3><span style="font-size:10px;color:var(--text-secondary)">整体库龄健康度变化方向</span></div>
+    <div class="panel-body"><div class="chart" id="chart-age-trend"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><h3>🔥 滞留库存热力图 · 物料类别 × 库龄段</h3><span style="font-size:10px;color:var(--text-secondary)">聚焦右下角(超长库龄)</span></div>
+    <div class="panel-body"><div class="chart" id="chart-heatmap"></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><h3>🚨 库龄预警 · 各项目超标情况</h3><span style="font-size:10px;color:var(--text-secondary)">超过90天库龄的库存占比</span></div>
+    <div class="panel-body"><div class="chart" id="chart-age-gauge"></div></div>
+  </div>
+</div>
+
+<script>
+if(typeof echarts==='undefined'){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0e17;color:#e2e8f0;font-family:sans-serif"><h1>⚠️ ECharts 加载失败，请检查网络后刷新</h1></div>';throw new Error('ECharts not loaded')}
+const $={rose:'#f43f5e',amber:'#f59e0b',purple:'#8b5cf6',green:'#10b981',blue:'#3b82f6',cyan:'#06b6d4',textSub:'#94a3b8',textPri:'#e2e8f0',border:'#1e293b',bgPanel:'#111827'};
+function initChart(id){var dom=document.getElementById(id);if(!dom)return null;try{var c=echarts.init(dom,null,{devicePixelRatio:window.devicePixelRatio});new ResizeObserver(function(){c.resize()}).observe(dom);return c}catch(e){return null}}
+function tip(){return{backgroundColor:'rgba(17,24,39,0.95)',borderColor:$.border,textStyle:{color:$.textPri,fontSize:12}}}
+function sLine(){return{lineStyle:{color:'rgba(255,255,255,0.06)'}}}
+function aLine(){return{lineStyle:{color:'rgba(255,255,255,0.15)'}}}
+function fillData(chartId,headers,rows){var chart=document.getElementById(chartId);if(!chart)return;var panelBody=chart.closest('.panel-body');if(!panelBody)return;var ds=panelBody.querySelector('.data-section');if(!ds){ds=document.createElement('details');ds.className='data-section';ds.setAttribute('open','');ds.innerHTML='<summary>📊 数据明细</summary><div class="data-inner"></div>';panelBody.appendChild(ds)}var inner=ds.querySelector('.data-inner');if(!inner)return;var h='<table><thead><tr>';headers.forEach(function(hd){h+='<th>'+hd+'</th>'});h+='</tr></thead><tbody>';rows.forEach(function(row){h+='<tr>';row.forEach(function(cell,i){var cls=(i>0&&typeof cell==='number')?'num':'';h+='<td class="'+cls+'">'+cell+'</td>'});h+='</tr>'});h+='</tbody></table>';inner.innerHTML=h}
+
+// ═══════════════ Data ═══════════════
+const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const CATEGORIES=['钢材','电缆','阀门','泵类','仪表','管件','紧固件','密封件','电器','轴承'];
+const ageLabels=['0-30天','30-60天','60-90天','90-180天','180-365天','>365天'];
+const ageAmount=[2800,3200,1800,1200,650,350];
+const ageSku=[1200,1800,950,620,380,210];
+const avgAgeData=[35,36,38,37,40,42,43,45,47,49,50,52];
+const over90Data=[8,9,9,10,11,12,12,13,14,15,16,17];
+const heatmapBase=[[15,12,28,8,32,18,5,3,25,10],[20,18,35,12,38,22,8,5,30,14],[35,28,45,22,42,32,15,12,38,20],[45,38,55,32,48,42,25,20,45,28],[65,55,72,48,58,55,40,32,58,42],[85,78,92,68,75,72,58,48,78,62]];
+const ageWarningProjects=['A-扩建','B-技改','C-检修','D-新建','E-运维','F-安环','G-研发','H-备品'];
+const over90Rate=[22,18,35,8,15,5,42,28];
+
+console.log('📦 主题三：时间指标 · 数据已加载');
+
+// ═══════════════ 3.1 库龄金字塔 ═══════════════
+(function(){
+  var c=initChart('chart-age-pyramid');
+  var barColors=[$.green,$.cyan,$.blue,$.amber,$.purple,$.rose];
+  c.setOption({
+    tooltip:{...tip(),trigger:'axis'},
+    legend:{top:0,textStyle:{color:$.textSub},data:['库存金额(万)','SKU数']},
+    grid:{top:40,right:55,bottom:20,left:65},
+    xAxis:{type:'value',axisLabel:{color:$.textSub},splitLine:sLine()},
+    yAxis:{type:'category',data:ageLabels,axisLabel:{color:$.textSub,fontSize:11},axisLine:aLine(),inverse:false},
+    series:[
+      {name:'库存金额(万)',type:'bar',data:ageAmount,itemStyle:{color:function(p){return barColors[p.dataIndex]}},barWidth:14,barGap:'40%',
+        label:{show:true,position:'right',color:$.textSub,fontSize:10,formatter:'{c}万'}},
+      {name:'SKU数',type:'bar',data:ageSku.map(function(v){return v/10}),itemStyle:{color:'rgba(255,255,255,0.08)',borderColor:'rgba(255,255,255,0.2)',borderWidth:1},barWidth:14,
+        label:{show:true,position:'right',color:$.textSub,fontSize:10,formatter:function(p){return(p.value*10)+'个'}}},
+    ],
+  });
+  fillData('chart-age-pyramid',['库龄段','库存金额(万)','SKU数'],ageLabels.map(function(l,i){return[l,ageAmount[i],ageSku[i]]}));
+})();
+
+// ═══════════════ 3.2 平均库龄趋势 ═══════════════
+(function(){
+  var c=initChart('chart-age-trend');
+  var n=avgAgeData.length,xs=avgAgeData.map(function(_,i){return i});
+  var yMean=avgAgeData.reduce(function(a,b){return a+b},0)/n,xMean=(n-1)/2;
+  var slope=xs.reduce(function(s,x,i){return s+(x-xMean)*(avgAgeData[i]-yMean)},0)/xs.reduce(function(s,x){return s+(x-xMean)*(x-xMean)},0);
+  var intercept=yMean-slope*xMean;
+  var trendLine=avgAgeData.map(function(_,i){return +(slope*i+intercept).toFixed(1)});
+  c.setOption({
+    tooltip:{...tip(),trigger:'axis'},
+    legend:{top:0,textStyle:{color:$.textSub},data:['平均库龄(天)','趋势线','>90天占比(%)']},
+    grid:{top:45,right:55,bottom:25,left:55},
+    xAxis:{type:'category',data:MONTHS,axisLabel:{color:$.textSub,fontSize:10},axisLine:aLine()},
+    yAxis:[
+      {type:'value',name:'天',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:sLine(),min:30,max:60},
+      {type:'value',name:'%',nameTextStyle:{color:$.textSub},axisLabel:{color:$.textSub},splitLine:{show:false},min:5,max:20},
+    ],
+    series:[
+      {name:'平均库龄(天)',type:'line',data:avgAgeData,smooth:true,lineStyle:{color:$.purple,width:2.5},itemStyle:{color:$.purple},symbol:'circle',symbolSize:5,
+        areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(139,92,246,0.2)'},{offset:1,color:'rgba(139,92,246,0)'}])},
+        markLine:{silent:true,symbol:'none',data:[{yAxis:45,label:{formatter:'警戒线 45天',color:$.amber},lineStyle:{color:$.amber,type:'dashed'}}]}},
+      {name:'趋势线',type:'line',data:trendLine,smooth:false,lineStyle:{color:'#fbbf24',width:2,type:'dotted'},itemStyle:{color:'#fbbf24'},symbol:'none',
+        endLabel:{show:true,formatter:'↑ 上升趋势',color:'#fbbf24',fontSize:11,fontWeight:'bold'}},
+      {name:'>90天占比(%)',type:'line',yAxisIndex:1,data:over90Data,smooth:true,lineStyle:{color:$.rose,width:2},itemStyle:{color:$.rose},symbol:'diamond',symbolSize:5,
+        markLine:{silent:true,symbol:'none',data:[{yAxis:15,label:{formatter:'危险线 15%',color:$.rose},lineStyle:{color:$.rose,type:'dashed'}}]}},
+    ],
+  });
+  fillData('chart-age-trend',['月份','平均库龄(天)','趋势值(天)','>90天占比(%)'],MONTHS.map(function(m,i){return[m,avgAgeData[i],trendLine[i],over90Data[i]]}));
+})();
+
+// ═══════════════ 3.3 滞留库存热力图 ═══════════════
+(function(){
+  var c=initChart('chart-heatmap');
+  var catsY=['>365天','180-365','90-180','60-90','30-60','0-30天'];
+  var hmData=[];
+  for(var y=0;y<6;y++){for(var x=0;x<10;x++){hmData.push([x,y,heatmapBase[y][x]+Math.floor(Math.random()*8)])}}
+  c.setOption({
+    tooltip:{...tip(),formatter:function(p){return catsY[p.value[1]]+' / '+CATEGORIES[p.value[0]]+'<br/>库存: <b>¥'+p.value[2]+'万</b>'}},
+    grid:{top:10,right:20,bottom:40,left:75},
+    xAxis:{type:'category',data:CATEGORIES,axisLabel:{color:$.textSub,fontSize:9,rotate:45},axisLine:aLine(),position:'bottom'},
+    yAxis:{type:'category',data:catsY,axisLabel:{color:$.textSub,fontSize:10},axisLine:aLine()},
+    visualMap:{right:10,bottom:50,min:0,max:100,inRange:{color:['#111827','#1e3a5f','#2563eb','#f59e0b','#ef4444']},text:['高','低'],textStyle:{color:$.textSub}},
+    series:[{type:'heatmap',data:hmData,label:{show:true,color:'#fff',fontSize:9},emphasis:{itemStyle:{shadowBlur:10,shadowColor:'rgba(0,0,0,0.5)'}}}],
+  });
+  var rows=[['物料类别'].concat(['>365天','180-365','90-180','60-90','30-60','0-30天'])];
+  CATEGORIES.forEach(function(cat,x){var row=[cat];for(var y=5;y>=0;y--){row.push(heatmapBase[y][x])}rows.push(row)});
+  fillData('chart-heatmap',rows[0],rows.slice(1));
+})();
+
+// ═══════════════ 3.4 库龄预警仪表 ═══════════════
+(function(){
+  var c=initChart('chart-age-gauge');
+  c.setOption({
+    tooltip:{...tip(),formatter:function(p){return p.name+'<br/>>90天库存占比: <b>'+p.value+'%</b>'}},
+    grid:{top:15,right:30,bottom:20,left:70},
+    xAxis:{type:'value',max:50,axisLabel:{color:$.textSub,formatter:'{value}%'},splitLine:sLine()},
+    yAxis:{type:'category',data:ageWarningProjects,axisLabel:{color:$.textSub,fontSize:10},axisLine:aLine(),inverse:true},
+    series:[{type:'bar',data:over90Rate,
+      itemStyle:{color:function(p){return over90Rate[p.dataIndex]>30?$.rose:over90Rate[p.dataIndex]>15?$.amber:$.green},borderRadius:[0,6,6,0]},
+      barWidth:16,label:{show:true,position:'right',color:$.textSub,fontSize:10,formatter:'{c}%'},
+      markLine:{silent:true,symbol:'none',data:[{xAxis:15,label:{formatter:'警戒 15%',color:$.amber},lineStyle:{color:$.amber,type:'dashed'}},{xAxis:30,label:{formatter:'危险 30%',color:$.rose},lineStyle:{color:$.rose,type:'dashed'}}]}}],
+  });
+  fillData('chart-age-gauge',['项目','>90天库存占比(%)'],ageWarningProjects.map(function(p,i){return[p,over90Rate[i]]}));
+})();
+
+(function loop(){var now=new Date(),el=document.getElementById('refresh-time');if(el)el.textContent=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');setTimeout(loop,1000)})();
+</script>
+</body>
+</html>

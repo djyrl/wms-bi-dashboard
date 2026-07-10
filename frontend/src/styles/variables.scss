@@ -1,0 +1,20 @@
+// ============================================
+// BI Dashboard — SCSS 变量（仅供 @use 导入，不输出 CSS）
+// ============================================
+
+// 颜色
+$bg-color: #f0f2f5;
+$text-primary: #1a1a2e;
+$text-secondary: #6b7280;
+$accent: #4f46e5;
+$accent-light: #e0e7ff;
+$success: #10b981;
+$danger: #ef4444;
+$border-color: #e5e7eb;
+$radius: 12px;
+$shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+// 布局
+$sidebar-width: 220px;
+$sidebar-collapsed-width: 64px;
+$header-height: 56px;

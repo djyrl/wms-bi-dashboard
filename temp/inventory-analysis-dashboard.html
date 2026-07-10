@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智慧仓储 · 库存分析驾驶舱</title>
+  <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js">
+  </script>
+  <script>
+    // Fallback if bootcdn fails
+    if (typeof echarts === 'undefined') {
+      var s = document.createElement('script');
+      s.src = 'https://unpkg.com/echarts@5.5.0/dist/echarts.min.js';
+      document.head.appendChild(s);
+    }
+  </script>
+  <style>
+    :root {
+      --bg-deep: #0a0e17;
+      --bg-panel: #111827;
+      --bg-card: #1a1f2e;
+      --border: #1e293b;
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-purple: #8b5cf6;
+      --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 28px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .logo {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .title {
+      font-size: 20px; font-weight: 700;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 28px; }
+    .stat-pill { display: flex; flex-direction: column; align-items: flex-end; }
+    .stat-pill .label { font-size: 10px; color: var(--text-secondary); letter-spacing: 1px; }
+    .stat-pill .value { font-size: 18px; font-weight: 700; font-family: var(--font-mono); }
+    .live-dot {
+      width: 8px; height: 8px; background: var(--accent-green);
+      border-radius: 50%; display: inline-block;
+      animation: pulse 2s infinite; margin-right: 4px;
+    }
+    @keyframes pulse {
+      0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,0.5)}
+      50%{opacity:0.6;box-shadow:0 0 0 8px rgba(16,185,129,0)}
+    }
+
+    /* ── Section Title ── */
+    .section-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 28px 28px 8px;
+    }
+    .section-num {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; color: #fff;
+    }
+    .section-num.t1 { background: var(--accent-rose); }
+    .section-num.t2 { background: var(--accent-amber); }
+    .section-num.t3 { background: var(--accent-purple); }
+    .section-num.t4 { background: var(--accent-green); }
+    .section-title { font-size: 17px; font-weight: 700; }
+    .section-desc { font-size: 12px; color: var(--text-secondary); margin-left: 4px; }
+
+    /* ── Grid ── */
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 10px 28px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 10px 28px; }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: border-color 0.3s;
+    }
+    .panel:hover { border-color: rgba(59,130,246,0.3); }
+    .panel-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .panel-header h3 { font-size: 13px; font-weight: 600; flex: 1; }
+    .panel-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .chart { flex: 1; min-height: 160px; width: 100%; }
+    .data-section { max-height: 130px; overflow-y: auto; flex-shrink: 0; border-top: 1px solid var(--border); font-size: 10px; background: var(--bg-panel); }
+    .data-section summary { cursor: pointer; padding: 5px 12px; color: var(--text-secondary); user-select: none; position: sticky; top: 0; background: var(--bg-panel); z-index: 1; }
+    .data-section summary:hover { color: var(--text-primary); }
+    .data-section table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 10px; }
+    .data-section th { position: sticky; top: 0; background: var(--bg-panel); text-align: left; padding: 4px 8px; color: var(--text-secondary); font-weight: 500; border-bottom: 1px solid var(--border); }
+    .data-section td { padding: 3px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-primary); }
+    .data-section tr:hover td { background: rgba(59,130,246,0.05); }
+    .data-section .num { text-align: right; font-feature-settings: "tnum"; }
+
+    .col-span-2 { grid-column: span 2; }
+    .col-span-4 { grid-column: span 4; }
+    .row-span-2 { grid-row: span 2; }
+
+    /* ── KPI Row ── */
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 10px 28px 0; }
+    .kpi-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .kpi-icon {
+      width: 50px; height: 50px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; font-size: 24px;
+    }
+    .kpi-icon.t1 { background: rgba(244,63,94,0.12); }
+    .kpi-icon.t2 { background: rgba(245,158,11,0.12); }
+    .kpi-icon.t3 { background: rgba(139,92,246,0.12); }
+    .kpi-icon.t4 { background: rgba(16,185,129,0.12); }
+    .kpi-info { flex: 1; }
+    .kpi-label { font-size: 11px; color: var(--text-secondary); letter-spacing: 0.5px; }
+    .kpi-value { font-size: 28px; font-weight: 800; font-family: var(--font-mono); }
+    .kpi-change { font-size: 11px; margin-top: 2px; }
+    .kpi-change.up { color: var(--accent-green); }
+    .kpi-change.down { color: var(--accent-rose); }
+
+    /* ── Table inside panel ── */
+    .simple-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .simple-table th {
+      text-align: left; padding: 8px 12px; color: var(--text-secondary);
+      font-weight: 500; border-bottom: 1px solid var(--border); font-size: 11px;
+    }
+    .simple-table td {
+      padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-family: var(--font-mono); font-size: 11px;
+    }
+    .simple-table tr:hover td { background: rgba(59,130,246,0.05); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 10px; font-weight: 600;
+    }
+    .badge.red    { background: rgba(244,63,94,0.15); color: var(--accent-rose); }
+    .badge.amber  { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+    .badge.green  { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+    .badge.purple { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+
+    /* ── Responsive ── */
+    @media (max-width: 1440px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+      .col-span-2 { grid-column: span 2; }
+    }
+    @media (max-width: 1024px) {
+      .grid, .grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .col-span-2 { grid-column: span 2; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .grid, .grid-2 { grid-template-columns: 1fr; }
+      .col-span-2 { grid-column: span 1; }
+      .kpi-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<!-- 加载状态指示器 -->
+<div id="loading-banner" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#f59e0b,#f43f5e);color:#fff;text-align:center;padding:6px;font-size:13px;display:none;">
+  ⚠️ ECharts 加载中... 如长时间无图表显示，请检查网络连接
+</div>
+
+<!-- ═══════════════════ Header ═══════════════════ -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📦</div>
+    <div>
+      <div class="title">智慧仓储 · 库存分析驾驶舱</div>
+      <div class="subtitle">发现问题 → 定位来源 → 深挖原因 → 行动计划</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill"><span class="label"><span class="live-dot"></span>实时</span><span class="value" style="color:var(--accent-green)">在线</span></div>
+    <div class="stat-pill"><span class="label">刷新时间</span><span class="value" style="color:var(--accent-amber)" id="refresh-time">--</span></div>
+    <div class="stat-pill"><span class="label">待处理问题</span><span class="value" style="color:var(--accent-rose)" id="alert-count">17</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ KPI ═══════════════════ -->
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-icon t1">📉</div>
+    <div class="kpi-info">
+      <div class="kpi-label">当月物资领用率</div>
+      <div class="kpi-value" style="color:var(--accent-rose)">72.3<span style="font-size:15px">%</span></div>
+      <div class="kpi-change down">↓ 4.2% vs 上月</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon t2">🔍</div>
+    <div class="kpi-info">
+      <div class="kpi-label">库存来源项目数</div>
+      <div class="kpi-value" style="color:var(--accent-amber)">28<span style="font-size:15px">个</span></div>
+      <div class="kpi-change down">↑ 3个 新增项目</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon t3">⏱</div>
+    <div class="kpi-info">
+      <div class="kpi-label">全库平均库龄</div>
+      <div class="kpi-value" style="color:var(--accent-purple)">52<span style="font-size:15px">天</span></div>
+      <div class="kpi-change down">↑ 17天 vs 年初</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon t4">📋</div>
+    <div class="kpi-info">
+      <div class="kpi-label">呆滞待处置项</div>
+      <div class="kpi-value" style="color:var(--accent-green)">17<span style="font-size:15px">项</span></div>
+      <div class="kpi-change up">↓ 5项 已处置</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ 主题一：领用指标 ═══════════════════ -->
+<div class="section-row">
+  <span class="section-num t1">1</span>
+  <span class="section-title" style="color:var(--accent-rose)">领用指标 · 识别库存形成情况</span>
+  <span class="section-desc">总体控制，发现库存异常增长信号</span>
+</div>
+
+<div class="grid">
+  <!-- 1.1 领用率趋势 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>📉 物资领用率月度趋势</h3><span style="font-size:10px;color:var(--text-secondary)">领用金额 / (期初库存 + 本期入库) × 100%</span></div>
+    <div class="panel-body"><div class="chart" id="chart-usage-rate"></div></div>
+  </div>
+  <!-- 1.2 入库 vs 领用 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>📦 入库金额 vs 领用金额 对比</h3><span style="font-size:10px;color:var(--text-secondary)">当月入库多、领用少 → 库存净增</span></div>
+    <div class="panel-body"><div class="chart" id="chart-in-out"></div></div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- 1.3 库存水位 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>📊 在库水位变化 · 安全库存偏离度</h3></div>
+    <div class="panel-body"><div class="chart" id="chart-water-level"></div></div>
+  </div>
+  <!-- 1.4 异常变动预警 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>⚠️ 库存异常变动预警日历</h3><span style="font-size:10px;color:var(--text-secondary)">单日入库/领用偏离均值2σ的事件</span></div>
+    <div class="panel-body"><div class="chart" id="chart-anomaly"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ 主题二：结构指标 ═══════════════════ -->
+<div class="section-row">
+  <span class="section-num t2">2</span>
+  <span class="section-title" style="color:var(--accent-amber)">结构指标 · 定位库存来源</span>
+  <span class="section-desc">按项目/采购人/类别逐层下钻，找到库存形成的关键来源</span>
+</div>
+
+<div class="grid">
+  <!-- 2.1 项目库存树图 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>🌳 按项目维度 · 库存金额分布</h3><span style="font-size:10px;color:var(--text-secondary)">矩形面积 = 库存金额，点击可下钻</span></div>
+    <div class="panel-body"><div class="chart" id="chart-treemap"></div></div>
+  </div>
+  <!-- 2.2 采购人排行 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>👤 按采购负责人 · 库存贡献排行</h3><span style="font-size:10px;color:var(--text-secondary)">定位高库存的责任主体</span></div>
+    <div class="panel-body"><div class="chart" id="chart-buyer"></div></div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- 2.3 物料类别结构 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>🏷 按物料类别 · 库存金额与领用率</h3><span style="font-size:10px;color:var(--text-secondary)">气泡大小=库存金额，颜色=领用率</span></div>
+    <div class="panel-body"><div class="chart" id="chart-category-bubble"></div></div>
+  </div>
+  <!-- 2.4 批次维度分析 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>📦 按入库批次 · 库存消化进度</h3><span style="font-size:10px;color:var(--text-secondary)">批次入库后逐月剩余库存占比</span></div>
+    <div class="panel-body"><div class="chart" id="chart-batch"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ 主题三：时间指标 ═══════════════════ -->
+<div class="section-row">
+  <span class="section-num t3">3</span>
+  <span class="section-title" style="color:var(--accent-purple)">时间指标 · 识别滞留库存</span>
+  <span class="section-desc">库龄结构变化，精准定位长期未动物料</span>
+</div>
+
+<div class="grid">
+  <!-- 3.1 库龄分布 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>⏳ 库存库龄分布 · 金字塔</h3><span style="font-size:10px;color:var(--text-secondary)">横向对比库龄段金额与SKU数</span></div>
+    <div class="panel-body"><div class="chart" id="chart-age-pyramid"></div></div>
+  </div>
+  <!-- 3.2 库龄趋势 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>📈 平均库龄月度趋势</h3><span style="font-size:10px;color:var(--text-secondary)">整体库龄健康度变化方向</span></div>
+    <div class="panel-body"><div class="chart" id="chart-age-trend"></div></div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- 3.3 呆滞区域热力图 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>🔥 滞留库存热力图 · 物料类别 × 库龄段</h3><span style="font-size:10px;color:var(--text-secondary)">颜色越深=库存金额越高，聚焦右下角(超长库龄)</span></div>
+    <div class="panel-body"><div class="chart" id="chart-heatmap"></div></div>
+  </div>
+  <!-- 3.4 库龄预警分布 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>🚨 库龄预警仪表 · 各项目超标情况</h3><span style="font-size:10px;color:var(--text-secondary)">超过90天库龄的库存占比</span></div>
+    <div class="panel-body"><div class="chart" id="chart-age-gauge"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ 主题四：TOP指标 · 问题清单 ═══════════════════ -->
+<div class="section-row">
+  <span class="section-num t4">4</span>
+  <span class="section-title" style="color:var(--accent-green)">TOP指标 · 问题清单 & 行动计划</span>
+  <span class="section-desc">按优先级排序，每一项都有明确的处置建议</span>
+</div>
+
+<div class="grid">
+  <!-- 4.1 TOP呆滞物料清单 -->
+  <div class="panel col-span-2 row-span-2" >
+    <div class="panel-header"><h3>📋 TOP15 呆滞物料 · 处置优先级清单</h3><span style="font-size:10px;color:var(--text-secondary)">按「金额×库龄」综合评分排序</span></div>
+    <div class="panel-body" style="overflow-y:auto">
+      <table class="simple-table" id="table-sluggish"></table>
+    </div>
+  </div>
+  <!-- 4.2 TOP超量备货 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>📊 TOP10 超量备货物料</h3><span style="font-size:10px;color:var(--text-secondary)">当前库存 / 安全库存上限</span></div>
+    <div class="panel-body"><div class="chart" id="chart-overstock"></div></div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- 4.3 处置计划进度 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>✅ 处置计划执行进度</h3><span style="font-size:10px;color:var(--text-secondary)">各项目呆滞物资清理完成率</span></div>
+    <div class="panel-body"><div class="chart" id="chart-cleanup"></div></div>
+  </div>
+  <!-- 4.4 优化备货建议 -->
+  <div class="panel col-span-2">
+    <div class="panel-header"><h3>💡 智能备货优化建议</h3><span style="font-size:10px;color:var(--text-secondary)">基于日均消耗量推荐安全库存调整</span></div>
+    <div class="panel-body"><div class="chart" id="chart-suggest"></div></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  Shared Utilities
+// ═══════════════════════════════════════════════════════════════
+
+// Guard: if ECharts failed to load, show error and stop
+if (typeof echarts === 'undefined') {
+  document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0e17;color:#e2e8f0;font-family:sans-serif;flex-direction:column;gap:16px"><h1>⚠️ ECharts 加载失败</h1><p>请检查网络连接后刷新页面</p><p style="color:#94a3b8;font-size:13px">如您在中国大陆，可尝试使用 VPN 或更换 DNS</p></div>';
+  throw new Error('ECharts not loaded');
+}
+
+const $ = {
+  rose:   '#f43f5e', amber: '#f59e0b', purple: '#8b5cf6', green: '#10b981',
+  blue:   '#3b82f6', cyan:  '#06b6d4', textSub: '#94a3b8', textPri: '#e2e8f0',
+  border: '#1e293b', bgPanel:'#111827',
+};
+
+function initChart(id) {
+  const dom = document.getElementById(id);
+  if (!dom) return null;
+  try {
+    const c = echarts.init(dom, null, { devicePixelRatio: window.devicePixelRatio });
+    new ResizeObserver(() => c.resize()).observe(dom);
+    return c;
+  } catch(e) { console.error('Chart init failed:', id, e); return null; }
+}
+function tip() { return { backgroundColor:'rgba(17,24,39,0.95)', borderColor:$.border, textStyle:{color:$.textPri,fontSize:12} }; }
+function sLine() { return { lineStyle:{color:'rgba(255,255,255,0.06)'} }; }
+function aLine() { return { lineStyle:{color:'rgba(255,255,255,0.15)'} }; }
+
+// ═══════════════════════════════════════════════════════════════
+//  SAMPLE DATA — 全部示例数据集中定义，便于替换为真实数据
+// ═══════════════════════════════════════════════════════════════
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+// 物料类别
+const CATEGORIES = ['钢材','电缆','阀门','泵类','仪表','管件','紧固件','密封件','电器','轴承'];
+
+// 项目列表
+const PROJECTS = [
+  'A-扩建项目','B-技改项目','C-检修项目','D-新建项目','E-运维项目',
+  'F-安环项目','G-研发项目','H-备品项目','I-基建项目','J-IT项目'
+];
+
+// 采购负责人
+const BUYERS = ['张建国','李明辉','王建华','赵志强','陈伟明','刘永刚','杨海峰','周文博'];
+
+// ── 领用率趋势数据 ──
+const usageRateData      = [85, 83, 81, 80, 79, 77, 76, 74, 73, 72, 71, 72];
+const usageRateTarget     = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80];
+
+// ── 入库 vs 领用数据 ──
+const inAmountData  = [420, 380, 450, 520, 480, 510, 560, 490, 530, 550, 470, 500];
+const outAmountData  = [380, 350, 390, 400, 370, 380, 390, 360, 370, 380, 340, 360];
+
+// ── 库存水位数据 ──
+const stockCurrent  = [320, 280, 450, 180, 220, 350, 150, 200, 380, 120];
+const stockSafeMax   = [250, 200, 300, 150, 180, 250, 120, 160, 280, 100];
+const stockSafeMin   = [120, 100, 150,  80,  90, 120,  60,  80, 140,  50];
+
+// ── 项目库存树图数据 ──
+const projectTreeData = [
+  { name:'A-扩建', value:3200, usageRate:68 },
+  { name:'B-技改', value:2800, usageRate:75 },
+  { name:'C-检修', value:2100, usageRate:58 },
+  { name:'D-新建', value:1500, usageRate:82 },
+  { name:'E-运维', value:1200, usageRate:71 },
+  { name:'F-安环', value: 950, usageRate:90 },
+  { name:'G-研发', value: 780, usageRate:45 },
+  { name:'H-备品', value: 650, usageRate:55 },
+  { name:'I-基建', value: 520, usageRate:88 },
+  { name:'J-IT',  value: 380, usageRate:92 },
+  { name:'K-消防',value: 320, usageRate:62 },
+  { name:'L-绿化',value: 180, usageRate:95 },
+];
+
+// ── 采购人排行数据 ──
+const buyerData = [
+  { name:'张建国', value:4500, usageRate:65 },
+  { name:'李明辉', value:3800, usageRate:72 },
+  { name:'王建华', value:2900, usageRate:58 },
+  { name:'赵志强', value:2400, usageRate:81 },
+  { name:'陈伟明', value:2100, usageRate:69 },
+  { name:'刘永刚', value:1850, usageRate:74 },
+  { name:'杨海峰', value:1200, usageRate:53 },
+  { name:'周文博', value: 950, usageRate:88 },
+];
+
+// ── 物料类别气泡数据 ──
+const categoryBubbleData = [
+  { name:'钢材',   value:[3200, 68, 320] },
+  { name:'电缆',   value:[2800, 72, 280] },
+  { name:'阀门',   value:[2100, 55, 210] },
+  { name:'泵类',   value:[1500, 82, 150] },
+  { name:'仪表',   value:[2400, 60, 240] },
+  { name:'管件',   value:[1800, 75, 180] },
+  { name:'紧固件', value:[ 900, 88,  90] },
+  { name:'密封件', value:[ 650, 90,  65] },
+  { name:'电器',   value:[2800, 52, 280] },
+  { name:'轴承',   value:[1200, 78, 120] },
+];
+
+// ── 批次消化进度 ──
+const batchLabels = ['入库月','+1月','+2月','+3月','+4月','+5月','+6月'];
+const batchData = [
+  { name:'批次2401', data:[100, 82, 65, 48, 35, 22, 15], color:$.blue },
+  { name:'批次2403', data:[100, 88, 78, 65, 55, 48, 40], color:$.amber },
+  { name:'批次2405', data:[100, 92, 85, 80, 75, 72, 68], color:$.rose },
+  { name:'批次2407', data:[100, 75, 55, 40, 30, 22, 18], color:$.green },
+];
+
+// ── 库龄分布 ──
+const ageLabels = ['0-30天','30-60天','60-90天','90-180天','180-365天','>365天'];
+const ageAmount = [2800, 3200, 1800, 1200, 650, 350];
+const ageSku    = [1200, 1800,  950,  620, 380, 210];
+
+// ── 库龄趋势 ──
+const avgAgeData = [35, 36, 38, 37, 40, 42, 43, 45, 47, 49, 50, 52];
+const over90Data = [ 8,  9,  9, 10, 11, 12, 12, 13, 14, 15, 16, 17];
+
+// ── 滞留热力图基础值 ──
+const heatmapBase = [
+  [15, 12, 28,  8, 32, 18,  5,  3, 25, 10], // >365天
+  [20, 18, 35, 12, 38, 22,  8,  5, 30, 14], // 180-365
+  [35, 28, 45, 22, 42, 32, 15, 12, 38, 20], // 90-180
+  [45, 38, 55, 32, 48, 42, 25, 20, 45, 28], // 60-90
+  [65, 55, 72, 48, 58, 55, 40, 32, 58, 42], // 30-60
+  [85, 78, 92, 68, 75, 72, 58, 48, 78, 62], // 0-30天
+];
+
+// ── 库龄预警 ──
+const ageWarningProjects = ['A-扩建','B-技改','C-检修','D-新建','E-运维','F-安环','G-研发','H-备品'];
+const over90Rate = [22, 18, 35, 8, 15, 5, 42, 28];
+
+// ── TOP15 呆滞物料 ──
+const sluggishItems = [
+  { code:'MAT-2023-0892', name:'高压开关柜配件',   age:385, amt:186, project:'C-检修', buyer:'王建华', suggest:'报废处置',     level:'red' },
+  { code:'MAT-2024-0156', name:'特种阀门DN200',     age:312, amt:152, project:'A-扩建', buyer:'张建国', suggest:'折价转让',     level:'red' },
+  { code:'MAT-2024-0234', name:'防爆电缆YJV22',     age:298, amt:138, project:'G-研发', buyer:'杨海峰', suggest:'项目间调拨',   level:'red' },
+  { code:'MAT-2024-0412', name:'进口轴承SKF',       age:265, amt: 95, project:'B-技改', buyer:'李明辉', suggest:'降级使用',     level:'amber' },
+  { code:'MAT-2024-0567', name:'不锈钢管件Φ108',    age:242, amt: 88, project:'C-检修', buyer:'王建华', suggest:'折价转让',     level:'amber' },
+  { code:'MAT-2024-0721', name:'PLC控制模块',       age:228, amt: 76, project:'D-新建', buyer:'赵志强', suggest:'退回供应商',   level:'amber' },
+  { code:'MAT-2024-0892', name:'仪表变送器',        age:205, amt: 65, project:'E-运维', buyer:'陈伟明', suggest:'降级使用',     level:'amber' },
+  { code:'MAT-2024-1034', name:'密封垫片组件',      age:185, amt: 52, project:'B-技改', buyer:'李明辉', suggest:'加速领用',     level:'amber' },
+  { code:'MAT-2024-1156', name:'高压螺栓M30',       age:168, amt: 48, project:'A-扩建', buyer:'张建国', suggest:'加速领用',     level:'amber' },
+  // { code:'MAT-2024-1278', name:'电缆桥架',          age:155, amt: 42, project:'H-备品', buyer:'周文博', suggest:'项目间调拨',   level:'green' },
+  // { code:'MAT-2025-0034', name:'防腐涂料',          age:142, amt: 38, project:'F-安环', buyer:'刘永刚', suggest:'加速领用',     level:'green' },
+  // { code:'MAT-2025-0123', name:'气动执行器',        age:128, amt: 35, project:'G-研发', buyer:'杨海峰', suggest:'降级使用',     level:'green' },
+  // { code:'MAT-2025-0234', name:'配电柜配件',        age:115, amt: 32, project:'C-检修', buyer:'王建华', suggest:'保留观察',     level:'green' },
+  // { code:'MAT-2025-0345', name:'焊接管件',          age: 98, amt: 28, project:'I-基建', buyer:'张建国', suggest:'加速领用',     level:'green' },
+  // { code:'MAT-2025-0456', name:'液位计',            age: 85, amt: 22, project:'E-运维', buyer:'陈伟明', suggest:'保留观察',     level:'green' },
+];
+
+// ── TOP10 超量备货 ──
+const overstockItems = ['高压开关柜配件','特种阀门DN200','防爆电缆','进口轴承','不锈钢管件','PLC模块','仪表变送器','密封垫片','高压螺栓','电缆桥架'];
+const overstockCurrent = [480, 380, 350, 220, 200, 180, 165, 140, 125, 110];
+const overstockSafeMax  = [200, 160, 180, 120, 100,  90,  85,  70,  65,  60];
+
+// ── 处置进度 ──
+const cleanupProjects = ['A-扩建','B-技改','C-检修','D-新建','E-运维','F-安环','G-研发','H-备品','I-基建','J-IT'];
+const cleanupTotal   = [3200, 2800, 2100, 1500, 1200, 950, 780, 650, 520, 380];
+const cleanupCleaned  = [1200, 1800,  600, 1100,  800, 850, 200, 350, 450, 350];
+
+// ── 备货优化建议 ──
+const suggestItems    = ['阀门DN200','电缆YJV','轴承SKF','管件Φ108','变送器','螺栓M30','涂料','执行器'];
+const suggestCurrent   = [380, 350, 220, 200, 165, 125, 85, 70];
+const suggestDailyUse  = [2.5, 4.0, 1.2, 3.0, 1.5, 2.0, 0.8, 0.6];
+const suggestMaxStock  = [180, 140, 100, 120,  80,  70, 35, 30];
+
+console.log('📦 智慧仓储驾驶舱 · 示例数据已加载');
+console.log('  项目数:', projectTreeData.length, '| 物料类别:', CATEGORIES.length, '| 采购人:', BUYERS.length);
+console.log('  呆滞清单:', sluggishItems.length, '项 | 超量备货:', overstockItems.length, '项');
+
+// ═══════════════════════════════════════════════════════════════
+//  数据表注入 — 直接附加到 panel-body，不包装 chart
+// ═══════════════════════════════════════════════════════════════
+function fillData(chartId, headers, rows) {
+  var chart = document.getElementById(chartId);
+  if (!chart) return;
+  var panelBody = chart.closest('.panel-body');
+  if (!panelBody) return;
+  // Check if data section already exists
+  var ds = panelBody.querySelector('.data-section');
+  if (!ds) {
+    ds = document.createElement('details');
+    ds.className = 'data-section';
+    ds.setAttribute('open', '');
+    ds.innerHTML = '<summary>📊 数据明细</summary><div class="data-inner"></div>';
+    panelBody.appendChild(ds);
+  }
+  var inner = ds.querySelector('.data-inner');
+  if (!inner) return;
+  var h = '<table><thead><tr>';
+  headers.forEach(function(hd){ h += '<th>'+hd+'</th>'; });
+  h += '</tr></thead><tbody>';
+  rows.forEach(function(row){
+    h += '<tr>';
+    row.forEach(function(cell,i){
+      var cls = (i > 0 && typeof cell === 'number') ? 'num' : '';
+      h += '<td class="'+cls+'">'+cell+'</td>';
+    });
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  inner.innerHTML = h;
+}
+function tip() { return { backgroundColor:'rgba(17,24,39,0.95)', borderColor:$.border, textStyle:{color:$.textPri,fontSize:12} }; }
+function sLine() { return { lineStyle:{color:'rgba(255,255,255,0.06)'} }; }
+function aLine() { return { lineStyle:{color:'rgba(255,255,255,0.15)'} }; }
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME 1: 领用指标 — 识别库存形成情况
+// ═══════════════════════════════════════════════════════════════
+
+// 1.1 领用率月度趋势 — 强化趋势线
+(function(){
+  const c = initChart('chart-usage-rate');
+  // 线性回归趋势线: y = ax + b
+  const n = usageRateData.length;
+  const xs = usageRateData.map((_,i) => i);
+  const yMean = usageRateData.reduce((a,b)=>a+b,0)/n;
+  const xMean = (n-1)/2;
+  const slope = xs.reduce((s,x,i) => s + (x-xMean)*(usageRateData[i]-yMean), 0) /
+                xs.reduce((s,x) => s + (x-xMean)*(x-xMean), 0);
+  const intercept = yMean - slope * xMean;
+  const trendLine = usageRateData.map((_,i) => +(slope * i + intercept).toFixed(1));
+
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis' },
+    legend: { top:0, textStyle:{color:$.textSub,fontSize:10}, data:['领用率','趋势线','目标线(80%)'] },
+    grid: { top:45, right:20, bottom:25, left:55 },
+    xAxis: { type:'category', data:MONTHS, axisLabel:{color:$.textSub,fontSize:10}, axisLine:aLine() },
+    yAxis: { type:'value', min:60, max:100, axisLabel:{color:$.textSub,formatter:'{value}%'}, splitLine:sLine() },
+    series: [
+      { name:'领用率', type:'line', data:usageRateData, smooth:true, lineStyle:{color:$.rose,width:2.5}, itemStyle:{color:$.rose}, symbol:'circle',symbolSize:6,
+        areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(244,63,94,0.25)'},{offset:1,color:'rgba(244,63,94,0)'}])},
+        markLine:{ silent:true, symbol:'none', data:[{yAxis:75,label:{formatter:'⚠ 预警线 75%',color:$.amber},lineStyle:{color:$.amber,type:'dashed',width:1.5}}] } },
+      { name:'趋势线', type:'line', data:trendLine, smooth:false, lineStyle:{color:'#fbbf24',width:2,type:'dotted'}, itemStyle:{color:'#fbbf24'}, symbol:'none',
+        endLabel:{ show:true, formatter:'↓ 下降趋势', color:'#fbbf24', fontSize:11, fontWeight:'bold' } },
+      { name:'目标线(80%)', type:'line', data:usageRateTarget, lineStyle:{color:$.green,width:1.5,type:'dashed'}, itemStyle:{color:$.green}, symbol:'none' },
+    ],
+  });
+  fillData('chart-usage-rate', ['月份','领用率(%)','目标(%)','趋势值(%)'],
+    MONTHS.map(function(m,i){ return [m, usageRateData[i], usageRateTarget[i], trendLine[i]]; }));
+})();
+
+// 1.2 入库 vs 领用
+(function(){
+  const c = initChart('chart-in-out');
+  const diff = inAmountData.map((v,i) => v - outAmountData[i]);
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis' },
+    legend: { top:0, textStyle:{color:$.textSub}, data:['入库金额','领用金额','净增库存'] },
+    grid: { top:40, right:20, bottom:20, left:55 },
+    xAxis: { type:'category', data:MONTHS, axisLabel:{color:$.textSub,fontSize:10}, axisLine:aLine() },
+    yAxis: { type:'value', name:'万元', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine() },
+    series: [
+      { name:'入库金额', type:'bar', data:inAmountData, itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:$.blue},{offset:1,color:'rgba(59,130,246,0.2)'}])}, barWidth:16, barGap:'30%' },
+      { name:'领用金额', type:'bar', data:outAmountData, itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:$.cyan},{offset:1,color:'rgba(6,182,212,0.2)'}])}, barWidth:16 },
+      { name:'净增库存', type:'line', data:diff, smooth:true, lineStyle:{color:$.amber,width:2}, itemStyle:{color:$.amber}, symbol:'triangle',symbolSize:8,
+        markLine:{ silent:true, symbol:'none', data:[{yAxis:0,label:{formatter:'平衡线'},lineStyle:{color:'rgba(255,255,255,0.3)'}}] } },
+    ],
+  });
+  fillData('chart-in-out', ['月份','入库(万)','领用(万)','净增(万)'],
+    MONTHS.map(function(m,i){ return [m, inAmountData[i], outAmountData[i], inAmountData[i]-outAmountData[i]]; }));
+})();
+
+// 1.3 库存水位 vs 安全库存
+(function(){
+  const c = initChart('chart-water-level');
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis' },
+    legend: { top:0, textStyle:{color:$.textSub}, data:['当前库存','安全上限','安全下限'] },
+    grid: { top:40, right:20, bottom:20, left:55 },
+    xAxis: { type:'category', data:CATEGORIES, axisLabel:{color:$.textSub,fontSize:9,rotate:30}, axisLine:aLine() },
+    yAxis: { type:'value', name:'万元', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine() },
+    series: [
+      { name:'当前库存', type:'bar', data:stockCurrent, itemStyle:{color: p => stockCurrent[p.dataIndex] > stockSafeMax[p.dataIndex] ? $.rose : $.blue}, barWidth:14 },
+      { name:'安全上限', type:'line', data:stockSafeMax, lineStyle:{color:$.rose,width:1,type:'dashed'}, symbol:'none' },
+      { name:'安全下限', type:'line', data:stockSafeMin, lineStyle:{color:$.amber,width:1,type:'dashed'}, symbol:'none' },
+    ],
+  });
+  fillData('chart-water-level', ['物料类别','当前库存(万)','安全上限(万)','安全下限(万)','状态'],
+    CATEGORIES.map(function(c,i){ return [c, stockCurrent[i], stockSafeMax[i], stockSafeMin[i], stockCurrent[i] > stockSafeMax[i] ? '⚠ 超限' : stockCurrent[i] < stockSafeMin[i] ? '⚠ 不足' : '✅ 正常']; }));
+})();
+
+// 1.4 异常变动预警日历
+(function(){
+  const c = initChart('chart-anomaly');
+  // Last 30 days, mark anomaly days
+  const days = [];
+  const today = new Date();
+  const data = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    days.push((d.getMonth()+1)+'/'+d.getDate());
+    // 0=normal, 1=入库异常, 2=领用异常, 3=双异常 — 提高异常密度
+    const r = Math.random();
+    const v = r > 0.55 ? 1 : r > 0.35 ? 2 : r > 0.28 ? 3 : 0;
+    data.push(v);
+  }
+  c.setOption({
+    tooltip: { ...tip(), formatter: p => `${p.name}<br/>${['✅ 正常','📦 入库异常偏高','📉 领用异常偏低','⚠️ 双异常'][p.value]}` },
+    grid: { top:10, right:20, bottom:20, left:20 },
+    xAxis: { type:'category', data:days, axisLabel:{color:$.textSub,fontSize:9,rotate:60}, axisLine:aLine(), axisTick:{show:false} },
+    yAxis: { type:'category', data:['异常类型'], axisLabel:{color:$.textSub}, axisLine:{show:false}, axisTick:{show:false} },
+    visualMap: { show:false, pieces:[
+      {value:0, color:'#1e293b'},{value:1, color:$.blue},{value:2, color:$.amber},{value:3, color:$.rose}
+    ]},
+    series: [{
+      type:'heatmap', data: data.map((v,i) => [i, 0, v]),
+      label:{ show:true, fontSize:9, formatter: p => ['✅','📦入库','📉领用','⚠️双异'][p.value[2]],
+        color: p => p.value[2]===0?'rgba(255,255,255,0.25)':'#fff' },
+      emphasis:{ itemStyle:{ shadowBlur:8, shadowColor:'rgba(255,255,255,0.3)' } },
+    }],
+  });
+  // Anomaly data: show all 30 days
+  var anomalyRows = [];
+  for (var ai = 0; ai < days.length; ai++) { anomalyRows.push([days[ai], ['✅ 正常','📦 入库异常','📉 领用异常','⚠️ 双异常'][data[ai]]]); }
+  fillData('chart-anomaly', ['日期','状态'], anomalyRows);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME 2: 结构指标 — 定位库存来源
+// ═══════════════════════════════════════════════════════════════
+
+// 2.1 项目库存树图
+(function(){
+  const c = initChart('chart-treemap');
+  const usageColor = (r) => r < 50 ? $.rose : r < 70 ? $.amber : r < 85 ? $.blue : $.green;
+  c.setOption({
+    tooltip: { ...tip(), formatter: p => `${p.name}<br/>库存金额: <b>¥${p.value}万</b><br/>领用率: ${p.data?.usageRate||'-'}%` },
+    series: [{
+      type:'treemap', roam:false, width:'96%', height:'85%', left:'2%', top:10,
+      label:{ show:true, formatter: p => `${p.name}\n¥${p.value}万`, fontSize:11, color:'#fff' },
+      upperLabel:{ show:true, height:24, color:$.textSub, fontSize:11 },
+      itemStyle:{ borderColor:$.bgPanel, borderWidth:3, gapWidth:2 },
+      levels:[{ itemStyle:{ borderColor:'#0a0e17', borderWidth:4, gapWidth:2 }, upperLabel:{ show:true } }],
+      data: projectTreeData.map(d => ({ ...d, itemStyle:{color:usageColor(d.usageRate)} })),
+    }],
+  });
+  fillData('chart-treemap', ['项目','库存金额(万)','领用率(%)'],
+    projectTreeData.map(function(d){ return [d.name, d.value, d.usageRate]; }));
+})();
+
+// 2.2 采购人排行
+(function(){
+  const c = initChart('chart-buyer');
+  c.setOption({
+    tooltip: { ...tip(), formatter: p => `${p.name}<br/>库存: <b>¥${p.value}万</b><br/>领用率: ${p.data?.usageRate}%` },
+    grid: { top:10, right:60, bottom:20, left:100 },
+    xAxis: { type:'value', name:'万元', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine() },
+    yAxis: { type:'category', data:buyerData.map(d=>d.name), axisLabel:{color:$.textSub,fontSize:11}, axisLine:aLine(), inverse:true },
+    series: [{
+      type:'bar', data: buyerData,
+      itemStyle:{ color: p => buyerData[p.dataIndex].usageRate < 60 ? $.rose : buyerData[p.dataIndex].usageRate < 75 ? $.amber : $.green, borderRadius:[0,6,6,0] },
+      barWidth:18,
+      label:{ show:true, position:'right', color:$.textSub, fontSize:10, formatter:'{c}万' },
+    }],
+  });
+  fillData('chart-buyer', ['采购人','库存(万)','领用率(%)'],
+    buyerData.map(function(d){ return [d.name, d.value, d.usageRate]; }));
+})();
+
+// 2.3 物料类别气泡
+(function(){
+  const c = initChart('chart-category-bubble');
+  c.setOption({
+    tooltip: { ...tip(), formatter: p => `${p.name}<br/>库存: <b>¥${p.value[0]}万</b><br/>领用率: ${p.value[1]}%<br/>SKU数: ${p.value[2]}` },
+    grid: { top:15, right:20, bottom:30, left:65 },
+    xAxis: { name:'领用率 %', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine(), axisLine:aLine() },
+    yAxis: { name:'SKU数', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine(), axisLine:aLine() },
+    series: [{
+      type:'scatter', data: categoryBubbleData,
+      symbolSize: p => Math.sqrt(p[0]) * 0.7,
+      itemStyle: { shadowBlur:8, shadowColor:'rgba(0,0,0,0.4)' },
+      label: { show:true, position:'top', color:$.textSub, fontSize:10, formatter:'{b}' },
+      emphasis: { scale:1.3 },
+    }],
+    visualMap: { show:false, dimension:1, min:45, max:95, inRange:{color:[$.rose,$.amber,$.green]} },
+  });
+  fillData('chart-category-bubble', ['物料类别','库存(万)','领用率(%)','SKU数'],
+    categoryBubbleData.map(function(d){ return [d.name, d.value[0], d.value[1], d.value[2]]; }));
+})();
+
+// 2.4 批次消化进度
+(function(){
+  const c = initChart('chart-batch');
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis' },
+    legend: { top:0, textStyle:{color:$.textSub,fontSize:10}, data: batchData.map(d=>d.name) },
+    grid: { top:40, right:20, bottom:20, left:55 },
+    xAxis: { type:'category', data:batchLabels, axisLabel:{color:$.textSub,fontSize:10}, axisLine:aLine() },
+    yAxis: { type:'value', name:'剩余占比 %', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub,formatter:'{value}%'}, splitLine:sLine() },
+    series: batchData.map(d => ({
+      name:d.name, type:'line', data:d.data, smooth:true, lineStyle:{color:d.color,width:d.name==='批次2405'?2.5:2}, itemStyle:{color:d.color},
+      areaStyle: d.name==='批次2405'?{color:'rgba(244,63,94,0.1)'}:undefined,
+    })),
+  });
+})();
+  var batchRows = [['批次'].concat(batchLabels)];
+  batchData.forEach(function(d){ batchRows.push([d.name].concat(d.data.map(function(v){return v+'%';}))); });
+  fillData('chart-batch', batchRows[0], batchRows.slice(1));
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME 3: 时间指标 — 识别滞留库存
+// ═══════════════════════════════════════════════════════════════
+
+// 3.1 库龄金字塔
+(function(){
+  const c = initChart('chart-age-pyramid');
+  const barColors = [$.green, $.cyan, $.blue, $.amber, $.purple, $.rose];
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis' },
+    legend: { top:0, textStyle:{color:$.textSub}, data:['库存金额(万)','SKU数'] },
+    grid: { top:40, right:55, bottom:20, left:65 },
+    xAxis: { type:'value', axisLabel:{color:$.textSub}, splitLine:sLine() },
+    yAxis: { type:'category', data:ageLabels, axisLabel:{color:$.textSub,fontSize:11}, axisLine:aLine(), inverse:false },
+    series: [
+      { name:'库存金额(万)', type:'bar', data:ageAmount, itemStyle:{color: p => barColors[p.dataIndex]}, barWidth:14, barGap:'40%',
+        label:{ show:true, position:'right', color:$.textSub, fontSize:10, formatter:'{c}万' } },
+      { name:'SKU数', type:'bar', data:ageSku.map(v => v/10), itemStyle:{color:'rgba(255,255,255,0.08)',borderColor:'rgba(255,255,255,0.2)',borderWidth:1}, barWidth:14,
+        label:{ show:true, position:'right', color:$.textSub, fontSize:10, formatter: p => `${p.value*10}个` } },
+    ],
+  });
+  fillData('chart-age-pyramid', ['库龄段','库存金额(万)','SKU数'],
+    ageLabels.map(function(l,i){ return [l, ageAmount[i], ageSku[i]]; }));
+})();
+
+// 3.2 平均库龄趋势 — 强化上升趋势线
+(function(){
+  const c = initChart('chart-age-trend');
+  // 线性回归趋势线
+  const n = avgAgeData.length;
+  const xs = avgAgeData.map((_,i) => i);
+  const yMean = avgAgeData.reduce((a,b)=>a+b,0)/n;
+  const xMean = (n-1)/2;
+  const slope = xs.reduce((s,x,i) => s+(x-xMean)*(avgAgeData[i]-yMean),0) / xs.reduce((s,x) => s+(x-xMean)*(x-xMean),0);
+  const intercept = yMean - slope * xMean;
+  const trendLine = avgAgeData.map((_,i) => +(slope * i + intercept).toFixed(1));
+
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis' },
+    legend: { top:0, textStyle:{color:$.textSub}, data:['平均库龄(天)','趋势线','>90天占比(%)'] },
+    grid: { top:45, right:55, bottom:25, left:55 },
+    xAxis: { type:'category', data:MONTHS, axisLabel:{color:$.textSub,fontSize:10}, axisLine:aLine() },
+    yAxis: [
+      { type:'value', name:'天', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine(), min:30, max:60 },
+      { type:'value', name:'%', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:{show:false}, min:5, max:20 },
+    ],
+    series: [
+      { name:'平均库龄(天)', type:'line', data:avgAgeData, smooth:true, lineStyle:{color:$.purple,width:2.5}, itemStyle:{color:$.purple}, symbol:'circle',symbolSize:5,
+        areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(139,92,246,0.2)'},{offset:1,color:'rgba(139,92,246,0)'}])},
+        markLine:{ silent:true, symbol:'none', data:[{yAxis:45,label:{formatter:'警戒线 45天',color:$.amber},lineStyle:{color:$.amber,type:'dashed'}}] } },
+      { name:'趋势线', type:'line', data:trendLine, smooth:false, lineStyle:{color:'#fbbf24',width:2,type:'dotted'}, itemStyle:{color:'#fbbf24'}, symbol:'none',
+        endLabel:{ show:true, formatter:'↑ 上升趋势', color:'#fbbf24', fontSize:11, fontWeight:'bold' } },
+      { name:'>90天占比(%)', type:'line', yAxisIndex:1, data:over90Data, smooth:true, lineStyle:{color:$.rose,width:2}, itemStyle:{color:$.rose}, symbol:'diamond',symbolSize:5,
+        markLine:{ silent:true, symbol:'none', data:[{yAxis:15,label:{formatter:'危险线 15%',color:$.rose},lineStyle:{color:$.rose,type:'dashed'}}] } },
+    ],
+  });
+  fillData('chart-age-trend', ['月份','平均库龄(天)','趋势值(天)','>90天占比(%)'],
+    MONTHS.map(function(m,i){ return [m, avgAgeData[i], trendLine[i], over90Data[i]]; }));
+})();
+
+// 3.3 滞留库存热力图
+(function(){
+  const c = initChart('chart-heatmap');
+  const catsY = ['>365天','180-365','90-180','60-90','30-60','0-30天'];
+  const hmData = [];
+  for (let y = 0; y < 6; y++) {
+    for (let x = 0; x < 10; x++) {
+      hmData.push([x, y, heatmapBase[y][x] + Math.floor(Math.random()*8)]);
+    }
+  }
+  c.setOption({
+    tooltip: { ...tip(), formatter: p => `${catsY[p.value[1]]} / ${CATEGORIES[p.value[0]]}<br/>库存: <b>¥${p.value[2]}万</b>` },
+    grid: { top:10, right:20, bottom:40, left:75 },
+    xAxis: { type:'category', data:CATEGORIES, axisLabel:{color:$.textSub,fontSize:9,rotate:45}, axisLine:aLine(), position:'bottom' },
+    yAxis: { type:'category', data:catsY, axisLabel:{color:$.textSub,fontSize:10}, axisLine:aLine() },
+    visualMap: { right:10, bottom:50, min:0, max:100, inRange:{color:['#111827','#1e3a5f','#2563eb','#f59e0b','#ef4444']}, text:['高','低'], textStyle:{color:$.textSub} },
+    series: [{ type:'heatmap', data:hmData, label:{ show:true, color:'#fff', fontSize:9 }, emphasis:{ itemStyle:{ shadowBlur:10, shadowColor:'rgba(0,0,0,0.5)' } } }],
+  });
+  // Heatmap data table: flatten the matrix
+  var hmRows = [['物料类别'].concat(['>365天','180-365','90-180','60-90','30-60','0-30天'])];
+  CATEGORIES.forEach(function(cat, x){
+    var row = [cat];
+    for (var y = 5; y >= 0; y--) { row.push(heatmapBase[y][x]); }
+    hmRows.push(row);
+  });
+  fillData('chart-heatmap', hmRows[0], hmRows.slice(1));
+})();
+
+// 3.4 库龄预警仪表
+(function(){
+  const c = initChart('chart-age-gauge');
+  c.setOption({
+    tooltip: { ...tip(), formatter: p => `${p.name}<br/>>90天库存占比: <b>${p.value}%</b>` },
+    grid: { top:15, right:30, bottom:20, left:70 },
+    xAxis: { type:'value', max:50, axisLabel:{color:$.textSub,formatter:'{value}%'}, splitLine:sLine() },
+    yAxis: { type:'category', data:ageWarningProjects, axisLabel:{color:$.textSub,fontSize:10}, axisLine:aLine(), inverse:true },
+    series: [{
+      type:'bar', data: over90Rate,
+      itemStyle:{ color: p => over90Rate[p.dataIndex] > 30 ? $.rose : over90Rate[p.dataIndex] > 15 ? $.amber : $.green, borderRadius:[0,6,6,0] },
+      barWidth:16,
+      label:{ show:true, position:'right', color:$.textSub, fontSize:10, formatter:'{c}%' },
+      markLine:{ silent:true, symbol:'none', data:[{xAxis:15,label:{formatter:'警戒 15%',color:$.amber},lineStyle:{color:$.amber,type:'dashed'}},{xAxis:30,label:{formatter:'危险 30%',color:$.rose},lineStyle:{color:$.rose,type:'dashed'}}] },
+    }],
+  });
+  fillData('chart-age-gauge', ['项目','>90天库存占比(%)'],
+    ageWarningProjects.map(function(p,i){ return [p, over90Rate[i]]; }));
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//  THEME 4: TOP指标 & 行动计划
+// ═══════════════════════════════════════════════════════════════
+
+// 4.1 TOP15 呆滞物料清单 (Table)
+(function(){
+  const badgeMap = { red:'<span class="badge red">紧急</span>', amber:'<span class="badge amber">关注</span>', green:'<span class="badge green">跟踪</span>' };
+  const suggestColor = {
+    '报废处置':'badge red','折价转让':'badge amber','项目间调拨':'badge purple','降级使用':'badge amber','退回供应商':'badge amber','加速领用':'badge green','保留观察':'badge green'
+  };
+  let html = `<thead><tr>
+    <th>#</th><th>物料编码</th><th>物料名称</th><th>库龄(天)</th><th>金额(万)</th><th>来源项目</th><th>采购人</th><th>优先级</th><th>处置建议</th>
+  </tr></thead><tbody>`;
+  sluggishItems.forEach((it,i) => {
+    html += `<tr>
+      <td style="color:${$.textSub}">${i+1}</td>
+      <td style="font-size:10px">${it.code}</td>
+      <td>${it.name}</td>
+      <td style="color:${it.age>300?$.rose:it.age>200?$.amber:$.textSub}">${it.age}天</td>
+      <td>¥${it.amt}万</td>
+      <td style="font-size:10px">${it.project}</td>
+      <td style="font-size:10px">${it.buyer}</td>
+      <td>${badgeMap[it.level]}</td>
+      <td><span class="${suggestColor[it.suggest]}">${it.suggest}</span></td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('table-sluggish').innerHTML = html;
+})();
+
+// 4.2 TOP10 超量备货
+(function(){
+  const c = initChart('chart-overstock');
+  const ratio = overstockCurrent.map((v,i) => +(v/overstockSafeMax[i]).toFixed(1));
+  c.setOption({
+    tooltip: { ...tip(), formatter: p => `${p.name}<br/>当前库存: <b>¥${overstockCurrent[p.dataIndex]}万</b><br/>安全上限: ¥${overstockSafeMax[p.dataIndex]}万<br/>超标倍数: <b>${ratio[p.dataIndex]}x</b>` },
+    grid: { top:5, right:30, bottom:20, left:130 },
+    xAxis: { type:'value', name:'万元', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine() },
+    yAxis: { type:'category', data:overstockItems, axisLabel:{color:$.textSub,fontSize:10,width:120,overflow:'truncate'}, axisLine:aLine(), inverse:true },
+    series: [
+      { name:'安全上限', type:'bar', data:overstockSafeMax, itemStyle:{color:'rgba(255,255,255,0.06)',borderColor:'rgba(255,255,255,0.15)',borderWidth:1}, barWidth:12, barGap:'-100%', z:1 },
+      { name:'当前库存', type:'bar', data:overstockCurrent, itemStyle:{color: p => ratio[p.dataIndex] > 2.5 ? $.rose : $.amber, borderRadius:[0,5,5,0]}, barWidth:12, z:2,
+        label:{ show:true, position:'right', color:$.textSub, fontSize:10, formatter: p => `${ratio[p.dataIndex]}x` } },
+    ],
+  });
+  fillData('chart-overstock', ['物料','当前库存(万)','安全上限(万)','超标倍数'],
+    overstockItems.map(function(item,i){ return [item, overstockCurrent[i], overstockSafeMax[i], (overstockCurrent[i]/overstockSafeMax[i]).toFixed(1)+'x']; }));
+})();
+
+// 4.3 处置计划执行进度
+(function(){
+  const c = initChart('chart-cleanup');
+  const remain = cleanupTotal.map((v,i) => v - cleanupCleaned[i]);
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis', formatter: p => {
+      const i = p[0].dataIndex;
+      return `${cleanupProjects[i]}<br/>已处置: ¥${cleanupCleaned[i]}万 (${(cleanupCleaned[i]/cleanupTotal[i]*100).toFixed(0)}%)<br/>待处置: ¥${remain[i]}万`;
+    }},
+    legend: { top:0, textStyle:{color:$.textSub,fontSize:10}, data:['已处置','待处置'] },
+    grid: { top:40, right:20, bottom:20, left:60 },
+    xAxis: { type:'value', axisLabel:{color:$.textSub}, splitLine:sLine() },
+    yAxis: { type:'category', data:cleanupProjects, axisLabel:{color:$.textSub,fontSize:10}, axisLine:aLine(), inverse:true },
+    series: [
+      { name:'已处置', type:'bar', stack:'total', data:cleanupCleaned, itemStyle:{color:$.green, borderRadius:[0,0,0,0]}, barWidth:16,
+        label:{ show:true, position:'inside', color:'#fff', fontSize:9, formatter: p => cleanupCleaned[p.dataIndex] > 400 ? `${(cleanupCleaned[p.dataIndex]/cleanupTotal[p.dataIndex]*100).toFixed(0)}%` : '' } },
+      { name:'待处置', type:'bar', stack:'total', data:remain, itemStyle:{color:'rgba(255,255,255,0.06)',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,borderRadius:[0,6,6,0]},
+        label:{ show:true, position:'right', color:$.textSub, fontSize:9, formatter: p => `${(remain[p.dataIndex]/cleanupTotal[p.dataIndex]*100).toFixed(0)}%` } },
+    ],
+  });
+  fillData('chart-cleanup', ['项目','总库存(万)','已处置(万)','待处置(万)','完成率'],
+    cleanupProjects.map(function(p,i){ return [p, cleanupTotal[i], cleanupCleaned[i], remain[i], (cleanupCleaned[i]/cleanupTotal[i]*100).toFixed(0)+'%']; }));
+})();
+
+// 4.4 智能备货优化建议
+(function(){
+  const c = initChart('chart-suggest');
+  c.setOption({
+    tooltip: { ...tip(), trigger:'axis' },
+    legend: { top:0, textStyle:{color:$.textSub,fontSize:10}, data:['当前库存','建议上限','日均消耗(右轴)'] },
+    grid: { top:40, right:55, bottom:20, left:55 },
+    xAxis: { type:'category', data:suggestItems, axisLabel:{color:$.textSub,fontSize:9,rotate:25}, axisLine:aLine() },
+    yAxis: [
+      { type:'value', name:'万元', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:sLine() },
+      { type:'value', name:'万/天', nameTextStyle:{color:$.textSub}, axisLabel:{color:$.textSub}, splitLine:{show:false} },
+    ],
+    series: [
+      { name:'当前库存', type:'bar', data:suggestCurrent, itemStyle:{color:$.amber, borderRadius:[6,6,0,0]}, barWidth:18, barGap:'30%' },
+      { name:'建议上限', type:'bar', data:suggestMaxStock, itemStyle:{color:$.green, borderRadius:[6,6,0,0]}, barWidth:18 },
+      { name:'日均消耗(右轴)', type:'line', yAxisIndex:1, data:suggestDailyUse, lineStyle:{color:$.cyan,width:1.5}, itemStyle:{color:$.cyan}, symbol:'circle',symbolSize:5 },
+    ],
+  });
+})();
+  fillData('chart-suggest', ['物料','当前库存(万)','建议上限(万)','日均消耗(万)'],
+    suggestItems.map(function(item,i){ return [item, suggestCurrent[i], suggestMaxStock[i], suggestDailyUse[i]]; }));
+
+// ═══════════════════════════════════════════════════════════════
+//  Live Timer
+// ═══════════════════════════════════════════════════════════════
+(function loop(){
+  const now = new Date();
+  const el = document.getElementById('refresh-time');
+  if (el) el.textContent = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  setTimeout(loop, 1000);
+})();
+</script>
+
+</body>
+</html>

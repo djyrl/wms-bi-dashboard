@@ -1,0 +1,110 @@
+// ============================================
+// 全局样式
+// ============================================
+
+// 页面内容间距
+.kpi-section,
+.charts-section {
+  padding: 8px 12px;
+}
+.kpi-section {
+  padding-top: 20px;
+}
+.charts-section {
+  padding-bottom: 28px;
+}
+
+// 图表容器
+.chart-box {
+  width: 100%;
+  height: 340px;
+}
+
+// 卡片间距
+.chart-card,
+.table-card,
+.kpi-card {
+  margin-bottom: 8px;
+}
+
+// 卡片头部自定义区域
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// KPI 卡片内部样式
+.kpi-card__label {
+  font-size: 13px;
+  color: $text-secondary;
+  margin-bottom: 6px;
+}
+.kpi-card__value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: $text-primary;
+}
+.kpi-card__change {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.kpi-card__change.up {
+  color: $success;
+}
+.kpi-card__change.down {
+  color: $danger;
+}
+.kpi-card__hint {
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+// 排名标签
+.rank-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+.rank-tag--gold {
+  background: linear-gradient(135deg, #f59e0b, #e67e22);
+}
+.rank-tag--silver {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+}
+.rank-tag--bronze {
+  background: linear-gradient(135deg, #d98c5f, #b87333);
+}
+.rank-tag--normal {
+  background: #e5e7eb;
+  color: $text-secondary;
+}
+
+// 页面过渡动画
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .chart-box {
+    height: 260px;
+  }
+  .kpi-card__value {
+    font-size: 22px;
+  }
+}
