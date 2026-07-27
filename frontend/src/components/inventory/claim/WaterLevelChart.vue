@@ -8,11 +8,13 @@ const props = defineProps<{ data: WaterLevelItem[] }>()
 const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
+function toWan(v: number) { return +(v / 10000).toFixed(2) }
+
 const detailHeaders = ['物料编码', '物料名称', '当前库存(万)', '安全上限(万)', '安全下限(万)', '状态']
 const detailRows = computed(() =>
   props.data.map(d => {
     const status = d.current > d.safeMax ? '⚠ 超限' : d.current < d.safeMin ? '⚠ 不足' : '✅ 正常'
-    return [d.materialCode, d.category, d.current, d.safeMax, d.safeMin, status] as (string | number)[]
+    return [d.materialCode, d.category, toWan(d.current), toWan(d.safeMax), toWan(d.safeMin), status] as (string | number)[]
   })
 )
 
@@ -21,9 +23,9 @@ function render() {
   chart.init(chartRef.value)
 
   const categories = props.data.map(d => d.category)
-  const current = props.data.map(d => d.current)
-  const safeMax = props.data.map(d => d.safeMax)
-  const safeMin = props.data.map(d => d.safeMin)
+  const current = props.data.map(d => toWan(d.current))
+  const safeMax = props.data.map(d => toWan(d.safeMax))
+  const safeMin = props.data.map(d => toWan(d.safeMin))
 
   chart.setOption({
     tooltip: { trigger: 'axis' },

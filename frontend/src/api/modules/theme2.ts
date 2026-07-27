@@ -3,7 +3,11 @@ import request from '../request'
 // ---- 后端 /api/wms/indicators/structure 返回类型 ----
 
 export interface WmsStructure {
+  current_year: number
+  year_start: string
+  year_end: string
   current_inventory_amount: number
+  current_year_inventory_amount: number
   current_inventory_quantity: number
   project_ratios: {
     project_code: string

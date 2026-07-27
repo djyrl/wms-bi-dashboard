@@ -22,6 +22,7 @@ export interface TimeIndicatorsRes {
 export interface AgeLayerItem {
   id: number
   material_code: string
+  material_name: string
   batch_code: string
   inventory_amount: number
   current_quantity: number
@@ -34,6 +35,7 @@ export interface AgeLayerItem {
 /** 项目指标单项 */
 export interface WmsProjectIndicator {
   project_code: string
+  project_name: string
   inbound_amount: number
   claimed_amount: number
   unclaimed_amount: number

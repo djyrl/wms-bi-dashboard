@@ -7,12 +7,14 @@ import type { UsageRatePoint } from '@/types/inventory'
 const props = defineProps<{
   data: UsageRatePoint[]
   months: string[]
+  granularity?: string
 }>()
 
 const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
-const detailHeaders = ['周', '领用率(%)', '目标(%)', '趋势值(%)']
+const timeLabel = computed(() => props.granularity || '周')
+const detailHeaders = computed(() => [timeLabel.value, '领用率(%)', '目标(%)', '趋势值(%)'])
 const detailRows = computed(() => props.data.map(d => [d.month, d.rate, d.target, d.trend] as (string | number)[]))
 
 function render() {

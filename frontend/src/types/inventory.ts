@@ -30,7 +30,7 @@ export interface InOutPoint {
 }
 
 export interface WaterLevelItem {
-  materialCode: string
+  materialCode?: string
   category: string
   current: number
   safeMax: number
@@ -39,8 +39,11 @@ export interface WaterLevelItem {
 
 export interface AnomalyDay {
   date: string
-  type: 0 | 1  // 0=正常, 1=领用异常
+  inbound_amount: number
+  claimed_amount: number
+  type: 0 | 1
   label: string
+  huanbi: number | null
 }
 
 // ---- 主题二：结构指标 ----
@@ -48,6 +51,7 @@ export interface AnomalyDay {
 export interface ProjectTreeNode {
   name: string
   projectName: string
+  projectCode: string
   value: number
   usageRate: number
 }
@@ -94,6 +98,7 @@ export interface SluggishHeatmapCell {
 
 export interface AgeGaugeItem {
   project: string
+  projectName?: string
   avgAgeDays: number
   over90Rate: number
 }

@@ -1,0 +1,129 @@
+-- =====================================================================
+-- garden_report 星型视图架构说明
+-- =====================================================================
+--
+-- 目录结构：
+-- garden_report/
+-- ├── sql/
+-- │   ├── 00_deploy_order.sql            -- 部署入口（执行顺序）
+-- │   ├── 01_v_project_inventory_wide.sql -- 核心宽表（星型中心）
+-- │   ├── dimensions/                     -- 维度视图
+-- │   │   ├── 01_v_dim_material.sql       -- 物料维度
+-- │   │   ├── 02_v_dim_project.sql        -- 项目维度
+-- │   │   ├── 03_v_dim_location.sql       -- 货位维度
+-- │   │   └── 04_v_dim_outbound_log.sql   -- 出库日志维度
+-- │   └── reports/                        -- 报表视图
+-- │       ├── 01_v_rpt_inventory_report.sql -- 库存报表（兼容旧视图）
+-- │       └── 02_v_rpt_outbound_summary.sql -- 出库汇总报表
+--
+-- =====================================================================
+-- 星型结构 (Star Schema)
+-- =====================================================================
+--
+--                    ┌──────────────────────┐
+--                    │  v_dim_material       │
+--                    │  (物料维度)            │
+--                    │  material_code (PK)   │
+--                    └──────────┬────────────┘
+--                               │ material_code
+--                               ▼
+--  ┌────────────────────┐  ┌────────────────────────────┐  ┌───────────────────────┐
+--  │ v_dim_project       │  │ v_project_inventory_wide   │  │ v_dim_outbound_log    │
+--  │ (项目维度)          │◄─│ (核心宽表 - 星型中心)       │─►│ (出库日志维度)         │
+--  │ project_code (PK)   │  │ project_inventory_id (PK)  │  │ tenant_id+material+   │
+--  └────────────────────┘  │                            │  │ batch+erp_inventory   │
+--          ▲                │  语意：物料X的批次Y，       │  └───────────────────────┘
+--          │ project_code   │  归属于项目Z，有N个，       │
+--          │                │  单价P，存放在货位L，       │          ▲
+--          │                │  入库日期D                  │          │
+--          │                │                            │          │
+--          │                │  包含：                     │          │
+--          │                │  - project_ratio (窗口函数) │          │
+--          │                │  - inbound_amount          │          │
+--          │                │  - claimed_amount          │          │
+--          │                │  - inventory_amount        │          │
+--          │                │  - claim_rate              │          │
+--          │                │  - age_days                │          │
+--          │                └─────────────┬──────────────┘          │
+--          │                              │ representative_         │
+--          │                              │ inventory_id            │
+--          │                ┌─────────────▼──────────────┐          │
+--          │                │  v_dim_location             │          │
+--          │                │  (货位维度)                  │          │
+--          │                │  inventory_id (PK)          │          │
+--          │                └────────────────────────────┘          │
+--          │                                                        │
+--          └────────────────────────────────────────────────────────┘
+--
+-- =====================================================================
+-- 数据流向
+-- =====================================================================
+--
+-- 基础表 (wms_*, wbs_*)
+--     │
+--     ▼
+-- 维度视图 (v_dim_*)          ← 第一层：各维度独立聚合
+--     │
+--     ▼
+-- 核心宽表 (v_project_inventory_wide)  ← 第二层：星型 JOIN + 金额计算
+--     │
+--     ▼
+-- 报表视图 (v_rpt_*)          ← 第三层：业务报表薄包装
+--
+-- =====================================================================
+-- 视图依赖关系
+-- =====================================================================
+--
+-- v_dim_material:
+--   └─ wms_material + wbs_zmmrp048_parsed (ERP 优先，WMS 兜底)
+--
+-- v_dim_project:
+--   └─ wbs_zmmrp226_parsed (需求计划) + wbs_zmmrp048_parsed (项目主数据)
+--
+-- v_dim_location:
+--   └─ wms_inventory_location + wms_location + wms_warehouse
+--
+-- v_dim_outbound_log:
+--   └─ wms_inventory + wms_inventory_log (change_type 31/34/35/36)
+--
+-- v_project_inventory_wide:
+--   ├─ wms_project_inventory (主表，项目台账)
+--   ├─ official_inventory (CTE: wms_inventory 过滤+聚合)
+--   ├─ v_dim_outbound_log (出库维度)
+--   ├─ v_dim_material (物料维度)
+--   ├─ v_dim_project (项目维度)
+--   └─ v_dim_location (货位维度)
+--
+-- v_rpt_inventory_report:
+--   └─ v_project_inventory_wide (兼容旧 v_inventory_report 列名)
+--
+-- v_rpt_outbound_summary:
+--   └─ v_project_inventory_wide (按项目+物料 GROUP BY)
+--
+-- =====================================================================
+-- 金额计算公式
+-- =====================================================================
+--
+-- 批次级总量（不做项目拆分，真实物理金额）：
+--   total_inbound_amount  = original_quantity × weighted_unit_price
+--   total_claimed_amount  = total_outbound_quantity × weighted_unit_price
+--   total_inventory_amount = total_price
+--
+-- 项目级金额（× project_ratio，按项目台账分摊）：
+--   inbound_amount   = total_inbound_amount  × project_ratio
+--   claimed_amount   = total_claimed_amount  × project_ratio
+--   inventory_amount = total_inventory_amount × project_ratio
+--
+-- claim_rate       = MIN(total_outbound_quantity / original_quantity × 100, 100%)
+--
+-- project_ratio    = pi.current_quantity / SUM(pi.current_quantity) OVER (同物料批次)
+--
+-- =====================================================================
+-- 风险点
+-- =====================================================================
+--
+-- 1. v_dim_material 使用 FULL OUTER JOIN，需确认 wms_material 与 ERP 物料编码一致
+-- 2. v_dim_location 关联 representative_inventory_id（MAX），多货位场景取最后一条
+-- 3. v_dim_outbound_log 的 warehouse_code 过滤需确认是否影响匹配结果
+-- 4. project_ratio 窗口函数依赖 wms_project_inventory 数据完整性
+--

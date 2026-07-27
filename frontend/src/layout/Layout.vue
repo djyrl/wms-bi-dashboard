@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useAppStore } from '@/stores/modules/app'
+import { computed, ref, provide } from 'vue'
 import Sidebar from './Sidebar.vue'
-import Header from './Header.vue'
 
-const appStore = useAppStore()
+const sidebarCollapsed = ref(false)
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+provide('sidebarCollapsed', sidebarCollapsed)
+provide('toggleSidebar', toggleSidebar)
 
 const sidebarWidth = computed(() =>
-  appStore.sidebarCollapsed ? '64px' : '220px',
+  sidebarCollapsed.value ? '64px' : '220px',
 )
 </script>
 
@@ -23,11 +27,11 @@ const sidebarWidth = computed(() =>
 
     <!-- 右侧区域 -->
     <el-container class="app-right">
-      <!-- 顶部栏 -->
+      <!-- 顶部栏 
       <el-header height="56px" class="app-header">
         <Header />
-      </el-header>
-
+      </el-header>-->
+      
       <!-- 主内容区 -->
       <el-main class="app-main">
         <router-view v-slot="{ Component: RouteComponent }">

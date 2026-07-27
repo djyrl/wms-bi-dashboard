@@ -1,21 +1,37 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
-import { useKpiChecklistStore } from '@/stores/modules/kpiChecklist'
-import { storeToRefs } from 'pinia'
+import { onMounted, computed, ref } from 'vue'
+import { getKpiChecklist } from '@/api/modules/kpiChecklist'
+import type { KpiChecklistRes, KpiItem } from '@/api/modules/kpiChecklist'
 
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
 
-const store = useKpiChecklistStore()
-const {
-  loading,
-  error,
-  summary,
-  coreKpis,
-  constraintKpis,
-  structureKpis,
-  topKpis,
-} = storeToRefs(store)
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+const summary = ref<KpiChecklistRes['summary'] | null>(null)
+const coreKpis = ref<Record<string, KpiItem>>({})
+const constraintKpis = ref<Record<string, KpiItem>>({})
+const structureKpis = ref<KpiChecklistRes['structure_kpis'] | null>(null)
+const topKpis = ref<KpiChecklistRes['top_kpis'] | null>(null)
+
+async function loadAllData() {
+  loading.value = true
+  error.value = null
+  try {
+    const data = await getKpiChecklist()
+    summary.value = data.summary
+    coreKpis.value = data.core_kpis
+    constraintKpis.value = data.constraint_kpis
+    structureKpis.value = data.structure_kpis
+    topKpis.value = data.top_kpis
+  } catch (e: any) {
+    console.error('KPI考核清单数据加载失败:', e)
+    error.value = e?.message || '数据加载失败'
+  } finally {
+    loading.value = false
+  }
+}
 
 // 核心考核 KPI 条目（便于迭代）
 const coreKpiList = computed(() => Object.values(coreKpis.value))
@@ -37,6 +53,12 @@ const statusIcon: Record<string, string> = {
   info:    '📊',
 }
 
+// 格式化数值：保留两位小数，加千分位
+function formatNumber(val: number | undefined | null): string {
+  if (val == null) return '--'
+  return Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 // 数据概览卡片
 const overviewCards = computed(() => {
   if (!summary.value) return []
@@ -48,15 +70,25 @@ const overviewCards = computed(() => {
   ]
 })
 
+// 时间维度
+const timeRangeLabel = computed(() => {
+  if (!summary.value) return ''
+  const { data_start_date, data_end_date } = summary.value
+  if (data_start_date && data_end_date) {
+    return `数据范围：${data_start_date} ~ ${data_end_date}`
+  }
+  return ''
+})
+
 onMounted(() => {
-  store.loadAllData()
+  loadAllData()
 })
 </script>
 
 <template>
   <div v-loading="loading" element-loading-text="正在加载KPI考核清单..." class="kpi-checklist-page">
 
-    <ErrorResult v-if="error" :message="error" @retry="store.loadAllData()" />
+    <ErrorResult v-if="error" :message="error" @retry="loadAllData" />
 
     <template v-if="!error && summary">
       <!-- ══════════════════════════════════════════════════ -->
@@ -65,7 +97,7 @@ onMounted(() => {
       <div class="page-header">
         <div class="page-header__left">
           <h2 class="page-title">📋 KPI 考核清单</h2>
-          <span class="page-subtitle">更新于 {{ summary.update_time }}</span>
+          <span class="page-subtitle">更新于 {{ summary.update_time }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ timeRangeLabel }}</span>
         </div>
         <div class="status-summary">
           <div class="status-chip ok">
@@ -97,7 +129,7 @@ onMounted(() => {
           <div class="overview-card__content">
             <div class="overview-card__label">{{ card.label }}</div>
             <div class="overview-card__value" :style="{ color: card.color }">
-              {{ typeof card.value === 'number' ? card.value.toLocaleString() : card.value }}
+              {{ typeof card.value === 'number' ? formatNumber(card.value) : card.value }}
               <span class="overview-card__unit">{{ card.unit }}</span>
             </div>
           </div>
@@ -113,7 +145,7 @@ onMounted(() => {
           <span class="section-title">核心考核指标</span>
           <span class="section-desc">K1 · K2 · K3 — 反映采购消化质量与库存资金占用</span>
         </div>
-        <div class="kpi-grid">
+        <div class="kpi-grid kpi-grid--3col">
           <div
             v-for="kpi in coreKpiList"
             :key="kpi.key"
@@ -143,8 +175,7 @@ onMounted(() => {
               <div class="kpi-card__target">
                 <span class="label">目标：</span>{{ kpi.target }}
               </div>
-              <!-- K1 详细数据 -->
-              <div v-if="kpi.key === 'K1' && kpi.detail" class="kpi-card__detail">
+              <div class="kpi-card__detail" v-if="kpi.key === 'K1' && kpi.detail">
                 <div class="detail-row">
                   <span>入库金额</span><span>{{ kpi.detail.inbound_amount_wan?.toLocaleString() }} 万元</span>
                 </div>
@@ -158,11 +189,10 @@ onMounted(() => {
                   <span>数量领用率</span><span>{{ kpi.detail.claim_rate_quantity?.toLocaleString() }}%</span>
                 </div>
               </div>
-              <!-- K3 库龄结构 -->
               <div v-if="kpi.key === 'K3' && kpi.detail?.age_structure" class="kpi-card__detail">
                 <div class="detail-row" v-for="seg in kpi.detail.age_structure" :key="seg.range">
                   <span>{{ seg.range }}</span>
-                  <span>{{ (seg.ratio * 100).toFixed(1) }}% ({{ seg.count }}笔)</span>
+                  <span>{{ (seg.ratio * 100).toFixed(2) }}% ({{ seg.count }}笔)</span>
                 </div>
               </div>
             </div>
@@ -179,7 +209,7 @@ onMounted(() => {
           <span class="section-title">约束类考核指标</span>
           <span class="section-desc">K4 · K5 — 控制新增库存，约束项目采购</span>
         </div>
-        <div class="kpi-grid">
+        <div class="kpi-grid kpi-grid--2col">
           <div
             v-for="kpi in constraintKpiList"
             :key="kpi.key"
@@ -230,7 +260,7 @@ onMounted(() => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="p in kpi.detail.projects.slice(0, 5)" :key="p.project_code">
+                    <tr v-for="p in kpi.detail.projects.filter(p => p.project_code).slice(0, 5)" :key="p.project_code">
                       <td><span class="proj-name">{{ p.project_name || p.project_code }}</span></td>
                       <td>{{ p.unclaimed_amount_wan?.toLocaleString() }}</td>
                       <td>
@@ -271,7 +301,7 @@ onMounted(() => {
                   <tr><th>项目</th><th>库存(万元)</th><th>占比</th></tr>
                 </thead>
                 <tbody>
-                  <tr v-for="p in structureKpis.K6.project_ratios.slice(0, 8)" :key="p.project_code">
+                  <tr v-for="p in structureKpis.K6.project_ratios.filter(p => p.project_code).slice(0, 8)" :key="p.project_code">
                     <td>{{ p.project_name || p.project_code }}</td>
                     <td>{{ p.inventory_amount_wan?.toLocaleString() }}</td>
                     <td>
@@ -310,18 +340,24 @@ onMounted(() => {
         <!-- K7 时间分析 -->
         <ChartCard title="K7 · 时间分析">
           <div class="time-metrics" v-if="structureKpis?.K7">
-            <div class="time-metric-card">
-              <div class="time-metric-card__value">{{ structureKpis.K7.avg_age_weighted_days }}</div>
-              <div class="time-metric-card__label">加权平均库龄（天）</div>
-            </div>
-            <div class="time-metric-card">
-              <div class="time-metric-card__value">{{ structureKpis.K7.unused_days }}</div>
-              <div class="time-metric-card__label">未动用天数（天）</div>
-            </div>
-            <div class="time-metric-card">
-              <div class="time-metric-card__value">{{ structureKpis.K7.aged_ratio_1y }}%</div>
-              <div class="time-metric-card__label">长库龄占比（≥1年）</div>
-            </div>
+            <el-tooltip content="= Σ(库存金额 × 库龄天数) / Σ(库存金额)，按物理批次去重计算" placement="top">
+              <div class="time-metric-card">
+                <div class="time-metric-card__value">{{ structureKpis.K7.avg_age_weighted_days }}</div>
+                <div class="time-metric-card__label">加权平均库龄（天）</div>
+              </div>
+            </el-tooltip>
+            <el-tooltip content="= Σ(从未被领用的库存金额 × 库龄天数) / Σ(从未被领用的库存金额)" placement="top">
+              <div class="time-metric-card">
+                <div class="time-metric-card__value">{{ structureKpis.K7.unused_days }}</div>
+                <div class="time-metric-card__label">未动用天数（天）</div>
+              </div>
+            </el-tooltip>
+            <el-tooltip content="= 库龄 ≥ 365天的库存金额 / 总库存金额" placement="top">
+              <div class="time-metric-card">
+                <div class="time-metric-card__value">{{ structureKpis.K7.aged_ratio_1y }}%</div>
+                <div class="time-metric-card__label">长库龄占比（≥1年）</div>
+              </div>
+            </el-tooltip>
           </div>
           <!-- 库龄结构分段 -->
           <div class="age-bar-wrap" v-if="structureKpis?.K7?.age_structure">
@@ -340,7 +376,7 @@ onMounted(() => {
                   }"
                 ></div>
               </div>
-              <div class="age-bar__pct">{{ (seg.ratio * 100).toFixed(1) }}%</div>
+              <div class="age-bar__pct">{{ (seg.ratio * 100).toFixed(2) }}%</div>
             </div>
           </div>
         </ChartCard>
@@ -359,7 +395,7 @@ onMounted(() => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="p in structureKpis.K8.items.slice(0, 15)" :key="p.project_code">
+                <tr v-for="p in structureKpis.K8.items.filter(p => p.project_code).slice(0, 15)" :key="p.project_code">
                   <td>
                     <span class="proj-name">{{ p.project_name || p.project_code }}</span>
                   </td>
@@ -676,6 +712,14 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 16px;
+
+  &--3col {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  &--2col {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 // ═══ KPI 卡片 ═══
@@ -754,10 +798,17 @@ onMounted(() => {
 }
 
 // 详情行
-.kpi-card__detail {
+.kpi-card__detail,
+.kpi-card__detail-grid {
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px dashed #e2e8f0;
+}
+
+.kpi-card__detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 24px;
 }
 
 .detail-row {

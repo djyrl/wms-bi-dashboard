@@ -5,24 +5,26 @@ import { setupGuards } from './guards'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/dashboard',
+    name: 'AnalysisHub',
+    component: () => import('@/views/AnalysisHub/index.vue'),
+    meta: { title: '分析总览', icon: 'HomeFilled' },
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/Dashboard/index.vue'),
+    path: '/indicator-overview',
+    name: 'IndicatorOverview',
+    component: () => import('@/views/IndicatorOverview/index.vue'),
     meta: {
-      title: '仪表盘',
-      icon: 'Monitor',
+      title: '指标一览',
+      icon: 'List',
     },
   },
   {
-    path: '/inventory',
-    name: 'Inventory',
-    component: () => import('@/views/Inventory/index.vue'),
+    path: '/kpi-checklist',
+    name: 'KpiChecklist',
+    component: () => import('@/views/KpiChecklist/index.vue'),
     meta: {
-      title: '库存分析驾驶舱',
-      icon: 'TrendCharts',
+      title: 'KPI考核清单',
+      icon: 'Tickets',
     },
   },
   {
@@ -53,32 +55,92 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/path1',
+    name: 'Path1PurchaseUse',
+    component: () => import('@/views/Path1PurchaseUse/index.vue'),
+    meta: { title: '采消存分析', icon: 'TrendCharts' },
+  },
+  {
+    path: '/path2',
+    name: 'Path2Responsibility',
+    component: () => import('@/views/Path2Responsibility/index.vue'),
+    meta: { title: '责任归属', icon: 'PieChart' },
+  },
+  {
+    path: '/path3',
+    name: 'Path3AgingCleanup',
+    component: () => import('@/views/Path3AgingCleanup/index.vue'),
+    meta: { title: '库龄清理', icon: 'Timer' },
+  },
+  {
+    path: '/data-table',
+    name: 'DataTable',
+    component: () => import('@/views/DataTable/index.vue'),
+    meta: { title: '数据表格', icon: 'Grid' },
+  },
+  {
+    path: '/cross-analysis',
+    name: 'CrossAnalysis',
+    component: () => import('@/views/CrossAnalysis/index.vue'),
+    meta: {
+      title: '交叉分析',
+      icon: 'Grid',
+    },
+  },
+  {
+    path: '/inventory-report',
+    name: 'InventoryReport',
+    component: () => import('@/views/InventoryReport/index.vue'),
+    meta: {
+      title: '库存报表',
+      icon: 'Document',
+    },
+  },
+  {
+    path: '/project-summary',
+    name: 'ProjectSummary',
+    component: () => import('@/views/InventoryReport/ProjectSummary.vue'),
+    meta: {
+      title: '项目汇总',
+      icon: 'DataBoard',
+    },
+  },
+  {
+    path: '/purchaser-summary',
+    name: 'PurchaserSummary',
+    component: () => import('@/views/InventoryReport/PurchaserSummary.vue'),
+    meta: {
+      title: '采购人汇总',
+      icon: 'User',
+    },
+  },
+  {
+    path: '/source-structure',
+    name: 'SourceStructure',
+    component: () => import('@/views/InventoryReport/InventorySource.vue'),
+    meta: {
+      title: '来源结构',
+      icon: 'Histogram',
+    },
+  },
+  {
+    path: '/traceability',
+    name: 'Traceability',
+    component: () => import('@/views/Traceability/index.vue'),
+    meta: {
+      title: '库存追溯',
+      icon: 'Connection',
+    },
+  },
+  {
     path: '/theme4',
     name: 'Theme4',
     component: () => import('@/views/Theme4/index.vue'),
     meta: {
-      title: '行动计划',
+      title: '优化建议',
       icon: 'List',
     },
   },
-  // {
-  //   path: '/kpi-checklist',
-  //   name: 'KpiChecklist',
-  //   component: () => import('@/views/KpiChecklist/index.vue'),
-  //   meta: {
-  //     title: 'KPI考核清单',
-  //     icon: 'Tickets',
-  //   },
-  // },
-  // {
-  //   path: '/drill/:dimension/:id',
-  //   name: 'Drill',
-  //   component: () => import('@/views/Drill/index.vue'),
-  //   meta: {
-  //     title: '维度下钻',
-  //     icon: 'Search',
-  //   },
-  // },
   {
     path: '/404',
     name: 'NotFound',

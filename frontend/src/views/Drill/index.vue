@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDashboardStore } from '@/stores/modules/dashboard'
+import { drillBatches } from '@/api/modules/dashboard'
 import { formatAmount, formatDays, formatPercent } from '@/utils/format'
 import type { ProcurementBatch } from '@/types/dashboard'
 
 const route = useRoute()
 const router = useRouter()
-const store = useDashboardStore()
 
 const dimension = (route.params.dimension as string) || 'project'
 const id = Number(route.params.id)
@@ -27,7 +26,7 @@ async function loadData() {
     else if (dimension === 'purchaser') params.purchaser_id = id
     else if (dimension === 'material') params.material_id = id
 
-    const result = await store.fetchDrillBatches(params)
+    const result = await drillBatches(params)
     batches.value = result
 
     if (result.length) {

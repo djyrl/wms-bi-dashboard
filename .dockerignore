@@ -1,0 +1,11 @@
+node_modules/
+.git/
+__pycache__/
+*.pyc
+.DS_Store
+temp/
+frontend/dist/
+olddashboard.html
+olddashboard_files/
+schema_ddl.sql
+*.md

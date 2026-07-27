@@ -26,9 +26,9 @@ function render() {
   chart.setOption({
     tooltip: {
       trigger: 'axis',
-      formatter(params) {
+      formatter(params: any[]) {
         let html = `${params[0].axisValue}<br/>`
-        params.forEach((p) => {
+        params.forEach((p: any) => {
           if (p.seriesName === '日均消耗') {
             html += `${p.marker} ${p.seriesName}: ${(p.value * 10000).toLocaleString()} 元/天<br/>`
           } else {
@@ -45,7 +45,7 @@ function render() {
       { type: 'value', name: '万元', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
       {
         type: 'value', name: '元/天', nameTextStyle: { color: '#94a3b8' },
-        axisLabel: { color: '#94a3b8', formatter(v) { return (v * 10000).toLocaleString() } },
+        axisLabel: { color: '#94a3b8', formatter(v: number) { return (v * 10000).toLocaleString() } },
         splitLine: { show: false },
       },
     ],

@@ -1,3 +1,4 @@
 flask>=1.1
 flask-cors
 psycopg2-binary
+mcp>=1.0

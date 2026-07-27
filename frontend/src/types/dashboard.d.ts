@@ -34,25 +34,42 @@ export interface KpiSummary {
   batch_count: number; total_inventory_quantity: number
 }
 
-// ---- I. 库存领用指标 ----
-export interface ClaimIndicators {
-  claim_rate_amount: number; claim_rate_quantity: number
-  unclaimed_amount: number; unclaimed_quantity: number
+// ---- I. 库存领用指标（当年 / 全部拆分） ----
+export interface ClaimIndicatorsRange {
+  claim_rate_amount: number
+  claim_rate_quantity: number
+  unclaimed_amount: number
   unclaimed_amount_ratio: number
-  total_inbound_amount: number; total_claimed_amount: number
+  total_inbound_amount: number
+  total_claimed_amount: number
+  total_inbound_quantity: number
+  total_claimed_quantity: number
+}
+
+export interface ClaimIndicators {
+  current_year: number
+  year_start: string
+  year_end: string
+  all: ClaimIndicatorsRange
+  year: ClaimIndicatorsRange
 }
 
 // ---- II. 库存结构指标 ----
 export interface ProjectRatio {
-  project_id: number; project_name: string
-  inventory_amount: number; ratio: number; batch_count: number
+  project_code: string; project_name: string
+  inventory_amount: number; ratio: number
 }
 export interface PurchaserRatio {
-  purchaser_id: number; purchaser_name: string
-  inventory_amount: number; ratio: number; batch_count: number
+  purchaser_id: string; purchaser_name: string
+  inventory_amount: number; ratio: number
 }
 export interface StructureIndicators {
-  current_inventory_amount: number; current_inventory_quantity: number
+  current_year: number
+  year_start: string
+  year_end: string
+  current_inventory_amount: number
+  current_year_inventory_amount: number
+  current_inventory_quantity: number
   project_ratios: ProjectRatio[]
   purchaser_ratios: PurchaserRatio[]
 }

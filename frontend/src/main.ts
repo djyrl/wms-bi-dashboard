@@ -6,7 +6,6 @@ import 'element-plus/dist/index.css'
 
 import App from './App.vue'
 import router from './router'
-import pinia from './stores'
 import { initECharts } from './utils/echarts'
 
 // 全局样式（variables.scss 仅含 SCSS 变量，通过 vite additionalData 注入）
@@ -23,9 +22,6 @@ app.use(ElementPlus, { locale: zhCn })
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
-
-// Pinia
-app.use(pinia)
 
 // Router
 app.use(router)

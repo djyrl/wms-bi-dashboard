@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAppStore } from '@/stores/modules/app'
 
 const router = useRouter()
 const route = useRoute()
-const appStore = useAppStore()
+const sidebarCollapsed = inject('sidebarCollapsed', ref(false))
 
 // 从路由表生成菜单项（排除 hidden: true 的路由）
 const menuItems = computed(() =>
@@ -29,17 +28,17 @@ function handleSelect(path: string) {
 <template>
   <div class="sidebar">
     <!-- Logo -->
-    <div class="sidebar-logo">
+    <!-- <div class="sidebar-logo">
       <span class="sidebar-logo__icon">📊</span>
-      <span v-show="!appStore.sidebarCollapsed" class="sidebar-logo__text">
+      <span v-show="!sidebarCollapsed" class="sidebar-logo__text">
         BI<span class="sidebar-logo__accent">Dash</span>
       </span>
-    </div>
+    </div> -->
 
     <!-- 菜单 -->
     <el-menu
       :default-active="activeMenu"
-      :collapse="appStore.sidebarCollapsed"
+      :collapse="sidebarCollapsed"
       background-color="#001529"
       text-color="#ffffffa6"
       active-text-color="#fff"

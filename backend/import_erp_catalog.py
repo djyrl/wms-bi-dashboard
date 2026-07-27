@@ -1,8 +1,8 @@
 """
 ERP Catalog Data Import Program
 ================================
-从 DB_CONFIG_ERP.erp_catalog_zmmrp048 读取数据，
-按指定字段映射解析 row_json，导入到 DB_CONFIG 目标数据库。
+从 erp_catalog_zmmrp048 读取数据（源表和目标表在同一库），
+按指定字段映射解析 row_json，导入到 wbs_zmmrp048_parsed。
 """
 
 import sys
@@ -17,21 +17,7 @@ sys.stdout = open(sys.stdout.fileno(), mode="w", encoding="utf-8", buffering=1)
 # 数据库配置
 # ============================================================
 
-DB_CONFIG_ERP = {
-    "host": "192.168.92.240",
-    "port": 54324,
-    "dbname": "garden_wms",
-    "user": "garden_wms",
-    "password": "garden_wms@2025",
-}
-
-DB_CONFIG = {
-    "host": "122.51.39.235",
-    "port": 54321,
-    "dbname": "garden_wms",
-    "user": "kingbase",
-    "password": "123456",
-}
+from db_config import DB_CONFIG
 
 TARGET_TABLE = "wbs_zmmrp048_parsed"
 BATCH_SIZE = 500
@@ -166,15 +152,25 @@ def create_target_table(create_sql: str):
     conn.autocommit = True
     cur = conn.cursor()
 
-    cur.execute("DROP TABLE IF EXISTS {} CASCADE".format(TARGET_TABLE))
-    print("Dropped old table: {}".format(TARGET_TABLE))
+    # 检查表是否存在：存在则 TRUNCATE（保留依赖视图），不存在则 CREATE
+    cur.execute("""
+        SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_name = %s
+        )
+    """, (TARGET_TABLE,))
+    table_exists = cur.fetchone()[0]
 
-    # Split CREATE TABLE and COMMENT ON statements — psycopg2 only
-    # executes one statement per execute() call.
-    statements = [s.strip() for s in create_sql.split(";") if s.strip()]
-    for stmt in statements:
-        cur.execute(stmt)
-    print("Created table: {}".format(TARGET_TABLE))
+    if table_exists:
+        cur.execute("TRUNCATE TABLE {}".format(TARGET_TABLE))
+        print("Truncated table: {} (views preserved)".format(TARGET_TABLE))
+    else:
+        # Split CREATE TABLE and COMMENT ON statements — psycopg2 only
+        # executes one statement per execute() call.
+        statements = [s.strip() for s in create_sql.split(";") if s.strip()]
+        for stmt in statements:
+            cur.execute(stmt)
+        print("Created table: {}".format(TARGET_TABLE))
 
     cur.close()
     conn.close()
@@ -185,7 +181,7 @@ def create_target_table(create_sql: str):
 # ============================================================
 
 def import_data():
-    src_conn = psycopg2.connect(**DB_CONFIG_ERP)
+    src_conn = psycopg2.connect(**DB_CONFIG)
     src_conn.set_client_encoding("UTF8")
 
     dst_conn = psycopg2.connect(**DB_CONFIG)
@@ -256,8 +252,8 @@ def main():
     print("=" * 60)
     print("ERP Catalog Import Program")
     print("=" * 60)
-    print("Source: {host}:{port}/{dbname}".format(**DB_CONFIG_ERP))
-    print("Target: {host}:{port}/{dbname}".format(**DB_CONFIG))
+    db_info = "{host}:{port}/{dbname}".format(**DB_CONFIG)
+    print("Database: {}".format(db_info))
     print("Source table: erp_catalog_zmmrp048")
     print("Target table: {}".format(TARGET_TABLE))
     print("Fields: {}".format(len(FIELD_MAPPING)))
@@ -268,9 +264,9 @@ def main():
     create_sql = generate_create_table_sql()
 
     # Write SQL to file for review
-    with open("sql/create_wms_zmmrp048.sql", "w", encoding="utf-8") as f:
+    with open("sql/create_wbs_zmmrp048.sql", "w", encoding="utf-8") as f:
         f.write(create_sql)
-    print("SQL written to sql/create_wms_zmmrp048.sql")
+    print("SQL written to sql/create_wbs_zmmrp048.sql")
     print("\n" + create_sql)
     print("=" * 60)
 

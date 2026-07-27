@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useDashboardStore } from '@/stores/modules/dashboard'
-import { storeToRefs } from 'pinia'
+import { computed, ref } from 'vue'
 import { formatAmount, formatNumber, formatDays } from '@/utils/format'
 import type { ProcurementBatch } from '@/types/dashboard'
 
-const store = useDashboardStore()
-const { topTab, topUnclaimedAmount, topUnclaimedQuantity, topClaimedAmount, topClaimedQuantity } = storeToRefs(store)
+const props = defineProps<{
+  topUnclaimedAmount: ProcurementBatch[]
+  topUnclaimedQuantity: ProcurementBatch[]
+  topClaimedAmount: any[]
+  topClaimedQuantity: any[]
+}>()
 
-const currentData = computed<ProcurementBatch[]>(() => {
+type TabKey = 'unclaimed-amount' | 'unclaimed-quantity' | 'claimed-amount' | 'claimed-quantity'
+const topTab = ref<TabKey>('unclaimed-amount')
+
+const currentData = computed<ProcurementBatch[] | any[]>(() => {
   switch (topTab.value) {
-    case 'unclaimed-amount': return topUnclaimedAmount.value
-    case 'unclaimed-quantity': return topUnclaimedQuantity.value
-    case 'claimed-amount': return topClaimedAmount.value
-    case 'claimed-quantity': return topClaimedQuantity.value
+    case 'unclaimed-amount': return props.topUnclaimedAmount
+    case 'unclaimed-quantity': return props.topUnclaimedQuantity
+    case 'claimed-amount': return props.topClaimedAmount
+    case 'claimed-quantity': return props.topClaimedQuantity
     default: return []
   }
-})
-
-const currentTab = computed({
-  get: () => topTab.value,
-  set: (v) => store.switchTopTab(v),
 })
 
 const isUnclaimed = computed(() => topTab.value.startsWith('unclaimed'))
@@ -32,7 +32,7 @@ const isAmount = computed(() => topTab.value.endsWith('amount'))
     <template #header>
       <div class="card-header">
         <span>TOP 10 排行</span>
-        <el-radio-group v-model="currentTab" size="small">
+        <el-radio-group v-model="topTab" size="small">
           <el-radio-button value="unclaimed-amount">未领用金额</el-radio-button>
           <el-radio-button value="unclaimed-quantity">未领用数量</el-radio-button>
           <el-radio-button value="claimed-amount">领用金额</el-radio-button>

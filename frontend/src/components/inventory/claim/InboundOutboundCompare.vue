@@ -4,19 +4,22 @@ import { useECharts } from '@/composables/useECharts'
 import DataDetail from '@/components/inventory/DataDetail.vue'
 import type { InOutPoint } from '@/types/inventory'
 
-const props = defineProps<{ data: InOutPoint[]; months: string[] }>()
+const props = defineProps<{ data: InOutPoint[]; months: string[]; granularity?: string }>()
 const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
-const detailHeaders = ['周', '入库(万)', '领用(万)', '净增(万)']
-const detailRows = computed(() => props.data.map(d => [d.month, d.inbound, d.outbound, d.net] as (string | number)[]))
+function toWan(v: number) { return +(v / 10000).toFixed(2) }
+
+const timeLabel = computed(() => props.granularity || '周')
+const detailHeaders = computed(() => [timeLabel.value, '入库(万)', '领用(万)', '净增(万)'])
+const detailRows = computed(() => props.data.map(d => [d.month, toWan(d.inbound), toWan(d.outbound), toWan(d.net)] as (string | number)[]))
 
 function render() {
   if (!chartRef.value || !props.data.length) return
   chart.init(chartRef.value)
-  const inbound = props.data.map(d => d.inbound)
-  const outbound = props.data.map(d => d.outbound)
-  const net = props.data.map(d => d.net)
+  const inbound = props.data.map(d => toWan(d.inbound))
+  const outbound = props.data.map(d => toWan(d.outbound))
+  const net = props.data.map(d => toWan(d.net))
 
   chart.setOption({
     tooltip: { trigger: 'axis' },

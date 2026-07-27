@@ -7,13 +7,13 @@ defineProps<{
 </script>
 
 <template>
-  <div class="kpi-row">
+  <div class="kpi-row" :style="{ gridTemplateColumns: `repeat(${cards.length}, 1fr)` }">
     <div v-for="(card, i) in cards" :key="i" class="kpi-card">
       <div class="kpi-icon" :class="`t${i + 1}`">{{ card.icon }}</div>
       <div class="kpi-info">
         <div class="kpi-label">{{ card.label }}</div>
         <div class="kpi-value" :style="{ color: card.color }">
-          {{ card.value }}<span class="kpi-unit">{{ card.unit }}</span>
+          {{ card.value.toFixed(2) }}<span class="kpi-unit">{{ card.unit }}</span>
         </div>
         <div class="kpi-change" :class="card.changeType">{{ card.change }}</div>
       </div>

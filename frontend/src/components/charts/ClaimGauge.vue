@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useDashboardStore } from '@/stores/modules/dashboard'
-import { storeToRefs } from 'pinia'
 import { useECharts } from '@/composables/useECharts'
 import type { EChartsOption } from 'echarts'
+import type { ClaimIndicators } from '@/types/dashboard'
 
-const store = useDashboardStore()
-const { claim } = storeToRefs(store)
+const props = defineProps<{
+  claim: ClaimIndicators | null
+}>()
+
 const { init, setOption, resize, dispose } = useECharts()
 const chartRef = ref<HTMLDivElement>()
 
@@ -39,14 +40,14 @@ function buildOption(rateAmount: number, rateQty: number): EChartsOption {
   } as EChartsOption
 }
 
-watch(() => claim.value, (c) => {
-  if (c) nextTick(() => setOption(buildOption(c.claim_rate_amount, c.claim_rate_quantity)))
+watch(() => props.claim, (c) => {
+  if (c) nextTick(() => setOption(buildOption(c.all.claim_rate_amount, c.all.claim_rate_quantity)))
 }, { deep: true })
 
 onMounted(() => {
   if (chartRef.value) {
     init(chartRef.value)
-    if (claim.value) setOption(buildOption(claim.value.claim_rate_amount, claim.value.claim_rate_quantity))
+    if (props.claim) setOption(buildOption(props.claim.all.claim_rate_amount, props.claim.all.claim_rate_quantity))
   }
   window.addEventListener('resize', resize)
 })

@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useDashboardStore } from '@/stores/modules/dashboard'
-import { storeToRefs } from 'pinia'
 import { formatAmount, formatPercent, formatDays } from '@/utils/format'
+import type { KpiSummary } from '@/types/dashboard'
 
-const store = useDashboardStore()
-const { summary } = storeToRefs(store)
+const props = defineProps<{
+  summary: KpiSummary | null
+}>()
 
 interface KpiCard {
   label: string; value: string; sub?: string; color?: string
 }
 
 const cards = computed<KpiCard[]>(() => {
-  const s = summary.value
+  const s = props.summary
   if (!s) return []
   return [
     { label: '总入库金额', value: formatAmount(s.total_inbound_amount), sub: `${s.batch_count} 批次` },

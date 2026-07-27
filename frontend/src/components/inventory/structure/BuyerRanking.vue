@@ -9,7 +9,7 @@ const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
 const detailHeaders = ['采购人', '库存(万)', '领用率(%)']
-const detailRows = computed(() => props.data.map(d => [d.name, d.value, d.usageRate] as (string | number)[]))
+const detailRows = computed(() => props.data.map(d => [d.name, Number(d.value).toFixed(2), d.usageRate] as (string | number)[]))
 
 function render() {
   if (!chartRef.value || !props.data.length) return
@@ -20,8 +20,8 @@ function render() {
   const rates = props.data.map(d => d.usageRate)
 
   chart.setOption({
-    tooltip: { formatter: (p: { name: string; value: number; dataIndex: number }) => `${p.name}<br/>库存: <b>¥${p.value}万</b><br/>领用率: ${rates[p.dataIndex]}%` },
-    grid: { top: 10, right: 60, bottom: 20, left: 100 },
+    tooltip: { formatter: (p: { name: string; value: number; dataIndex: number }) => `${p.name}<br/>库存: <b>¥${Number(p.value).toFixed(2)}万</b><br/>领用率: ${rates[p.dataIndex]}%` },
+    grid: { top: 4, right: 50, bottom: 16, left: 90 },
     xAxis: { type: 'value', name: '万元', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
     yAxis: { type: 'category', data: names, axisLabel: { color: '#94a3b8', fontSize: 11 }, inverse: true },
     series: [{
@@ -29,8 +29,9 @@ function render() {
         value: v,
         itemStyle: { color: rates[i] < 60 ? '#f43f5e' : rates[i] < 75 ? '#f59e0b' : '#10b981', borderRadius: [0, 6, 6, 0] },
       })),
-      barWidth: 18,
-      label: { show: true, position: 'right', color: '#94a3b8', fontSize: 10, formatter: '{c}万' },
+      barWidth: 14,
+      barCategoryGap: '20%',
+      label: { show: true, position: 'right', color: '#94a3b8', fontSize: 10, formatter: (p: { value: number }) => `${Number(p.value).toFixed(2)}万` },
     }],
   })
 }

@@ -50,6 +50,18 @@ export interface ClaimWeeklyRes {
   data: ClaimWeeklyItem[]
 }
 
+export interface ClaimYearlyItem {
+  year: string
+  inbound_amount: number
+  claimed_amount: number
+  net_amount: number
+  claim_rate: number
+}
+export interface ClaimYearlyRes {
+  years: string[]
+  data: ClaimYearlyItem[]
+}
+
 export interface AnomalyDailyItem {
   date: string
   inbound_amount: number
@@ -72,13 +84,23 @@ export interface WmsSummary {
   avg_age_weighted_days: number
 }
 
-export interface WmsClaim {
+export interface WmsClaimRange {
   claim_rate_amount: number
   claim_rate_quantity: number
   unclaimed_amount: number
   unclaimed_amount_ratio: number
   total_inbound_amount: number
   total_claimed_amount: number
+  total_inbound_quantity: number
+  total_claimed_quantity: number
+}
+
+export interface WmsClaimSplit {
+  current_year: number
+  year_start: string
+  year_end: string
+  all: WmsClaimRange
+  year: WmsClaimRange
 }
 
 // ---- API 方法 ----
@@ -95,6 +117,10 @@ export const getClaimDaily = () =>
 export const getClaimWeekly = () =>
   request.get<ClaimWeeklyRes>('/wms/indicators/claim/weekly')
 
+/** 按年入库/领用/领用率（全部年份） */
+export const getClaimYearly = () =>
+  request.get<ClaimYearlyRes>('/wms/indicators/claim/yearly')
+
 /** 按物料类别统计库存（含安全线） */
 export const getStructureByCategory = () =>
   request.get<CategoryRes>('/wms/indicators/structure/by-category')
@@ -107,6 +133,6 @@ export const getAnomalyDaily = (days = 30) =>
 export const getWmsSummary = () =>
   request.get<WmsSummary>('/wms/indicators/summary')
 
-/** 领用指标汇总 */
+/** 领用指标汇总（当年/全部拆分） */
 export const getWmsClaim = () =>
-  request.get<WmsClaim>('/wms/indicators/claim')
+  request.get<WmsClaimSplit>('/wms/indicators/claim')

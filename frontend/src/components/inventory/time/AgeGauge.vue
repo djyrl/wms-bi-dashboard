@@ -8,16 +8,22 @@ const props = defineProps<{ data: AgeGaugeItem[] }>()
 const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
-const detailHeaders = ['项目', '平均库龄(天)', '≥90天占比(%)']
+const detailHeaders = ['项目编码', '项目名称', '平均库龄(天)', '≥90天占比(%)']
 const detailRows = computed(() =>
-  props.data.map(d => [d.project, d.avgAgeDays, d.over90Rate] as (string | number)[]),
+  props.data.map(d => [d.project, d.projectName, d.avgAgeDays, d.over90Rate] as (string | number)[]),
 )
+
+function shortName(name: string, code: string): string {
+  if (!name || name === code) return code.length > 10 ? code.slice(0, 10) + '…' : code
+  return name.length > 10 ? name.slice(0, 10) + '…' : name
+}
 
 function render() {
   if (!chartRef.value || !props.data.length) return
   chart.init(chartRef.value)
 
-  const names = props.data.map(d => d.project)
+  const names = props.data.map(d => shortName(d.projectName ?? d.project, d.project))
+  const fullNames = props.data.map(d => d.projectName || d.project)
   const ages = props.data.map(d => d.avgAgeDays)
   const rates = props.data.map(d => d.over90Rate)
   const xMax = Math.ceil(Math.max(...ages) * 1.2)
@@ -31,7 +37,7 @@ function render() {
     tooltip: {
       formatter: (p: { name: string; dataIndex: number }) => {
         const idx = p.dataIndex
-        return `${p.name}<br/>平均库龄: <b>${ages[idx]} 天</b><br/>≥90天占比: <b>${rates[idx]}%</b>`
+        return `${fullNames[idx]}<br/>平均库龄: <b>${ages[idx]} 天</b><br/>≥90天占比: <b>${rates[idx]}%</b>`
       },
     },
     grid: { top: 15, right: 55, bottom: 20, left: 70 },

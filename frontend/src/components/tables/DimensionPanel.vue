@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDashboardStore } from '@/stores/modules/dashboard'
-import { storeToRefs } from 'pinia'
 import { formatAmount, formatPercent, formatDays, claimRateColor } from '@/utils/format'
+import type { ProjectIndicator, PurchaserIndicator } from '@/types/dashboard'
+
+const props = defineProps<{
+  projectIndicators: ProjectIndicator[]
+  purchaserIndicators: PurchaserIndicator[]
+}>()
 
 const router = useRouter()
-const store = useDashboardStore()
-const { projectIndicators, purchaserIndicators } = storeToRefs(store)
 
 const activeTab = ref<'project' | 'purchaser'>('project')
 

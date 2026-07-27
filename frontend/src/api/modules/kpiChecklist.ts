@@ -4,6 +4,8 @@ import request from '../request'
 
 export interface SummaryInfo {
   update_time: string
+  data_start_date: string
+  data_end_date: string
   total_inbound_wan: number
   total_claimed_wan: number
   current_inventory_wan: number

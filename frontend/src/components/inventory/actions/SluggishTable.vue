@@ -9,13 +9,6 @@ function levelBadge(level: string) {
 function levelType(level: string): 'danger' | 'warning' | 'success' {
   return level === 'red' ? 'danger' : level === 'amber' ? 'warning' : 'success'
 }
-function suggestType(s: string): 'danger' | 'warning' | 'success' | 'info' | 'primary' {
-  if (s === '报废处置') return 'danger'
-  if (s === '折价转让' || s === '退回供应商') return 'warning'
-  if (s === '降级使用') return 'warning'
-  if (s === '项目间调拨') return 'info'
-  return 'primary'
-}
 </script>
 
 <template>

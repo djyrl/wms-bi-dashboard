@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { useAppStore } from '@/stores/modules/app'
+import { inject, ref } from 'vue'
 import { useClock } from '@/composables/useClock'
 
-const appStore = useAppStore()
+const sidebarCollapsed = inject('sidebarCollapsed', ref(false))
+const toggleSidebar = inject('toggleSidebar', () => {})
 const { currentTime } = useClock()
 
 function handleToggle() {
-  appStore.toggleSidebar()
+  toggleSidebar()
 }
 </script>
 
@@ -19,7 +20,7 @@ function handleToggle() {
         @click="handleToggle"
       >
         <el-icon :size="20">
-          <Fold v-if="!appStore.sidebarCollapsed" />
+          <Fold v-if="!sidebarCollapsed" />
           <Expand v-else />
         </el-icon>
       </el-button>

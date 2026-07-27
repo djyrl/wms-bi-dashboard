@@ -39,5 +39,5 @@ export function useECharts() {
     dispose()
   })
 
-  return { init, setOption, resize, dispose }
+  return { init, setOption, resize, dispose, get instance() { return instance } }
 }

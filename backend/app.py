@@ -1,56 +1,61 @@
 """
 采购库存 BI Dashboard — Flask 后端
 ===================================
-数据源：
-  - 模拟数据：14 个指标分析接口
-  - 人大金仓（KingbaseES）：4 张 WMS 核心表查询接口
+数据源：v_project_inventory_wide 视图（人大金仓 KingbaseES）
 """
 
-from flask import Flask, jsonify, request
+import os
+from flask import Flask, jsonify, request, send_from_directory, redirect
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
 
-from data.generate_data import (
-    get_summary,
-    get_claim_indicators,
-    get_structure_indicators,
-    get_time_indicators,
-    get_age_layers,
-    get_by_project,
-    get_by_purchaser,
-    get_top_unclaimed_amount,
-    get_top_unclaimed_quantity,
-    get_top_claimed_amount,
-    get_top_claimed_quantity,
-    get_dimensions,
-    drill_batches,
-)
-
 # 人大金仓真实数据计算模块
-from compute_kpi_checklist import get_kpi_checklist
-from compute_indicators import (
-    get_summary as db_get_summary,
-    get_claim_indicators as db_get_claim_indicators,
+from cross_indicators import (
+    get_project_matrix as db_get_project_matrix,
+    get_project_types as db_get_project_types,
+    get_top_projects as db_get_top_projects,
+    get_project_trend as db_get_project_trend,
+    get_source_distribution as db_get_source_distribution,
+    get_distinct_values as db_get_distinct_values,
+    get_available_dimensions as db_get_available_dimensions,
+)
+from kpi_checklist import get_kpi_checklist
+from summary import get_summary as db_get_summary
+from claim_indicators import get_claim_indicators as db_get_claim_indicators
+from structure_indicators import (
     get_structure_indicators as db_get_structure_indicators,
+    get_structure_by_category as db_get_structure_by_category,
+    get_source_structure as db_get_source_structure,
+)
+from time_indicators import (
     get_time_indicators as db_get_time_indicators,
     get_age_layers as db_get_age_layers,
+    get_age_monthly as db_get_age_monthly,
+    get_age_heatmap as db_get_age_heatmap,
+)
+from dimension_indicators import (
     get_by_project as db_get_by_project,
     get_by_purchaser as db_get_by_purchaser,
+    get_project_summary as db_get_project_summary,
+    get_purchaser_summary as db_get_purchaser_summary,
+)
+from top_indicators import (
     get_top_unclaimed_amount as db_get_top_unclaimed_amount,
     get_top_unclaimed_quantity as db_get_top_unclaimed_quantity,
     get_top_claimed_amount as db_get_top_claimed_amount,
     get_top_claimed_quantity as db_get_top_claimed_quantity,
+    get_optimize_suggest as db_get_optimize_suggest,
+)
+from other_indicators import (
     get_claim_monthly as db_get_claim_monthly,
+    get_claim_yearly as db_get_claim_yearly,
     get_claim_daily as db_get_claim_daily,
     get_claim_weekly as db_get_claim_weekly,
-    get_structure_by_category as db_get_structure_by_category,
     get_category_bubble as db_get_category_bubble,
     get_anomaly_daily as db_get_anomaly_daily,
     get_batch_digest as db_get_batch_digest,
-    get_age_monthly as db_get_age_monthly,
-    get_age_heatmap as db_get_age_heatmap,
-    get_optimize_suggest as db_get_optimize_suggest,
+    get_inventory_report as db_get_inventory_report,
 )
 
 app = Flask(__name__)
@@ -59,14 +64,7 @@ CORS(app)
 # ================================================================
 # 人大金仓（KingbaseES）数据库连接配置
 # ================================================================
-DB_CONFIG = {
-    "host": "122.51.39.235",
-    "port": 54321,
-    "dbname": "garden_wms",
-    "user": "kingbase",
-    "password": "123456",
-}
-
+from db_config import DB_CONFIG
 
 def get_db():
     """获取数据库连接。"""
@@ -111,98 +109,69 @@ def ok(data):
 
 
 # ================================================================
-#  模拟数据接口 — 采购库存 BI 指标分析
+#  兼容 URL — 旧 mock API 路径重定向至真实 WMS 端点
 # ================================================================
 
-@app.route("/api/summary", methods=["GET"])
-def api_summary():
-    """GET /api/summary — KPI 总览"""
-    return ok(get_summary())
+_REDIRECT_MAP = {
+    "/api/summary":                          "/api/wms/indicators/summary",
+    "/api/indicators/claim":                 "/api/wms/indicators/claim",
+    "/api/indicators/structure":             "/api/wms/indicators/structure",
+    "/api/indicators/time":                  "/api/wms/indicators/time",
+    "/api/indicators/age-layers":            "/api/wms/indicators/age-layers",
+    "/api/indicators/by-project":            "/api/wms/indicators/by-project",
+    "/api/indicators/by-purchaser":          "/api/wms/indicators/by-purchaser",
+    "/api/top/unclaimed-amount":             "/api/wms/indicators/top/unclaimed-amount",
+    "/api/top/unclaimed-quantity":           "/api/wms/indicators/top/unclaimed-quantity",
+    "/api/top/claimed-amount":               "/api/wms/indicators/top/claimed-amount",
+    "/api/top/claimed-quantity":             "/api/wms/indicators/top/claimed-quantity",
+}
 
 
-@app.route("/api/indicators/claim", methods=["GET"])
-def api_claim():
-    """GET /api/indicators/claim — 采购领用率、未领用金额等"""
-    return ok(get_claim_indicators())
+def _add_redirect_routes():
+    """为旧 mock API 路径注册 HTTP 307 重定向到新的 WMS 端点。"""
+    for old_path, new_path in _REDIRECT_MAP.items():
+        endpoint_name = f"redirect_{old_path.replace('/', '_').strip('_')}"
+
+        def _make_handler(target=new_path, methods=["GET"]):
+            def _handler():
+                return redirect(target, code=307)
+            return _handler
+
+        app.add_url_rule(old_path, endpoint_name, _make_handler(), methods=["GET"])
 
 
-@app.route("/api/indicators/structure", methods=["GET"])
-def api_structure():
-    """GET /api/indicators/structure — 库存金额、项目/采购人占比"""
-    return ok(get_structure_indicators())
+_add_redirect_routes()
 
 
-@app.route("/api/indicators/time", methods=["GET"])
-def api_time():
-    """GET /api/indicators/time — 库龄结构、加权平均库龄"""
-    return ok(get_time_indicators())
-
-
-@app.route("/api/indicators/age-layers", methods=["GET"])
-def api_age_layers():
-    """GET /api/indicators/age-layers?min_amount=&min_age=&max_age= — 库龄分层统计"""
-    min_amount = request.args.get("min_amount", 0, type=float)
-    min_age = request.args.get("min_age", 0, type=int)
-    max_age = request.args.get("max_age", None, type=int)
-    return ok(get_age_layers(min_amount=min_amount, min_age=min_age, max_age=max_age))
-
-
-@app.route("/api/indicators/by-project", methods=["GET"])
-def api_by_project():
-    """GET /api/indicators/by-project — 各项目领用率、未消耗金额、平均库龄"""
-    return ok(get_by_project())
-
-
-@app.route("/api/indicators/by-purchaser", methods=["GET"])
-def api_by_purchaser():
-    """GET /api/indicators/by-purchaser — 各采购人领用率、未消耗金额、平均库龄"""
-    return ok(get_by_purchaser())
-
-
-@app.route("/api/top/unclaimed-amount", methods=["GET"])
-def api_top_unclaimed_amount():
-    """GET /api/top/unclaimed-amount?limit=10 — 未领用库存 TOP（金额）"""
-    limit = request.args.get("limit", 10, type=int)
-    return ok(get_top_unclaimed_amount(limit))
-
-
-@app.route("/api/top/unclaimed-quantity", methods=["GET"])
-def api_top_unclaimed_quantity():
-    """GET /api/top/unclaimed-quantity?limit=10 — 未领用库存 TOP（数量）"""
-    limit = request.args.get("limit", 10, type=int)
-    return ok(get_top_unclaimed_quantity(limit))
-
-
-@app.route("/api/top/claimed-amount", methods=["GET"])
-def api_top_claimed_amount():
-    """GET /api/top/claimed-amount?limit=10 — 领用 TOP（金额）"""
-    limit = request.args.get("limit", 10, type=int)
-    return ok(get_top_claimed_amount(limit))
-
-
-@app.route("/api/top/claimed-quantity", methods=["GET"])
-def api_top_claimed_quantity():
-    """GET /api/top/claimed-quantity?limit=10 — 领用 TOP（数量）"""
-    limit = request.args.get("limit", 10, type=int)
-    return ok(get_top_claimed_quantity(limit))
-
+# 特殊兼容：/api/dimensions/<dim_type> → /api/wms/indicators/distinct-values
+_DIM_FIELD_MAP = {
+    "materials": "material_code",
+    "projects": "project_code",
+    "purchasers": "purchaser_name",
+}
 
 @app.route("/api/dimensions/<dim_type>", methods=["GET"])
-def api_dimensions(dim_type: str):
-    """GET /api/dimensions/materials|projects|purchasers"""
-    return ok(get_dimensions(dim_type))
+def api_dimensions_compat(dim_type: str):
+    field = _DIM_FIELD_MAP.get(dim_type, dim_type)
+    target = f"/api/wms/indicators/distinct-values?field={field}"
+    return redirect(target, code=307)
 
 
+# 特殊兼容：/api/drill/batches → /api/wms/indicators/age-layers
 @app.route("/api/drill/batches", methods=["GET"])
-def api_drill():
-    """GET /api/drill/batches?project_id=&material_id=&purchaser_id=&age_min=&age_max="""
-    return ok(drill_batches(
-        project_id=request.args.get("project_id", None, type=int),
-        material_id=request.args.get("material_id", None, type=int),
-        purchaser_id=request.args.get("purchaser_id", None, type=int),
-        age_min=request.args.get("age_min", None, type=int),
-        age_max=request.args.get("age_max", None, type=int),
-    ))
+def api_drill_batches_compat():
+    params = []
+    for old_key, new_key in [
+        ("min_age", "min_age"),
+        ("max_age", "max_age"),
+    ]:
+        val = request.args.get(old_key)
+        if val is not None:
+            params.append(f"{new_key}={val}")
+    target = "/api/wms/indicators/age-layers"
+    if params:
+        target += "?" + "&".join(params)
+    return redirect(target, code=307)
 
 
 # ================================================================
@@ -270,10 +239,11 @@ def api_wms_summary():
 @app.route("/api/wms/indicators/claim", methods=["GET"])
 def api_wms_claim():
     """
-    1. 采购领用率（金额） = 领用金额 / 入库金额
-    2. 采购领用率（数量） = 领用数量 / 入库数量
-    3. 未领用采购金额 = 入库金额 - 净领用金额
-    4. 未领用采购占比 = 未领用金额 / 入库金额
+    1. 当年采购领用率（金额） / 全部采购领用率（金额） = 领用金额 / 入库金额
+    2. 当年采购领用率（数量） / 全部采购领用率（数量） = 领用数量 / 入库数量
+    3. 当年未领用采购金额 / 全部未领用采购金额 = 入库金额 - 净领用金额
+    4. 当年未领用采购占比（金额） / 全部未领用采购占比（金额） = 未领用金额 / 入库金额
+    当年区间：当前自然年；NULL 入库日期不计入当年。
     """
     try:
         return ok(db_get_claim_indicators())
@@ -284,10 +254,11 @@ def api_wms_claim():
 @app.route("/api/wms/indicators/structure", methods=["GET"])
 def api_wms_structure():
     """
-    5. 当前库存金额
+    5. 当前库存金额（全部 / 当年）
     6. 当前库存数量
     7. 项目库存占比
     8. 采购人库存占比
+    当年区间：当前自然年；NULL 入库日期不计入当年。
     """
     try:
         return ok(db_get_structure_indicators())
@@ -405,6 +376,15 @@ def api_wms_claim_monthly():
         return jsonify({"code": -1, "msg": str(e)})
 
 
+@app.route("/api/wms/indicators/claim/yearly", methods=["GET"])
+def api_wms_claim_yearly():
+    """按年统计入库金额、领用金额、领用率（全部年份）。"""
+    try:
+        return ok(db_get_claim_yearly())
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
 @app.route("/api/wms/indicators/claim/daily", methods=["GET"])
 def api_wms_claim_daily():
     """
@@ -510,6 +490,133 @@ def api_wms_optimize_suggest():
         return jsonify({"code": -1, "msg": str(e)})
 
 
+@app.route("/api/wms/indicators/inventory-report", methods=["GET"])
+def api_wms_inventory_report():
+    """
+    采购批次库存报表。
+    参数：?sort_by=claim_rate|age_days|inventory_amount&sort_order=asc|desc&limit=500&offset=0
+    """
+    sort_by = request.args.get("sort_by", "inventory_amount")
+    sort_order = request.args.get("sort_order", "desc")
+    limit = request.args.get("limit", 500, type=int)
+    offset = request.args.get("offset", 0, type=int)
+    try:
+        return ok(db_get_inventory_report(sort_by, sort_order, limit, offset))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/project-summary", methods=["GET"])
+def api_wms_project_summary():
+    """
+    项目库存追溯汇总表。
+    参数：?sort_by=inventory_amount|claim_rate|avg_age_days&sort_order=desc|asc
+    """
+    sort_by = request.args.get("sort_by", "inventory_amount")
+    sort_order = request.args.get("sort_order", "desc")
+    try:
+        return ok(db_get_project_summary(sort_by, sort_order))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/project-matrix", methods=["GET"])
+def api_wms_project_matrix():
+    """
+    项目 × 时间 热力图矩阵
+    参数：?metric=inventory_amount&project_type=A修&months=12
+    """
+    metric = request.args.get("metric", "inventory_amount")
+    project_type = request.args.get("project_type", None)
+    months = request.args.get("months", 12, type=int)
+    try:
+        return ok(db_get_project_matrix(metric, project_type, months))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/project-types", methods=["GET"])
+def api_wms_project_types():
+    try:
+        return ok(db_get_project_types())
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/project-top", methods=["GET"])
+def api_wms_project_top():
+    metric = request.args.get("metric", "inventory_amount")
+    project_type = request.args.get("project_type", None)
+    limit = request.args.get("limit", 15, type=int)
+    group_by = request.args.get("group_by", "project")
+    try:
+        return ok(db_get_top_projects(metric, project_type, limit, group_by))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/project-trend", methods=["GET"])
+def api_wms_project_trend():
+    metric = request.args.get("metric", "inventory_amount")
+    project_type = request.args.get("project_type", None)
+    months = request.args.get("months", 12, type=int)
+    try:
+        return ok(db_get_project_trend(project_type, metric, months))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/source-distribution", methods=["GET"])
+def api_wms_source_distribution():
+    project_type = request.args.get("project_type", None)
+    try:
+        return ok(db_get_source_distribution(project_type))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/available-dimensions", methods=["GET"])
+def api_wms_dimensions():
+    try:
+        return ok(db_get_available_dimensions())
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/distinct-values", methods=["GET"])
+def api_wms_distinct_values():
+    field = request.args.get("field", "")
+    project_type = request.args.get("project_type", None)
+    project_code = request.args.get("project_code", None)
+    try:
+        return ok(db_get_distinct_values(field, project_type, project_code))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/purchaser-summary", methods=["GET"])
+def api_wms_purchaser_summary():
+    """
+    采购人库存追溯汇总表。
+    参数：?sort_by=inventory_amount|claim_rate|avg_age_days&sort_order=desc|asc
+    """
+    sort_by = request.args.get("sort_by", "inventory_amount")
+    sort_order = request.args.get("sort_order", "desc")
+    try:
+        return ok(db_get_purchaser_summary(sort_by, sort_order))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/source-structure", methods=["GET"])
+def api_wms_source_structure():
+    """库存来源结构表。"""
+    try:
+        return ok(db_get_source_structure())
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
 # ================================================================
 #  KPI 考核清单接口
 # ================================================================
@@ -531,20 +638,146 @@ def api_wms_kpi_checklist():
 
 
 # ================================================================
+#  调试接口 — 逐个测试各模块，帮助定位线上问题
+# ================================================================
+
+@app.route("/api/wms/debug", methods=["GET"])
+def api_wms_debug():
+    """
+    逐个运行 compute_indicators 中的函数，返回每个函数的执行结果。
+    成功 → 返回数据摘要；失败 → 返回完整 traceback。
+    访问 http://服务器IP:端口/api/wms/debug 即可在线诊断。
+    """
+    import traceback
+    import time
+
+    results = {}
+
+    # ---- compute_indicators 各函数 ----
+    indicator_tests = [
+        ("summary", "db_get_summary"),
+        ("claim", "db_get_claim_indicators"),
+        ("structure", "db_get_structure_indicators"),
+        ("time", "db_get_time_indicators"),
+        ("by_project", "db_get_by_project"),
+        ("by_purchaser", "db_get_by_purchaser"),
+        ("top_unclaimed_amount", "db_get_top_unclaimed_amount"),
+        ("top_unclaimed_quantity", "db_get_top_unclaimed_quantity"),
+        ("top_claimed_amount", "db_get_top_claimed_amount"),
+        ("top_claimed_quantity", "db_get_top_claimed_quantity"),
+        ("claim_monthly", "db_get_claim_monthly"),
+        ("claim_yearly", "db_get_claim_yearly"),
+        ("claim_weekly", "db_get_claim_weekly"),
+        ("structure_by_category", "db_get_structure_by_category"),
+        ("category_bubble", "db_get_category_bubble"),
+        ("anomaly_daily", "db_get_anomaly_daily"),
+        ("age_monthly", "db_get_age_monthly"),
+        ("age_heatmap", "db_get_age_heatmap"),
+        ("optimize_suggest", "db_get_optimize_suggest"),
+    ]
+
+    for key, func_name in indicator_tests:
+        t0 = time.time()
+        try:
+            func = globals().get(func_name)
+            if func is None:
+                results[key] = {"status": "error", "msg": f"函数 {func_name} 未找到"}
+                continue
+            data = func()
+            elapsed = time.time() - t0
+            # 返回摘要而非完整数据
+            if isinstance(data, dict):
+                summary = f"keys={list(data.keys())[:5]}, elapsed={elapsed:.2f}s"
+            elif isinstance(data, list):
+                summary = f"items={len(data)}, elapsed={elapsed:.2f}s"
+            else:
+                summary = f"type={type(data).__name__}, elapsed={elapsed:.2f}s"
+            results[key] = {"status": "ok", "summary": summary}
+        except Exception:
+            elapsed = time.time() - t0
+            results[key] = {
+                "status": "error",
+                "elapsed": f"{elapsed:.2f}s",
+                "error": str(traceback.format_exc()),
+            }
+
+    # ---- compute_kpi_checklist ----
+    t0 = time.time()
+    try:
+        kpi_data = get_kpi_checklist()
+        results["kpi_checklist"] = {
+            "status": "ok",
+            "summary": f"summary keys={list(kpi_data['summary'].keys())}, elapsed={time.time() - t0:.2f}s",
+        }
+    except Exception:
+        results["kpi_checklist"] = {
+            "status": "error",
+            "elapsed": f"{time.time() - t0:.2f}s",
+            "error": str(traceback.format_exc()),
+        }
+
+    # ---- 数据库连通性 ----
+    t0 = time.time()
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        conn.close()
+        results["db_connect"] = {"status": "ok", "elapsed": f"{time.time() - t0:.2f}s"}
+    except Exception:
+        results["db_connect"] = {
+            "status": "error",
+            "elapsed": f"{time.time() - t0:.2f}s",
+            "error": str(traceback.format_exc()),
+        }
+
+    ok_count = sum(1 for v in results.values() if v["status"] == "ok")
+    err_count = len(results) - ok_count
+
+    return jsonify({
+        "code": 0,
+        "data": {
+            "total": len(results),
+            "ok": ok_count,
+            "error": err_count,
+            "results": results,
+        },
+    })
+
+
+# ================================================================
+# 生产环境：托管前端静态文件（Docker 部署时使用）
+# ================================================================
+
+STATIC_FOLDER = os.environ.get("STATIC_FOLDER", "")
+
+if STATIC_FOLDER and os.path.isdir(STATIC_FOLDER):
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path: str):
+        """非 /api/ 路径，返回前端静态资源或 index.html（SPA 回退）。"""
+        # 先检查是否是静态资源文件
+        if path and os.path.isfile(os.path.join(STATIC_FOLDER, path)):
+            return send_from_directory(STATIC_FOLDER, path)
+        # SPA 回退：所有非 API 路由返回 index.html
+        return send_from_directory(STATIC_FOLDER, "index.html")
+
+
+# ================================================================
 # 启动
 # ================================================================
 if __name__ == "__main__":
+    is_prod = bool(STATIC_FOLDER)
     print("=== BI Dashboard API Starting... ===")
-    print("Address: http://127.0.0.1:5001")
+    if is_prod:
+        print(f"Mode: Production (static: {STATIC_FOLDER})")
+    print("Address: http://0.0.0.0:5001")
     print()
-    print("Mock Data API (13 endpoints):")
-    for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
-        if rule.rule.startswith("/api/") and "/wms/" not in rule.rule:
-            print(f"   GET {rule.rule}")
-    print()
-    print("KingbaseES WMS API (5 endpoints):")
-    print("   Database: KingbaseES @ 122.51.39.235:54321/garden_wms")
-    for rule in sorted(app.url_map.iter_rules(), key=lambda r: r.rule):
-        if "/wms/" in rule.rule:
-            print(f"   GET {rule.rule}")
-    app.run(debug=True, port=5001)
+    if not is_prod:
+        print("Compatibility redirects active (old mock paths → WMS endpoints)")
+        for old, new in _REDIRECT_MAP.items():
+            print(f"   GET {old} → {new}")
+        print()
+    print("KingbaseES WMS API endpoints active")
+    app.run(debug=not is_prod, host="0.0.0.0", port=5001, use_reloader=False)

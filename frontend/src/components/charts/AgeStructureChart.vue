@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useDashboardStore } from '@/stores/modules/dashboard'
-import { storeToRefs } from 'pinia'
 import { useECharts } from '@/composables/useECharts'
 import { formatAmount } from '@/utils/format'
 import type { EChartsOption } from 'echarts'
-import type { AgeStructureItem } from '@/types/dashboard'
+import type { TimeIndicators } from '@/types/dashboard'
 
-const store = useDashboardStore()
-const { time } = storeToRefs(store)
+const props = defineProps<{
+  time: TimeIndicators | null
+}>()
+
 const { init, setOption, resize, dispose } = useECharts()
 const chartRef = ref<HTMLDivElement>()
 
 const BAR_COLORS = ['#10b981', '#f59e0b', '#f97316', '#ef4444']
 
-function buildOption(data: AgeStructureItem[]): EChartsOption {
+function buildOption(data: { range: string; amount: number }[]): EChartsOption {
   return {
     tooltip: { trigger: 'axis' as const, formatter: (p: unknown) => {
       const items = p as Array<{ name: string; value: number }>
@@ -37,14 +37,14 @@ function buildOption(data: AgeStructureItem[]): EChartsOption {
   } as EChartsOption
 }
 
-watch(() => time.value?.age_structure, (data) => {
+watch(() => props.time?.age_structure, (data) => {
   if (data?.length) nextTick(() => setOption(buildOption(data)))
 }, { deep: true })
 
 onMounted(() => {
   if (chartRef.value) {
     init(chartRef.value)
-    if (time.value?.age_structure.length) setOption(buildOption(time.value.age_structure))
+    if (props.time?.age_structure?.length) setOption(buildOption(props.time.age_structure))
   }
   window.addEventListener('resize', resize)
 })

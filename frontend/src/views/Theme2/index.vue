@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useTheme2Store } from '@/stores/modules/theme2'
-import { storeToRefs } from 'pinia'
+import { onMounted, ref, computed } from 'vue'
+import { getStructure, getByProject, getByPurchaser, getByCategory, getBatchDigest } from '@/api/modules/theme2'
+import type { WmsStructure, WmsProjectIndicator, WmsPurchaserIndicator, WmsCategoryItem, WmsBatchDigest } from '@/api/modules/theme2'
+import type { ProjectTreeNode, BuyerRankItem, CategoryBubbleItem, BatchDigestItem, KpiCardData } from '@/types/inventory'
 
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
-import SectionHeader from '@/components/inventory/SectionHeader.vue'
 import KpiCards from '@/components/inventory/KpiCards.vue'
 
 import ProjectTreemap from '@/components/inventory/structure/ProjectTreemap.vue'
@@ -13,17 +13,146 @@ import BuyerRanking from '@/components/inventory/structure/BuyerRanking.vue'
 import CategoryBubble from '@/components/inventory/structure/CategoryBubble.vue'
 import BatchProgress from '@/components/inventory/structure/BatchProgress.vue'
 
-const store = useTheme2Store()
-const {
-  loading,
-  error,
-  kpiCards,
-  structureProjectTree,
-  structureBuyerRank,
-  structureCategoryBubble,
-  structureBatch,
-  structureBatchLabels,
-} = storeToRefs(store)
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+const structureProjectTree = ref<ProjectTreeNode[]>([])
+const structureBuyerRank = ref<BuyerRankItem[]>([])
+const structureCategoryBubble = ref<CategoryBubbleItem[]>([])
+const structureBatch = ref<BatchDigestItem[]>([])
+const structureBatchLabels = ref<string[]>([])
+
+const structure = ref<WmsStructure | null>(null)
+const projectIndicators = ref<WmsProjectIndicator[]>([])
+const purchaserIndicators = ref<WmsPurchaserIndicator[]>([])
+
+const kpiCards = computed<KpiCardData[]>(() => {
+  const s = structure.value
+  const projs = projectIndicators.value
+  const validProjs = (projs || []).filter(p => p.project_code && p.project_name !== '非项目物资')
+  const validRatios = (s?.project_ratios || []).filter(p => p.project_code && p.project_name !== '非项目物资')
+  return [
+    {
+      icon: '🔍',
+      label: '库存来源项目数',
+      value: validRatios.length,
+      unit: '个',
+      change: validRatios.length > 0 ? `有效库存项目 ${validRatios.length} 个` : '--',
+      changeType: 'down',
+      color: '#f59e0b',
+    },
+    {
+      icon: '📦',
+      label: '当前库存总额',
+      value: s?.current_inventory_amount ? Math.round(s.current_inventory_amount) : 0,
+      unit: '万',
+      change: s ? `${s.current_inventory_quantity?.toLocaleString?.() || 0} 项库存` : '--',
+      changeType: 'down',
+      color: '#f59e0b',
+    },
+    {
+      icon: '📊',
+      label: '项目平均库存金额',
+      value: (() => {
+        return validRatios.length
+          ? Math.round(s!.current_inventory_amount / validRatios.length)
+          : 0
+      })(),
+      unit: '万',
+      change: (() => {
+        return validRatios.length ? `共 ${validRatios.length} 个项目` : '--'
+      })(),
+      changeType: 'down',
+      color: '#f59e0b',
+    },
+  ]
+})
+
+function buildChartData(
+  s: WmsStructure,
+  projs: WmsProjectIndicator[],
+  purchasers: WmsPurchaserIndicator[],
+  categories: WmsCategoryItem[],
+  batchDigest: WmsBatchDigest | null,
+) {
+  structureProjectTree.value = (s.project_ratios || [])
+    .filter(p => p.project_name !== '非项目物资')
+    .map(p => {
+      const pi = projs.find(x => x.project_code === p.project_code)
+      return {
+        name: p.project_name || p.project_code || '(未关联)',
+        projectName: p.project_name || p.project_code || '(未关联)',
+        projectCode: p.project_code || '',
+        value: p.inventory_amount / 10000,
+        usageRate: pi?.claim_rate ?? 0,
+      }
+    })
+
+  if (purchasers.length > 0) {
+    structureBuyerRank.value = purchasers.map(p => ({
+      name: p.purchaser_name || '(未知)',
+      value: p.unclaimed_amount / 10000,
+      usageRate: p.claim_rate ?? 0,
+    }))
+  } else if ((s.purchaser_ratios || []).length > 0) {
+    structureBuyerRank.value = s.purchaser_ratios.map(p => ({
+      name: p.purchaser_name || '(未知)',
+      value: p.inventory_amount / 10000,
+      usageRate: 0,
+    }))
+  } else {
+    structureBuyerRank.value = []
+  }
+
+  structureCategoryBubble.value = categories.map(c => ({
+    name: c.category_name || c.category_code || '未知',
+    inventory: c.inventory_amount,
+    usageRate: c.claim_rate,
+    skuCount: c.sku_count,
+  }))
+
+  if (batchDigest && batchDigest.series.length > 0) {
+    structureBatchLabels.value = batchDigest.labels
+    structureBatch.value = batchDigest.series.map(s => ({
+      name: s.batch_code,
+      color: s.color,
+      data: s.data,
+    }))
+  } else {
+    structureBatchLabels.value = []
+    structureBatch.value = []
+  }
+}
+
+async function loadAllData() {
+  loading.value = true
+  error.value = null
+
+  const errs: string[] = []
+  let s: WmsStructure | null = null
+  let projs: WmsProjectIndicator[] = []
+  let purchasers: WmsPurchaserIndicator[] = []
+  let categories: WmsCategoryItem[] = []
+  let batchDigest: WmsBatchDigest | null = null
+
+  try { s = await getStructure() } catch (e: any) { errs.push('库存结构: ' + (e?.message || '失败')) }
+  try { projs = await getByProject() } catch (e: any) { errs.push('项目分析: ' + (e?.message || '失败')) }
+  try { purchasers = await getByPurchaser() } catch (e: any) { errs.push('采购人: ' + (e?.message || '失败')) }
+  try { const r = await getByCategory(); categories = r.data || [] } catch (e: any) { errs.push('类别: ' + (e?.message || '失败')) }
+  try { batchDigest = await getBatchDigest() } catch (e: any) { errs.push('批次: ' + (e?.message || '失败')) }
+
+  if (s) {
+    structure.value = s
+    projectIndicators.value = projs
+    purchaserIndicators.value = purchasers
+    buildChartData(s, projs, purchasers, categories, batchDigest)
+  }
+
+  if (errs.length > 0) {
+    error.value = errs.join('；')
+  }
+  loading.value = false
+}
 
 const projectTreemapRef = ref<InstanceType<typeof ProjectTreemap>>()
 
@@ -32,13 +161,13 @@ function handleRefreshTreemap() {
 }
 
 onMounted(() => {
-  store.loadAllData()
+  loadAllData()
 })
 </script>
 
 <template>
   <div v-loading="loading" element-loading-text="正在加载项目分析数据..." class="theme2-dashboard">
-    <ErrorResult v-if="error" :message="error" @retry="store.loadAllData()" />
+    <ErrorResult v-if="error" :message="error" @retry="loadAllData" />
 
     <template v-if="!error">
       <!-- ═══ KPI 总览 ═══ -->
