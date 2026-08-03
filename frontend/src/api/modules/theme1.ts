@@ -197,3 +197,18 @@ export interface ErpAgeRes {
 /** ERP 增强版库龄指标 */
 export const getErpAge = () =>
   request.get<ErpAgeRes>('/wms/indicators/erp-age')
+
+export interface ErpAgeMonthlyRow {
+  doc_month: string
+  avg_age: number
+  over90_rate: number
+  total_inventory: number
+}
+
+export interface ErpAgeMonthlyRes {
+  rows: ErpAgeMonthlyRow[]
+}
+
+/** ERP 版月度库龄趋势 */
+export const getErpAgeMonthly = () =>
+  request.get<ErpAgeMonthlyRes>('/wms/indicators/erp-age-monthly')

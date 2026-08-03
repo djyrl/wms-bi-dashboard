@@ -658,3 +658,144 @@ def get_erp_age_indicators() -> Dict:
             {"range": "≥5年",  "amount": round(r["amt_ge_5y"] / 10000, 2),  "count": int(r["cnt_ge_5y"])},
         ],
     }
+
+
+# ================================================================
+#  ERP 月度库龄趋势
+# ================================================================
+#  按月计算加权平均库龄和超 90 天库存占比。
+#  数据来源：erp_catalog_mb51 历史凭证 + v_batch_lifecycle 批次入库日期。
+#
+#  原理：
+#    对每个物料+批次，按月累计 ERP 余额。
+#    每月末的库龄 = 月末日期 - 该批次的 first_inbound_date。
+#    加权平均库龄 = Σ(月末余额 × 库龄) / Σ(月末余额)。
+# ================================================================
+
+def get_erp_age_monthly() -> Dict:
+    """
+    ERP 版月度库龄趋势（从 2021-05 至今）。
+
+    返回每月：
+      - avg_age:          加权平均库龄（天）
+      - over90_rate:      库龄 ≥ 90 天的库存占比（%）
+      - total_inventory:  月末库存总额（万元）
+
+    Returns:
+        {"rows": [{doc_month, avg_age, over90_rate, total_inventory}, ...]}
+    """
+    sql = """
+        WITH batch_monthly AS (
+            SELECT
+                row_json->>'MATNR'                              AS material_code,
+                charg                                            AS batch_code,
+                DATE_TRUNC('month', (row_json->>'BLDAT')::date)::date AS doc_month,
+                SUM((row_json->>'DMBTR')::numeric)              AS net_change
+            FROM public.erp_catalog_mb51
+            WHERE werks = '2635'
+              AND row_json->>'MATNR' IS NOT NULL
+              AND charg IS NOT NULL
+            GROUP BY 1, 2, 3
+        ),
+        batch_cum AS (
+            SELECT
+                material_code,
+                batch_code,
+                doc_month,
+                SUM(net_change) OVER (
+                    PARTITION BY material_code, batch_code
+                    ORDER BY doc_month ROWS UNBOUNDED PRECEDING
+                ) AS cum_balance
+            FROM batch_monthly
+        ),
+        batch_with_age AS (
+            SELECT
+                bc.doc_month,
+                bc.cum_balance,
+                v.first_inbound_date
+            FROM batch_cum bc
+            JOIN v_batch_lifecycle v
+                ON v.material_code = bc.material_code
+               AND v.batch_code = bc.batch_code
+            WHERE bc.cum_balance > 0
+              AND v.first_inbound_date IS NOT NULL
+        )
+        SELECT
+            doc_month,
+            first_inbound_date,
+            cum_balance
+        FROM batch_with_age
+        ORDER BY doc_month
+    """
+
+    rows = query(sql)
+    if not rows:
+        return {"rows": []}
+
+    # Python 中计算库龄，避免 KingbaseES Oracle 模式的日期类型问题
+    from datetime import date, timedelta
+    from collections import defaultdict
+
+    # 按月汇总： {(year, month): {total_balance, weighted_age_sum, over90_balance}}
+    monthly = defaultdict(lambda: {"total": 0.0, "weighted": 0.0, "over90": 0.0})
+
+    for r in rows:
+        doc_month = r["doc_month"]  # date object
+        if isinstance(doc_month, str):
+            doc_month = date.fromisoformat(doc_month[:10])
+        cum_balance = float(r["cum_balance"])
+        first_date = r["first_inbound_date"]  # date object
+        if isinstance(first_date, str):
+            first_date = date.fromisoformat(first_date[:10])
+
+        if cum_balance <= 0 or not first_date:
+            continue
+
+        # 月末 ≈ doc_month + 30天
+        month_end = date(doc_month.year, doc_month.month, 1)
+        if month_end.month == 12:
+            month_end = date(month_end.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            month_end = date(month_end.year, month_end.month + 1, 1) - timedelta(days=1)
+
+        age_days = (month_end - first_date).days
+        if age_days < 0:
+            age_days = 0
+
+        key = doc_month.strftime("%Y-%m")
+        monthly[key]["total"] += cum_balance
+        monthly[key]["weighted"] += cum_balance * age_days
+        if age_days >= 90:
+            monthly[key]["over90"] += cum_balance
+
+    result_rows = []
+    for ym in sorted(monthly.keys()):
+        m = monthly[ym]
+        avg_age = round(m["weighted"] / m["total"], 1) if m["total"] > 0 else 0
+        over90 = round(m["over90"] / m["total"] * 100, 2) if m["total"] > 0 else 0
+        result_rows.append({
+            "doc_month": ym,
+            "avg_age": avg_age,
+            "over90_rate": over90,
+            "total_inventory": round(m["total"] / 10000, 2),
+        })
+
+    return {"rows": result_rows}
+
+
+    rows = query(sql)
+    if not rows:
+        return {"rows": []}
+    rows = _rows_to_float(rows, "avg_age", "over90_rate", "total_inventory")
+
+    return {
+        "rows": [
+            {
+                "doc_month": str(r["doc_month"])[:7],
+                "avg_age": round(r["avg_age"], 1),
+                "over90_rate": r["over90_rate"],
+                "total_inventory": round(r["total_inventory"] / 10000, 2),
+            }
+            for r in rows
+        ],
+    }

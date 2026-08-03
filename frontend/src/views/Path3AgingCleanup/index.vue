@@ -8,7 +8,7 @@ import {
   getAgeMonthly,
   getAgeHeatmap,
 } from '@/api/modules/theme3'
-import { getErpAge } from '@/api/modules/theme1'
+import { getErpAge, getErpAgeMonthly } from '@/api/modules/theme1'
 import type {
   TimeIndicatorsRes,
   WmsProjectIndicator,
@@ -39,6 +39,7 @@ const timeIndicators = ref<TimeIndicatorsRes | null>(null)
 const erpAge = ref<any>(null)
 const projectIndicators = ref<WmsProjectIndicator[]>([])
 const ageMonthlyData = ref<AgeMonthlyRes | null>(null)
+const erpAgeMonthly = ref<any>(null)
 
 const kpiCards = computed<KpiCardData[]>(() => {
   const t = timeIndicators.value
@@ -68,16 +69,24 @@ function buildChartData(
   projs: WmsProjectIndicator[],
   ageMonthly: AgeMonthlyRes | null,
   heatmap: AgeHeatmapRes | null,
+  erpAm: any,
 ) {
   if (t.age_structure && t.age_structure.length > 0) {
     agePyramid.value = t.age_structure
       .filter(item => item.range !== '≥5年')
       .map(item => ({ range: item.range, amount: +(item.amount / 10000).toFixed(2), skuCount: item.count }))
   }
-  if (ageMonthly && ageMonthly.data.length > 0) {
-    const avgAges = ageMonthly.data.map(d => d.avg_age)
+  // 优先用 ERP 月度库龄（2021至今），回退 WMS
+  const ageSrc = (erpAm && erpAm.rows?.length) ? erpAm.rows : (ageMonthly?.data || [])
+  if (ageSrc.length > 0) {
+    const avgAges = ageSrc.map((d: any) => d.avg_age ?? d.avgAge)
     const trendVals = calcTrend(avgAges)
-    ageTrend.value = ageMonthly.data.map((d, i) => ({ month: d.month, avgAge: d.avg_age, trend: trendVals[i], over90Rate: d.over90_rate }))
+    ageTrend.value = ageSrc.map((d: any, i: number) => ({
+      month: d.doc_month || d.month,
+      avgAge: d.avg_age ?? d.avgAge,
+      trend: trendVals[i],
+      over90Rate: d.over90_rate ?? d.over90Rate,
+    }))
   }
   if (heatmap && heatmap.data.length > 0) {
     sluggishHeatmap.value = heatmap.data
@@ -103,6 +112,7 @@ async function loadAllData() {
   let heatmap: AgeHeatmapRes | null = null
   try { t = await getTimeIndicators() } catch (e: any) { errs.push('时间指标: ' + (e?.message || '失败')) }
   try { erpAge.value = await getErpAge() } catch (e: any) { errs.push('ERP库龄: ' + (e?.message || '失败')) }
+  try { erpAgeMonthly.value = await getErpAgeMonthly() } catch (e: any) { errs.push('ERP月度库龄: ' + (e?.message || '失败')) }
   try { await getAgeLayers({ min_amount: 0, min_age: 0 }) } catch (e: any) { errs.push('库龄分层: ' + (e?.message || '失败')) }
   try { projs = await getByProject() } catch (e: any) { errs.push('项目分析: ' + (e?.message || '失败')) }
   try { const r = await getAgeMonthly(); ageMonthlyData.value = r; ageMonthly = r } catch (e: any) { errs.push('库龄趋势: ' + (e?.message || '失败')) }
@@ -110,7 +120,7 @@ async function loadAllData() {
   if (t) {
     timeIndicators.value = t
     projectIndicators.value = projs
-    buildChartData(t, projs, ageMonthly, heatmap)
+    buildChartData(t, projs, ageMonthly, heatmap, erpAgeMonthly.value)
   }
   if (errs.length > 0) error.value = errs.join('；')
   loading.value = false
