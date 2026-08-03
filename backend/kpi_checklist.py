@@ -377,7 +377,7 @@ def get_kpi_checklist() -> Dict[str, Any]:
             "project_ratios": [
                 {
                     "project_code": p["owner_project_code"],
-                    "project_name": p["project_name"] or p["owner_project_code"],
+                    "project_name": p["project_name"] or "",
                     "project_submitter": p.get("project_submitter") or "",
                     "project_contact": p.get("project_contact") or "",
                     "inventory_amount_wan": round(p["inventory_amount"] / 10000, 2),

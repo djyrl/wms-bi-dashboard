@@ -118,7 +118,7 @@ def get_by_project(owner_project_type: str = None, start_date=None, end_date=Non
         )
         result.append({
             "project_code": code,
-            "project_name": r["project_name"] or code,
+            "project_name": r["project_name"] or "",
             "inbound_amount": round(inb, 2),
             "claimed_amount": round(clm, 2),
             # 未消耗库存 = 库存金额（恒等式：inbound - claimed ≈ inventory）
@@ -276,7 +276,7 @@ def get_project_summary(
             r["inventory_amount"], r["age_weighted"]
         )
         result.append({
-            "project_name": r["project_name"] or code or "(未归属项目)",
+            "project_name": r["project_name"] or "",
             "project_code": code,
             "inbound_amount": round(inb, 2),
             "claimed_amount": round(clm, 2),

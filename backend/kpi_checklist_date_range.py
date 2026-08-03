@@ -259,7 +259,7 @@ def get_kpi_checklist_by_date_range(start_date: str, end_date: str) -> Dict[str,
             "project_ratios": [
                 {
                     "project_code": p["owner_project_code"],
-                    "project_name": p["project_name"] or p["owner_project_code"],
+                    "project_name": p["project_name"] or "",
                     "inventory_amount_wan": round(p["inventory_amount"] / 10000, 2),
                     "ratio": round(p["inventory_amount"] / total_inventory_amt * 100, 2)
                     if total_inventory_amt else 0,
