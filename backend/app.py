@@ -60,6 +60,10 @@ from other_indicators import (
     get_batch_digest as db_get_batch_digest,
     get_inventory_report as db_get_inventory_report,
 )
+from erp_inventory import (
+    get_erp_claim_indicators,
+    get_erp_claim_monthly,
+)
 
 app = Flask(__name__)
 CORS(app)
@@ -607,6 +611,29 @@ def api_wms_purchaser_summary():
     sort_order = request.args.get("sort_order", "desc")
     try:
         return ok(db_get_purchaser_summary(sort_by, sort_order))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+# ================================================================
+#  ERP 领用率接口
+# ================================================================
+
+@app.route("/api/wms/indicators/erp-claim", methods=["GET"])
+def api_erp_claim():
+    """ERP 版领用率：当年 + 全部历史。数据源 erp_catalog_mb51。"""
+    try:
+        return ok(get_erp_claim_indicators())
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/erp-claim-monthly", methods=["GET"])
+def api_erp_claim_monthly():
+    """ERP 版月度领用率趋势。参数：?year=2026"""
+    year = request.args.get("year", type=int)
+    try:
+        return ok(get_erp_claim_monthly(year))
     except Exception as e:
         return jsonify({"code": -1, "msg": str(e)})
 

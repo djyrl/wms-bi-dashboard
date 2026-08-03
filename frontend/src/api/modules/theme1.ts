@@ -136,3 +136,45 @@ export const getWmsSummary = () =>
 /** 领用指标汇总（当年/全部拆分） */
 export const getWmsClaim = () =>
   request.get<WmsClaimSplit>('/wms/indicators/claim')
+
+// ---- ERP 领用率（erp_catalog_mb51）----
+
+export interface ErpClaimRange {
+  total_inbound_amount: number
+  total_outbound_amount: number
+  total_inbound_quantity: number
+  total_outbound_quantity: number
+  claim_rate_amount: number
+  claim_rate_quantity: number
+  unclaimed_amount: number
+  unclaimed_amount_ratio: number
+}
+
+export interface ErpClaimSplit {
+  current_year: number
+  year_start: string
+  year_end: string
+  all: ErpClaimRange
+  year: ErpClaimRange
+  note: string
+}
+
+export interface ErpClaimMonthlyRow {
+  doc_month: string
+  inbound: number
+  outbound: number
+  claim_rate: number
+  move_cnt: number
+}
+
+export interface ErpClaimMonthlyRes {
+  rows: ErpClaimMonthlyRow[]
+}
+
+/** ERP 版领用指标汇总 */
+export const getErpClaim = () =>
+  request.get<ErpClaimSplit>('/wms/indicators/erp-claim')
+
+/** ERP 版月度领用率 */
+export const getErpClaimMonthly = (year?: number) =>
+  request.get<ErpClaimMonthlyRes>('/wms/indicators/erp-claim-monthly', { params: { year } })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getWmsSummary, getWmsClaim } from '@/api/modules/theme1'
+import { getWmsSummary, getWmsClaim, getErpClaim } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
 import { getTimeIndicators, getAgeMonthly } from '@/api/modules/theme3'
@@ -16,6 +16,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<any>(null)
 const claim = ref<any>(null)
+const erpClaim = ref<any>(null)
 const structure = ref<WmsStructure | null>(null)
 const timeIndicators = ref<any>(null)
 const topUnclaimed = ref<any[]>([])
@@ -26,12 +27,13 @@ async function loadAll() {
   loading.value = true
   error.value = null
   try {
-    const [s, c, st, ti, top, am, os] = await Promise.all([
-      getWmsSummary(), getWmsClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(8),
+    const [s, c, ec, st, ti, top, am, os] = await Promise.all([
+      getWmsSummary(), getWmsClaim(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(8),
       getAgeMonthly(), getOptimizeSuggest(5, 60),
     ])
     summary.value = s
     claim.value = c
+    erpClaim.value = ec
     structure.value = st
     timeIndicators.value = ti
     topUnclaimed.value = top
@@ -130,23 +132,18 @@ const paths = [
             <div class="kpi-sub">{{ structure?.current_inventory_quantity?.toLocaleString() }} 项库存</div>
           </div>
         </el-tooltip>
-        <el-tooltip content="领用金额 / 入库金额 × 100%（全部历史数据）" placement="top">
+        <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%（erp_catalog_mb51）" placement="top">
           <div class="kpi-box" style="border-left-color:#10b981">
             <div class="kpi-label">采购领用率（金额）</div>
-            <div class="kpi-num">{{ claim?.all?.claim_rate_amount?.toFixed(2) }}%</div>
-            <div class="kpi-sub">= 领用 / 入库 × 100%</div>
+            <div class="kpi-num">{{ erpClaim?.year?.claim_rate_amount?.toFixed(2) }}%</div>
+            <div class="kpi-sub">= {{ erpClaim?.year?.total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaim?.year?.total_inbound_amount?.toFixed(0) || 0 }}万</div>
           </div>
         </el-tooltip>
-        <el-tooltip content="SUM(current_quantity × unit_price) 按批次去重聚合" placement="top">
-          <!-- <div class="kpi-box" style="border-left-color:#f59e0b">
-            <div class="kpi-label">当前库存总额</div>
-            <div class="kpi-num">{{ structure?.current_inventory_amount?.toFixed(2) }} 万</div>
-            <div class="kpi-sub">{{ structure?.current_inventory_quantity?.toLocaleString() }} 项库存</div>
-          </div> -->
+        <el-tooltip content="ERP数据：SUM(DMBTR) 101+102 移动类型（erp_catalog_mb51）" placement="top">
           <div class="kpi-box" style="border-left-color:#3b82f6">
             <div class="kpi-label">入库总额</div>
-            <div class="kpi-num">{{ summary?.total_inbound_amount?.toFixed(2) }} 万</div>
-            <div class="kpi-sub">累计采购入库金额</div>
+            <div class="kpi-num">{{ erpClaim?.year?.total_inbound_amount?.toFixed(2) }} 万</div>
+            <div class="kpi-sub">当年采购入库金额</div>
           </div>
         </el-tooltip>
         <el-tooltip content="Σ(库存金额 × 库龄天数) / Σ(库存金额)  金额加权平均" placement="top">
