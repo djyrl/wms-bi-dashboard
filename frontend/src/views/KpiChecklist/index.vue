@@ -66,12 +66,18 @@ const coreKpiList = computed(() => {
         formula: `出库金额 / 净入库 × 100%（${ec.total_outbound_amount?.toFixed(0) ?? 0}万 / ${ec.net_inbound_amount?.toFixed(0) ?? 0}万）`,
         detail: {
           ...kpi.detail,
-          inbound_amount_wan: ec.total_inbound_amount,         // 101毛收货
-          net_inbound_amount_wan: ec.net_inbound_amount,       // 净入库
-          reversal_amount_wan: ec.reversal_amount,             // 冲销
+          inbound_amount_wan: ec.total_inbound_amount,
+          net_inbound_amount_wan: ec.net_inbound_amount,
+          reversal_amount_wan: ec.reversal_amount,
           claimed_amount_wan: ec.total_outbound_amount,
           unclaimed_amount_wan: ec.unclaimed_amount,
         },
+      }
+    }
+    if (kpi.key === 'K2') {
+      return {
+        ...kpi,
+        value: erpClaim.value!.erp_inventory,
       }
     }
     return kpi
