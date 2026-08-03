@@ -317,50 +317,46 @@ onMounted(() => {
           <span class="section-desc">K6 · K7 · K8 · K9 — 多维度库存画像</span>
         </div>
 
-        <!-- K6 库存结构 -->
-        <ChartCard title="K6 · 库存结构分析">
-          <div class="structure-grid">
-            <div class="structure-col">
-              <h4 class="structure-col__title">📦 项目库存占比</h4>
-              <table class="mini-table" v-if="structureKpis?.K6?.project_ratios?.length">
-                <thead>
-                  <tr><th>项目</th><th>库存(万元)</th><th>占比</th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="p in structureKpis.K6.project_ratios.filter(p => p.project_code).slice(0, 8)" :key="p.project_code">
-                    <td>{{ p.project_name || p.project_code }}</td>
-                    <td>{{ p.inventory_amount_wan?.toLocaleString() }}</td>
-                    <td>
-                      <div class="ratio-bar">
-                        <div class="ratio-bar__fill" :style="{ width: p.ratio + '%', background: '#3b82f6' }"></div>
-                        <span>{{ p.ratio }}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="structure-col">
-              <h4 class="structure-col__title">👤 采购人库存占比</h4>
-              <table class="mini-table" v-if="structureKpis?.K6?.purchaser_ratios?.length">
-                <thead>
-                  <tr><th>采购人</th><th>库存(万元)</th><th>占比</th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="p in structureKpis.K6.purchaser_ratios.slice(0, 8)" :key="p.purchaser_name">
-                    <td>{{ p.purchaser_name }}</td>
-                    <td>{{ p.inventory_amount_wan?.toLocaleString() }}</td>
-                    <td>
-                      <div class="ratio-bar">
-                        <div class="ratio-bar__fill" :style="{ width: p.ratio + '%', background: '#8b5cf6' }"></div>
-                        <span>{{ p.ratio }}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <!-- K6 库存结构 — 项目库存占比 -->
+        <ChartCard title="K6 · 库存结构分析 — 项目库存占比">
+          <table class="mini-table" v-if="structureKpis?.K6?.project_ratios?.length">
+            <thead>
+              <tr><th>项目</th><th>库存(万元)</th><th>占比</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in structureKpis.K6.project_ratios.filter(p => p.project_code).slice(0, 8)" :key="p.project_code">
+                <td>{{ p.project_name || p.project_code }}</td>
+                <td>{{ p.inventory_amount_wan?.toLocaleString() }}</td>
+                <td>
+                  <div class="ratio-bar">
+                    <div class="ratio-bar__fill" :style="{ width: p.ratio + '%', background: '#3b82f6' }"></div>
+                    <span>{{ p.ratio }}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ChartCard>
+
+        <!-- K6 库存结构 — 采购人库存占比 -->
+        <ChartCard title="K6 · 库存结构分析 — 采购人库存占比">
+          <table class="mini-table" v-if="structureKpis?.K6?.purchaser_ratios?.length">
+            <thead>
+              <tr><th>采购人</th><th>库存(万元)</th><th>占比</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in structureKpis.K6.purchaser_ratios.slice(0, 8)" :key="p.purchaser_name">
+                <td>{{ p.purchaser_name }}</td>
+                <td>{{ p.inventory_amount_wan?.toLocaleString() }}</td>
+                <td>
+                  <div class="ratio-bar">
+                    <div class="ratio-bar__fill" :style="{ width: p.ratio + '%', background: '#8b5cf6' }"></div>
+                    <span>{{ p.ratio }}%</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </ChartCard>
 
         <!-- K7 时间分析 -->
@@ -915,7 +911,7 @@ onMounted(() => {
 // ═══ 时间指标卡片 ═══
 .time-metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 20px;
 }
