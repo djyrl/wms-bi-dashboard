@@ -123,7 +123,7 @@ const paths = [
       <div class="kpi-row">
         <el-tooltip content="WMS实物在库 + ERP有余额未入WMS的批次" placement="top">
           <div class="kpi-box" style="border-left-color:#f59e0b">
-            <div class="kpi-label">当前库存总额（{{ erpClaim?.current_year }}年）</div>
+            <div class="kpi-label">当前库存总额</div>
             <div class="kpi-num">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万</div>
             <div class="kpi-sub">WMS在库 + ERP批次补充</div>
           </div>
@@ -214,7 +214,7 @@ const paths = [
         </ChartCard>
 
         <!-- 第二行：3 个补充指标 -->
-        <ChartCard title="👤 采购人库存占比 TOP 5">
+        <ChartCard title="👤 项目负责人库存占比 TOP 5">
           <table class="mini-table" v-if="structure?.purchaser_ratios?.length">
             <tr v-for="p in structure.purchaser_ratios.slice(0, 5)" :key="p.purchaser_id">
               <td>{{ p.purchaser_name || p.purchaser_id }}</td>
@@ -230,7 +230,7 @@ const paths = [
 
         <ChartCard title="📦 库龄结构分布">
           <div class="age-bars" v-if="timeIndicators?.age_structure?.length">
-            <div class="age-bar" v-for="seg in timeIndicators.age_structure" :key="seg.range">
+            <div class="age-bar" v-for="seg in timeIndicators.age_structure.filter((s: any) => s.range !== '≥5年')" :key="seg.range">
               <span class="age-label">{{ seg.range }}</span>
               <div class="age-track">
                 <div class="age-fill" :style="{ width: Math.min(seg.ratio * 100, 100) + '%', background: seg.range.includes('≥') ? '#f43f5e' : seg.range.includes('3') ? '#f59e0b' : '#3b82f6' }"></div>

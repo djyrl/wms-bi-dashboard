@@ -604,12 +604,12 @@ def _get_wide_structure_aggregates(start_date=None, end_date=None) -> Dict[str, 
     """, None)
     project_rows = _rows_to_float(project_rows, "inventory_amount")
 
-    # ── 按采购人（提报人）聚合库存金额 ──
+    # ── 按联系人聚合库存金额 ──
     purchaser_rows = query(f"""
         WITH {_BATCH_AMOUNTS_SQL},
         wide_with_ratio AS (
             SELECT
-                w.project_submitter,
+                w.project_contact,
                 ba.batch_inventory,
                 {_PROJECT_RATIO_SQL} AS project_ratio
             FROM v_project_inventory_wide w
@@ -618,14 +618,14 @@ def _get_wide_structure_aggregates(start_date=None, end_date=None) -> Dict[str, 
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
                 AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
-            WHERE w.project_submitter IS NOT NULL
-              AND char_length(w.project_submitter) > 0{date_clause}
+            WHERE w.project_contact IS NOT NULL
+              AND char_length(w.project_contact) > 0{date_clause}
         )
         SELECT
-            project_submitter AS purchaser_name,
+            project_contact AS purchaser_name,
             SUM(batch_inventory * project_ratio) AS inventory_amount
         FROM wide_with_ratio
-        GROUP BY project_submitter
+        GROUP BY project_contact
         ORDER BY inventory_amount DESC
     """, None)
     purchaser_rows = _rows_to_float(purchaser_rows, "inventory_amount")
