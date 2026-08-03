@@ -70,7 +70,9 @@ function buildChartData(
   heatmap: AgeHeatmapRes | null,
 ) {
   if (t.age_structure && t.age_structure.length > 0) {
-    agePyramid.value = t.age_structure.map(item => ({ range: item.range, amount: +(item.amount / 10000).toFixed(2), skuCount: item.count }))
+    agePyramid.value = t.age_structure
+      .filter(item => item.range !== '≥5年')
+      .map(item => ({ range: item.range, amount: +(item.amount / 10000).toFixed(2), skuCount: item.count }))
   }
   if (ageMonthly && ageMonthly.data.length > 0) {
     const avgAges = ageMonthly.data.map(d => d.avg_age)
