@@ -39,7 +39,27 @@ async function loadAllData() {
 }
 
 // 核心考核 KPI 条目（便于迭代）
-const coreKpiList = computed(() => Object.values(coreKpis.value))
+const coreKpiList = computed(() => {
+  const list = Object.values(coreKpis.value)
+  if (!erpClaim.value) return list
+  return list.map(kpi => {
+    if (kpi.key === 'K1') {
+      const ec = erpClaim.value!.year
+      return {
+        ...kpi,
+        value: ec.claim_rate_amount,
+        formula: `出库金额 / 入库金额 × 100%（${ec.total_outbound_amount?.toFixed(0) ?? 0}万 / ${ec.total_inbound_amount?.toFixed(0) ?? 0}万）`,
+        detail: {
+          ...kpi.detail,
+          inbound_amount_wan: ec.total_inbound_amount,
+          claimed_amount_wan: ec.total_outbound_amount,
+          unclaimed_amount_wan: ec.unclaimed_amount,
+        },
+      }
+    }
+    return kpi
+  })
+})
 const constraintKpiList = computed(() => Object.values(constraintKpis.value))
 
 // 状态颜色与标签
@@ -183,16 +203,16 @@ onMounted(() => {
               </div>
               <div class="kpi-card__detail" v-if="kpi.key === 'K1' && kpi.detail">
                 <div class="detail-row">
-                  <span>入库金额</span><span>{{ kpi.detail.inbound_amount_wan?.toLocaleString() }} 万元</span>
+                  <span>入库金额 (ERP)</span><span>{{ kpi.detail.inbound_amount_wan?.toLocaleString() }} 万元</span>
                 </div>
                 <div class="detail-row">
-                  <span>领用金额</span><span>{{ kpi.detail.claimed_amount_wan?.toLocaleString() }} 万元</span>
+                  <span>出库金额 (ERP)</span><span>{{ kpi.detail.claimed_amount_wan?.toLocaleString() }} 万元</span>
                 </div>
                 <div class="detail-row">
                   <span>未领用金额</span><span>{{ kpi.detail.unclaimed_amount_wan?.toLocaleString() }} 万元</span>
                 </div>
                 <div class="detail-row">
-                  <span>数量领用率</span><span>{{ kpi.detail.claim_rate_quantity?.toLocaleString() }}%</span>
+                  <span>数量领用率</span><span>{{ erpClaim?.year?.claim_rate_quantity?.toLocaleString() }}%</span>
                 </div>
               </div>
               <div v-if="kpi.key === 'K3' && kpi.detail?.age_structure" class="kpi-card__detail">
