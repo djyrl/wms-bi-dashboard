@@ -372,12 +372,6 @@ onMounted(() => {
                 <div class="time-metric-card__label">加权平均库龄（天）</div>
               </div>
             </el-tooltip>
-            <el-tooltip content="Σ(未动用库存金额 × 库龄) / Σ(未动用库存金额),仅从未被领用过的库存物料" placement="top">
-              <div class="time-metric-card">
-                <div class="time-metric-card__value">{{ formatDays(structureKpis.K7.unused_days) }}</div>
-                <div class="time-metric-card__label">未动用天数（天）</div>
-              </div>
-            </el-tooltip>
             <el-tooltip content="= 库龄 ≥ 365天的库存金额 / 总库存金额" placement="top">
               <div class="time-metric-card">
                 <div class="time-metric-card__value">{{ structureKpis.K7.aged_ratio_1y }}%</div>
