@@ -8,6 +8,7 @@ import {
   getAgeMonthly,
   getAgeHeatmap,
 } from '@/api/modules/theme3'
+import { getErpAge } from '@/api/modules/theme1'
 import type {
   TimeIndicatorsRes,
   WmsProjectIndicator,
@@ -35,16 +36,18 @@ const heatmapAgeLabels = ref<string[]>([])
 const ageGauge = ref<AgeGaugeItem[]>([])
 
 const timeIndicators = ref<TimeIndicatorsRes | null>(null)
+const erpAge = ref<any>(null)
 const projectIndicators = ref<WmsProjectIndicator[]>([])
 const ageMonthlyData = ref<AgeMonthlyRes | null>(null)
 
 const kpiCards = computed<KpiCardData[]>(() => {
   const t = timeIndicators.value
+  const ea = erpAge.value
   const projs = projectIndicators.value
   return [
-    { icon: '⏱', label: '加权平均库龄', value: t?.avg_age_weighted_days ?? 52, unit: '天', change: t ? `${t.avg_age_weighted_days > 45 ? '⚠️ 偏高' : '✅ 正常'}` : '--', changeType: (t?.avg_age_weighted_days ?? 52) <= 45 ? 'up' : 'down', color: '#8b5cf6' },
-    { icon: '📦', label: '库存总额', value: t ? +(t.age_structure.reduce((s, i) => s + i.amount, 0) / 10000).toFixed(2) : 0, unit: '万元', change: t ? `${t.age_structure.length} 个库龄段` : '--', changeType: 'up', color: '#3b82f6' },
-    { icon: '⚠️', label: '长库龄占比(≥1年)', value: t ? +(t.aged_ratio_1y * 100).toFixed(1) : 17, unit: '%', change: t ? `金额 ¥${(t.aged_amount_1y / 10000).toFixed(0)} 万` : '--', changeType: (t?.aged_ratio_1y ?? 0) <= 0.15 ? 'up' : 'down', color: '#f43f5e' },
+    { icon: '⏱', label: '加权平均库龄', value: ea?.avg_age_weighted_days ?? t?.avg_age_weighted_days ?? 52, unit: '天', change: (ea?.avg_age_weighted_days ?? t?.avg_age_weighted_days ?? 52) > 45 ? '⚠️ 偏高' : '✅ 正常', changeType: (ea?.avg_age_weighted_days ?? t?.avg_age_weighted_days ?? 52) <= 45 ? 'up' : 'down', color: '#8b5cf6' },
+    { icon: '📦', label: '库存总额 (ERP)', value: ea?.total_inventory_amt ?? 0, unit: '万元', change: ea ? `${ea.total_batches} 个批次` : '--', changeType: 'up', color: '#3b82f6' },
+    { icon: '⚠️', label: '长库龄占比(≥1年)', value: ea?.aged_ratio_1y ?? +(t?.aged_ratio_1y * 100).toFixed(1) ?? 17, unit: '%', change: ea ? `金额 ¥${ea.aged_amount_1y} 万` : '--', changeType: (ea?.aged_ratio_1y ?? 17) <= 15 ? 'up' : 'down', color: '#f43f5e' },
     { icon: '🏗', label: '覆盖项目', value: projs.length || 8, unit: '个', change: projs.length > 0 ? `≥90天滞留 ${ageGauge.value.filter(g => g.over90Rate > 15).length} 个` : '--', changeType: 'up', color: '#10b981' },
   ]
 })
@@ -97,6 +100,7 @@ async function loadAllData() {
   let ageMonthly: AgeMonthlyRes | null = null
   let heatmap: AgeHeatmapRes | null = null
   try { t = await getTimeIndicators() } catch (e: any) { errs.push('时间指标: ' + (e?.message || '失败')) }
+  try { erpAge.value = await getErpAge() } catch (e: any) { errs.push('ERP库龄: ' + (e?.message || '失败')) }
   try { await getAgeLayers({ min_amount: 0, min_age: 0 }) } catch (e: any) { errs.push('库龄分层: ' + (e?.message || '失败')) }
   try { projs = await getByProject() } catch (e: any) { errs.push('项目分析: ' + (e?.message || '失败')) }
   try { const r = await getAgeMonthly(); ageMonthlyData.value = r; ageMonthly = r } catch (e: any) { errs.push('库龄趋势: ' + (e?.message || '失败')) }

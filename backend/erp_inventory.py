@@ -570,3 +570,91 @@ def get_erp_claim_monthly(year: Optional[int] = None) -> Dict:
             for r in rows
         ],
     }
+
+
+# ================================================================
+#  ERP 库龄指标（结合 v_batch_lifecycle，补齐 WMS 数据缺口）
+# ================================================================
+#  与 WMS 版 (time_indicators.py) 并列，库存总额包含了 ERP-only 批次。
+#  库龄按 COALESCE(wms_inbound_date, first_inbound_date) 计算。
+# ================================================================
+
+def get_erp_age_indicators() -> Dict:
+    """
+    ERP 增强版库龄指标。
+
+    从 v_batch_lifecycle 计算加权平均库龄、库龄结构、长库龄占比，
+    覆盖所有有正余额的批次（「在库」+「ERP有余额_WMS无」）。
+
+    与 WMS 版差异：
+      - 库存总额多 ~320万（来自 ERP-only 批次）
+      - 库龄结构几乎一致（差异 < 1%）
+
+    Returns:
+        {
+            "avg_age_weighted_days": 348,
+            "aged_ratio_1y": 23.0,
+            "aged_amount_1y": 1038.25,     # 万元
+            "total_inventory_amt": 4514.42, # 万元
+            "total_batches": 2061,
+            "age_structure": [
+                {"range": "≤1年", "amount": 3476.17, "count": 1234},
+                ...
+            ]
+        }
+    """
+    sql = """
+        WITH batch_age AS (
+            SELECT
+                best_inventory_amt,
+                EXTRACT(DAY FROM (CURRENT_DATE -
+                    COALESCE(wms_inbound_date, first_inbound_date)::timestamp))::int AS age_days
+            FROM v_batch_lifecycle
+            WHERE best_inventory_amt > 0
+        )
+        SELECT
+            ROUND(SUM(best_inventory_amt * age_days)
+                / NULLIF(SUM(best_inventory_amt), 0))           AS avg_age_days,
+            ROUND(SUM(CASE WHEN age_days >= 365
+                THEN best_inventory_amt ELSE 0 END)
+                / NULLIF(SUM(best_inventory_amt), 0) * 100, 2) AS aged_ratio_1y,
+            SUM(CASE WHEN age_days >= 365
+                THEN best_inventory_amt ELSE 0 END)              AS aged_amount_1y,
+            SUM(best_inventory_amt)                               AS total_inventory_amt,
+            COUNT(*)                                              AS total_batches,
+            -- 库龄段
+            SUM(CASE WHEN age_days <= 365
+                THEN best_inventory_amt ELSE 0 END)              AS amt_le_1y,
+            SUM(CASE WHEN age_days BETWEEN 366 AND 1095
+                THEN best_inventory_amt ELSE 0 END)              AS amt_1_3y,
+            SUM(CASE WHEN age_days BETWEEN 1096 AND 1825
+                THEN best_inventory_amt ELSE 0 END)              AS amt_3_5y,
+            SUM(CASE WHEN age_days >= 1826
+                THEN best_inventory_amt ELSE 0 END)              AS amt_ge_5y,
+            -- 各段批次数量
+            COUNT(*) FILTER (WHERE age_days <= 365)               AS cnt_le_1y,
+            COUNT(*) FILTER (WHERE age_days BETWEEN 366 AND 1095) AS cnt_1_3y,
+            COUNT(*) FILTER (WHERE age_days BETWEEN 1096 AND 1825) AS cnt_3_5y,
+            COUNT(*) FILTER (WHERE age_days >= 1826)              AS cnt_ge_5y
+        FROM batch_age
+    """
+    rows = query(sql)
+    if not rows:
+        return {}
+    r = _rows_to_float(rows,
+        "avg_age_days", "aged_ratio_1y", "aged_amount_1y",
+        "total_inventory_amt", "amt_le_1y", "amt_1_3y", "amt_3_5y", "amt_ge_5y")[0]
+
+    return {
+        "avg_age_weighted_days": round(r["avg_age_days"], 1),
+        "aged_ratio_1y": r["aged_ratio_1y"],
+        "aged_amount_1y": round(r["aged_amount_1y"] / 10000, 2),
+        "total_inventory_amt": round(r["total_inventory_amt"] / 10000, 2),
+        "total_batches": int(r["total_batches"]),
+        "age_structure": [
+            {"range": "≤1年",  "amount": round(r["amt_le_1y"] / 10000, 2),  "count": int(r["cnt_le_1y"])},
+            {"range": "1~3年", "amount": round(r["amt_1_3y"] / 10000, 2), "count": int(r["cnt_1_3y"])},
+            {"range": "3~5年", "amount": round(r["amt_3_5y"] / 10000, 2), "count": int(r["cnt_3_5y"])},
+            {"range": "≥5年",  "amount": round(r["amt_ge_5y"] / 10000, 2),  "count": int(r["cnt_ge_5y"])},
+        ],
+    }

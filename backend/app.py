@@ -63,6 +63,7 @@ from other_indicators import (
 from erp_inventory import (
     get_erp_claim_indicators,
     get_erp_claim_monthly,
+    get_erp_age_indicators,
 )
 
 app = Flask(__name__)
@@ -634,6 +635,15 @@ def api_erp_claim_monthly():
     year = request.args.get("year", type=int)
     try:
         return ok(get_erp_claim_monthly(year))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/erp-age", methods=["GET"])
+def api_erp_age():
+    """ERP 增强版库龄指标：加权平均库龄、库龄结构、长库龄占比。"""
+    try:
+        return ok(get_erp_age_indicators())
     except Exception as e:
         return jsonify({"code": -1, "msg": str(e)})
 

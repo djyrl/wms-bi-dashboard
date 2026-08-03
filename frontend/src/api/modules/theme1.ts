@@ -178,3 +178,22 @@ export const getErpClaim = () =>
 /** ERP 版月度领用率 */
 export const getErpClaimMonthly = (year?: number) =>
   request.get<ErpClaimMonthlyRes>('/wms/indicators/erp-claim-monthly', { params: { year } })
+
+export interface ErpAgeRange {
+  range: string
+  amount: number
+  count: number
+}
+
+export interface ErpAgeRes {
+  avg_age_weighted_days: number
+  aged_ratio_1y: number
+  aged_amount_1y: number
+  total_inventory_amt: number
+  total_batches: number
+  age_structure: ErpAgeRange[]
+}
+
+/** ERP 增强版库龄指标 */
+export const getErpAge = () =>
+  request.get<ErpAgeRes>('/wms/indicators/erp-age')
