@@ -107,8 +107,8 @@ const overviewCards = computed(() => {
   const ec = erpClaim.value
   return [
      { icon: '📦', label: '当前库存', value: ec?.erp_inventory ?? 0, unit: '万元', color: '#f59e0b' },
-    { icon: '📤', label: '出库总额', value: ec?.year?.total_outbound_amount ?? 0, unit: '万元', color: '#10b981' },
-    { icon: '📥', label: '入库总额', value: ec?.year?.total_inbound_amount ?? 0, unit: '万元', color: '#3b82f6' },
+    { icon: '📤', label: `出库总额（${ec?.current_year ?? ''}年）`, value: ec?.year?.total_outbound_amount ?? 0, unit: '万元', color: '#10b981' },
+    { icon: '📥', label: `入库总额（${ec?.current_year ?? ''}年）`, value: ec?.year?.total_inbound_amount ?? 0, unit: '万元', color: '#3b82f6' },
    { icon: '📈', label: '综合领用率', value: ec?.year?.claim_rate_amount ?? 0, unit: '%', color: '#8b5cf6' },
   ]
 })

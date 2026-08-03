@@ -123,28 +123,28 @@ const paths = [
       <div class="kpi-row">
         <el-tooltip content="WMS实物在库 + ERP有余额未入WMS的批次" placement="top">
           <div class="kpi-box" style="border-left-color:#f59e0b">
-            <div class="kpi-label">当前库存总额</div>
+            <div class="kpi-label">当前库存总额（{{ erpClaim?.current_year }}年）</div>
             <div class="kpi-num">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万</div>
             <div class="kpi-sub">WMS在库 + ERP批次补充</div>
           </div>
         </el-tooltip>
         <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%" placement="top">
           <div class="kpi-box" style="border-left-color:#10b981">
-            <div class="kpi-label">采购领用率（金额）</div>
+            <div class="kpi-label">采购领用率（{{ erpClaim?.current_year }}年）</div>
             <div class="kpi-num">{{ erpClaim?.year?.claim_rate_amount?.toFixed(2) }}%</div>
             <div class="kpi-sub">= {{ erpClaim?.year?.total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaim?.year?.net_inbound_amount?.toFixed(0) || 0 }}万</div>
           </div>
         </el-tooltip>
         <el-tooltip content="ERP数据：SUM(DMBTR) 101 移动类型" placement="top">
           <div class="kpi-box" style="border-left-color:#3b82f6">
-            <div class="kpi-label">入库总额</div>
+            <div class="kpi-label">入库总额（{{ erpClaim?.current_year }}年）</div>
             <div class="kpi-num">{{ erpClaim?.year?.total_inbound_amount?.toFixed(2) }} 万</div>
             <div class="kpi-sub">当年采购入库金额</div>
           </div>
         </el-tooltip>
         <el-tooltip content="Σ(库存金额 × 库龄天数) / Σ(库存金额)  金额加权平均" placement="top">
           <div class="kpi-box" style="border-left-color:#8b5cf6">
-            <div class="kpi-label">加权平均库龄</div>
+            <div class="kpi-label">加权平均库龄（{{ erpClaim?.current_year }}年）</div>
             <div class="kpi-num">{{ fmtAge(timeIndicators?.avg_age_weighted_days) }}</div>
             <div class="kpi-sub">≥1年占比 {{ (timeIndicators?.aged_ratio_1y * 100).toFixed(1) }}%</div>
           </div>
