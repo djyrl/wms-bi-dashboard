@@ -176,8 +176,8 @@ const paths = [
           <table class="mini-table" v-if="structure?.project_ratios">
             <tr v-for="p in structure.project_ratios.filter(p => p.project_name && p.project_name !== '非项目物资').slice(0, 8)" :key="p.project_code">
               <td>
-                <el-tooltip :content="p.project_name || p.project_code" placement="top" :disabled="(p.project_name || p.project_code || '').length <= 20">
-                  <span>{{ truncateText(p.project_name || p.project_code) }}</span>
+                <el-tooltip :content="p.project_name || '-'" placement="top" :disabled="(p.project_name || '-' || '').length <= 20">
+                  <span>{{ truncateText(p.project_name || '-') }}</span>
                 </el-tooltip>
               </td>
               <td class="num" :style="{ color: p.ratio > 0.2 ? '#f43f5e' : '#334155' }">

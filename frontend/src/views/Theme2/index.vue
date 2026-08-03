@@ -80,8 +80,8 @@ function buildChartData(
     .map(p => {
       const pi = projs.find(x => x.project_code === p.project_code)
       return {
-        name: p.project_name || p.project_code || '(未关联)',
-        projectName: p.project_name || p.project_code || '(未关联)',
+        name: p.project_name || '-' || '(未关联)',
+        projectName: p.project_name || '-' || '(未关联)',
         projectCode: p.project_code || '',
         value: p.inventory_amount / 10000,
         usageRate: pi?.claim_rate ?? 0,

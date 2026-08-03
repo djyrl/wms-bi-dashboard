@@ -243,7 +243,7 @@ onMounted(() => {
                   </thead>
                   <tbody>
                     <tr v-for="p in kpi.detail.projects.filter((p: any) => p.project_code).slice(0, 5)" :key="p.project_code">
-                      <td><span class="proj-name">{{ p.project_name || p.project_code }}</span></td>
+                      <td><span class="proj-name">{{ p.project_name || '-' }}</span></td>
                       <td>{{ p.unclaimed_amount_wan?.toLocaleString() }}</td>
                       <td><span :style="{ color: p.claim_rate >= 60 ? '#10b981' : p.claim_rate >= 30 ? '#f59e0b' : '#f43f5e' }">{{ p.claim_rate }}%</span></td>
                       <td>{{ formatDays(p.avg_age_days) }}</td>
@@ -275,7 +275,7 @@ onMounted(() => {
                 <thead><tr><th>项目</th><th>库存(万元)</th><th>占比</th></tr></thead>
                 <tbody>
                   <tr v-for="p in structureKpis.K6.project_ratios.filter((p: any) => p.project_code).slice(0, 8)" :key="p.project_code">
-                    <td>{{ p.project_name || p.project_code }}</td>
+                    <td>{{ p.project_name || '-' }}</td>
                     <td>{{ p.inventory_amount_wan?.toLocaleString() }}</td>
                     <td>
                       <div class="ratio-bar">
@@ -346,7 +346,7 @@ onMounted(() => {
               <thead><tr><th>项目名称</th><th>领用率</th><th>库存金额(万元)</th><th>平均库龄(天)</th><th>超90天占比</th></tr></thead>
               <tbody>
                 <tr v-for="p in structureKpis.K8.items.filter((p: any) => p.project_code).slice(0, 15)" :key="p.project_code">
-                  <td><span class="proj-name">{{ p.project_name || p.project_code }}</span></td>
+                  <td><span class="proj-name">{{ p.project_name || '-' }}</span></td>
                   <td><span class="rate-tag" :style="{ color: p.claim_rate >= 60 ? '#10b981' : p.claim_rate >= 30 ? '#f59e0b' : '#f43f5e', background: p.claim_rate >= 60 ? '#ecfdf5' : p.claim_rate >= 30 ? '#fffbeb' : '#fef2f2' }">{{ p.claim_rate }}%</span></td>
                   <td>{{ (p.inventory_amount_wan || 0).toLocaleString() }}</td>
                   <td>{{ formatDays(p.avg_age_days) }}</td>
@@ -395,7 +395,7 @@ onMounted(() => {
                   <td class="num">{{ item.inventory_amount_wan?.toLocaleString() }}</td>
                   <td>{{ item.current_quantity }} {{ item.unit }}</td>
                   <td><span :style="{ color: item.age_days > 365 ? '#f43f5e' : item.age_days > 180 ? '#f59e0b' : '#10b981' }">{{ formatDays(item.age_days) }}</span></td>
-                  <td>{{ item.owner_project_name || item.owner_project_code || '-' }}</td>
+                  <td>{{ item.owner_project_name || '-' || '-' }}</td>
                   <td>{{ item.purchaser_name || '-' }}</td>
                 </tr>
               </tbody>

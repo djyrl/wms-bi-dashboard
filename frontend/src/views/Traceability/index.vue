@@ -321,7 +321,7 @@ function sortArrow(col: string, currentSort: string, currentOrder: string) {
               <tr v-for="p in projectIndicators.slice(0, 8)" :key="p.project_code">
                 <td>
                   <el-tooltip :content="p.project_code" placement="top">
-                    <span class="text-ellipsis">{{ p.project_name || p.project_code }}</span>
+                    <span class="text-ellipsis">{{ p.project_name || '-' }}</span>
                   </el-tooltip>
                 </td>
                 <td class="num">{{ fmtWan(p.inbound_amount) }}万</td>

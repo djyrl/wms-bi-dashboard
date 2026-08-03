@@ -171,7 +171,7 @@ onMounted(loadAll)
         <h4>5. 项目库存占比 TOP 10</h4>
         <table class="data-table" v-if="structure?.project_ratios?.length">
           <thead><tr><th>项目</th><th class="num">库存金额(万)</th><th class="num">占比</th></tr></thead>
-          <tbody><tr v-for="p in structure.project_ratios.filter(p => p.project_code).slice(0,10)" :key="p.project_code"><td>{{ p.project_name || p.project_code }}</td><td class="num">{{ fmtWan(p.inventory_amount) }}</td><td class="num">{{ (p.ratio * 100).toFixed(2) }}%</td></tr></tbody>
+          <tbody><tr v-for="p in structure.project_ratios.filter(p => p.project_code).slice(0,10)" :key="p.project_code"><td>{{ p.project_name || '-' }}</td><td class="num">{{ fmtWan(p.inventory_amount) }}</td><td class="num">{{ (p.ratio * 100).toFixed(2) }}%</td></tr></tbody>
         </table>
         <h4>6. 提报人库存占比 TOP 10</h4>
         <table class="data-table" v-if="structure?.purchaser_ratios?.length">
@@ -231,7 +231,7 @@ onMounted(loadAll)
             <th class="num sortable" @click="toggleProjectSort('claim_rate')">领用率<span class="sort-arrow" v-if="projectSortKey === 'claim_rate'">{{ projectSortDir === 'asc' ? ' ▲' : ' ▼' }}</span></th>
             <th class="num sortable" @click="toggleProjectSort('avg_age_days')">平均库龄<span class="sort-arrow" v-if="projectSortKey === 'avg_age_days'">{{ projectSortDir === 'asc' ? ' ▲' : ' ▼' }}</span></th>
           </tr></thead>
-          <tbody><tr v-for="p in sortedProjectIndicators.slice(0,15)" :key="p.project_code"><td>{{ p.project_name || p.project_code }}</td><td class="num">{{ fmtWan(p.inbound_amount) }}</td><td class="num">{{ fmtWan(p.claimed_amount) }}</td><td class="num">{{ fmtWan(p.unclaimed_amount) }}</td><td class="num">{{ p.claim_rate }}%</td><td class="num">{{ formatDays(p.avg_age_days) }}</td></tr></tbody>
+          <tbody><tr v-for="p in sortedProjectIndicators.slice(0,15)" :key="p.project_code"><td>{{ p.project_name || '-' }}</td><td class="num">{{ fmtWan(p.inbound_amount) }}</td><td class="num">{{ fmtWan(p.claimed_amount) }}</td><td class="num">{{ fmtWan(p.unclaimed_amount) }}</td><td class="num">{{ p.claim_rate }}%</td><td class="num">{{ formatDays(p.avg_age_days) }}</td></tr></tbody>
         </table>
       </section>
 

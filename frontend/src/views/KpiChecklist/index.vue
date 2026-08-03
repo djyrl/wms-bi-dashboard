@@ -302,7 +302,7 @@ onMounted(() => {
                   </thead>
                   <tbody>
                     <tr v-for="p in kpi.detail.projects.filter(p => p.project_code).slice(0, 5)" :key="p.project_code">
-                      <td><span class="proj-name">{{ p.project_name || p.project_code }}</span></td>
+                      <td><span class="proj-name">{{ p.project_name || '-' }}</span></td>
                       <td>{{ p.unclaimed_amount_wan?.toLocaleString() }}</td>
                       <td>
                         <span :style="{ color: p.claim_rate >= 60 ? '#10b981' : p.claim_rate >= 30 ? '#f59e0b' : '#f43f5e' }">
@@ -340,7 +340,7 @@ onMounted(() => {
             </thead>
             <tbody>
               <tr v-for="p in structureKpis.K6.project_ratios.filter(p => p.project_code).slice(0, 8)" :key="p.project_code">
-                <td>{{ p.project_name || p.project_code }}</td>
+                <td>{{ p.project_name || '-' }}</td>
                 <td>{{ p.project_submitter || '-' }}</td>
                 <td>{{ p.project_contact || '-' }}</td>
                 <td>{{ p.inventory_amount_wan?.toLocaleString() }}</td>
@@ -409,7 +409,7 @@ onMounted(() => {
               <tbody>
                 <tr v-for="p in structureKpis.K8.items.filter(p => p.project_code).slice(0, 15)" :key="p.project_code">
                   <td>
-                    <span class="proj-name">{{ p.project_name || p.project_code }}</span>
+                    <span class="proj-name">{{ p.project_name || '-' }}</span>
                   </td>
                   <td>
                     <span
@@ -512,7 +512,7 @@ onMounted(() => {
                       {{ formatDays(item.age_days) }}
                     </span>
                   </td>
-                  <td>{{ item.owner_project_name || item.owner_project_code || '-' }}</td>
+                  <td>{{ item.owner_project_name || '-' || '-' }}</td>
                   <td>{{ item.purchaser_name || '-' }}</td>
                 </tr>
               </tbody>
