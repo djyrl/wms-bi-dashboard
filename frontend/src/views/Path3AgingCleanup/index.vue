@@ -139,7 +139,7 @@ onMounted(() => loadAllData())
       <div class="grid">
         <ChartCard title="📊 加权平均库龄月度趋势">
           <template #actions><span class="sub">红线=趋势，柱=≥90天占比</span></template>
-          <AgeTrend :data="ageTrend" :months="ageTrend.map(d => d.month)" />
+          <AgeTrend :data="ageTrend.filter(d => d.month.startsWith(String(new Date().getFullYear())))" :months="ageTrend.filter(d => d.month.startsWith(String(new Date().getFullYear()))).map(d => d.month)" />
         </ChartCard>
         <ChartCard title="🔻 库龄分布">
           <template #actions><span class="sub">各库龄段库存金额分布</span></template>
