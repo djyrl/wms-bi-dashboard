@@ -19,6 +19,7 @@
   差异 < 0.3%，两者高度一致
 """
 
+from datetime import date
 from typing import Dict, List, Optional
 
 from utils import query, _f, _rows_to_float
@@ -414,3 +415,158 @@ def get_inventory_overview() -> Dict:
     result["total_batches"] = total_batches
     result["total_inventory_amt"] = round(total_amt / 10000, 2)
     return result
+
+
+# ================================================================
+#  ERP 领用率指标
+# ================================================================
+#  从 erp_catalog_mb51 计算领用率，与 WMS 版 (claim_indicators.py) 并列。
+#
+#  ERP 版 vs WMS 版的关键区别：
+#    ERP: 统计所有历史凭证，包括已消耗完的批次 → 领用率更高、更真实
+#    WMS: 只统计当前有库存的批次 → 领用率偏低（大量已消耗的没算）
+#
+#  移动类型映射：
+#    入库 = 101 + 102（102已是负数）
+#    出库 = 201(成本中心) + 221(项目) + 222 + Z61(项目) + Z62
+#    领用率 = 出库 / 入库 × 100%
+# ================================================================
+
+def _query_erp_claim_aggregates(current_year: int) -> dict:
+    """
+    一次查询返回「全部历史」和「当年」两个维度的出入库汇总。
+
+    Args:
+        current_year: 当前年份（如 2026）
+
+    Returns:
+        {"all": {inbound, outbound, ...}, "year": {inbound, outbound, ...}}
+    """
+    sql = f"""
+        SELECT
+            -- 全部历史
+            COALESCE(SUM(CASE WHEN bwart IN ('101','102')
+                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS inbound_all,
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+                THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_all,
+            -- 当年
+            COALESCE(SUM(CASE WHEN bwart IN ('101','102')
+                    AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
+                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS inbound_year,
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+                    AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
+                THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_year,
+            -- 数量
+            COALESCE(SUM(CASE WHEN bwart IN ('101','102')
+                THEN (row_json->>'MENGE')::numeric ELSE 0 END), 0)     AS inbound_qty_all,
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+                THEN -(row_json->>'MENGE')::numeric ELSE 0 END), 0)    AS outbound_qty_all,
+            COALESCE(SUM(CASE WHEN bwart IN ('101','102')
+                    AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
+                THEN (row_json->>'MENGE')::numeric ELSE 0 END), 0)     AS inbound_qty_year,
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+                    AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
+                THEN -(row_json->>'MENGE')::numeric ELSE 0 END), 0)    AS outbound_qty_year
+        FROM public.erp_catalog_mb51
+        WHERE werks = '2635'
+          AND row_json->>'MATNR' IS NOT NULL
+          AND charg IS NOT NULL
+    """
+    rows = query(sql)
+    return _rows_to_float(rows, *rows[0].keys())[0] if rows else {}
+
+
+def _build_erp_claim_metrics(inbound: float, outbound: float,
+                              inbound_qty: float, outbound_qty: float) -> dict:
+    """基于出入库金额计算领用率指标。"""
+    unclaimed = inbound - outbound
+    return {
+        "total_inbound_amount": round(inbound / 10000, 2),
+        "total_outbound_amount": round(outbound / 10000, 2),
+        "total_inbound_quantity": round(inbound_qty, 2),
+        "total_outbound_quantity": round(outbound_qty, 2),
+        "claim_rate_amount": round(outbound / inbound * 100, 2) if inbound > 0 else 0.0,
+        "claim_rate_quantity": round(outbound_qty / inbound_qty * 100, 2) if inbound_qty > 0 else 0.0,
+        "unclaimed_amount": round(unclaimed / 10000, 2),
+        "unclaimed_amount_ratio": round(unclaimed / inbound * 100, 2) if inbound > 0 else 0.0,
+    }
+
+
+def get_erp_claim_indicators() -> Dict:
+    """
+    ERP 版领用率指标（主入口）。
+
+    返回「全部历史」和「当年」两个维度的领用率分析。
+
+    Returns:
+        {
+            "current_year": 2026,
+            "year_start": "2026-01-01", "year_end": "2026-12-31",
+            "all":  {...},   # 全部历史的领用率
+            "year": {...},   # 当年的领用率
+            "note": "数据来源: erp_catalog_mb51, 移动类型 101+102入库 / 201+221+Z61+...出库"
+        }
+    """
+    current_year = date.today().year
+    agg = _query_erp_claim_aggregates(current_year)
+
+    return {
+        "current_year": current_year,
+        "year_start": f"{current_year}-01-01",
+        "year_end": f"{current_year}-12-31",
+        "all": _build_erp_claim_metrics(
+            agg.get("inbound_all", 0), agg.get("outbound_all", 0),
+            agg.get("inbound_qty_all", 0), agg.get("outbound_qty_all", 0),
+        ),
+        "year": _build_erp_claim_metrics(
+            agg.get("inbound_year", 0), agg.get("outbound_year", 0),
+            agg.get("inbound_qty_year", 0), agg.get("outbound_qty_year", 0),
+        ),
+        "note": "ERP数据(erp_catalog_mb51)，移动类型101+102=入库, 201+221+222+Z61+Z62=出库",
+    }
+
+
+def get_erp_claim_monthly(year: Optional[int] = None) -> Dict:
+    """
+    ERP 版月度领用率趋势。
+
+    按月统计入库金额、出库金额、领用率。
+
+    Args:
+        year: 可选，筛选年份。不传则全部历史。
+
+    Returns:
+        {"rows": [{doc_month, inbound, outbound, claim_rate}, ...]}
+    """
+    year_filter = f"AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{year}'" if year else ""
+    sql = f"""
+        SELECT
+            SUBSTRING(row_json->>'BLDAT', 1, 7) AS doc_month,
+            COALESCE(SUM(CASE WHEN bwart IN ('101','102')
+                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS inbound,
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+                THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound,
+            COUNT(*) AS move_cnt
+        FROM public.erp_catalog_mb51
+        WHERE werks = '2635'
+          AND row_json->>'MATNR' IS NOT NULL
+          AND charg IS NOT NULL
+          {year_filter}
+        GROUP BY 1
+        ORDER BY 1
+    """
+    rows = query(sql)
+    rows = _rows_to_float(rows, "inbound", "outbound")
+
+    return {
+        "rows": [
+            {
+                "doc_month": r["doc_month"],
+                "inbound": round(r["inbound"] / 10000, 2),
+                "outbound": round(r["outbound"] / 10000, 2),
+                "claim_rate": round(r["outbound"] / r["inbound"] * 100, 2) if r["inbound"] > 0 else 0.0,
+                "move_cnt": r["move_cnt"],
+            }
+            for r in rows
+        ],
+    }
