@@ -125,7 +125,7 @@ onMounted(loadAll)
         </div>
         <div class="kpi-cards">
           <div class="kpi-card">
-            <div class="kpi-label">1a. 当年采购领用率（金额）</div>
+            <div class="kpi-label">1. 当年采购领用率（金额）</div>
             <div class="kpi-formula">= {{ erpClaimRange('year').total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaimRange('year').total_inbound_amount?.toFixed(0) || 0 }}万</div>
             <div class="kpi-value">{{ fmtPct(erpClaimRange('year').claim_rate_amount) }}</div>
           </div>
@@ -136,7 +136,7 @@ onMounted(loadAll)
             <div class="kpi-value">{{ fmtPct(erpClaimRange('all').claim_rate_amount) }}</div>
           </div> -->
           <div class="kpi-card">
-            <div class="kpi-label">2a. 当年未领用采购金额</div>
+            <div class="kpi-label">2. 当年未领用采购金额</div>
             <div class="kpi-formula">= 当年入库金额 - 当年出库金额</div>
             <div class="kpi-value">{{ erpClaimRange('year').unclaimed_amount?.toLocaleString() }} 万元</div>
           </div>
@@ -147,7 +147,7 @@ onMounted(loadAll)
             <div class="kpi-value">{{ erpClaimRange('all').unclaimed_amount?.toLocaleString() }} 万元</div>
           </div> -->
           <div class="kpi-card">
-            <div class="kpi-label">3a. 当年未领用采购占比（金额）</div>
+            <div class="kpi-label">3. 当年未领用采购占比（金额）</div>
             <div class="kpi-formula">= 当年未领用金额 / 当年入库金额</div>
             <div class="kpi-value">{{ fmtPct(erpClaimRange('year').unclaimed_amount_ratio) }}</div>
           </div>
@@ -164,16 +164,16 @@ onMounted(loadAll)
       <section>
         <h3>（二）库存结构指标</h3>
         <div class="kpi-cards">
-          <div class="kpi-card"><div class="kpi-label">4a. 当年库存金额</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
-          <div class="kpi-card"><div class="kpi-label">4b. 所有库存金额</div><div class="kpi-value">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">4. 当年库存金额</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">5. 所有库存金额</div><div class="kpi-value">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万元</div></div>
           <!-- <div class="kpi-card"><div class="kpi-label">6. 当前库存数量</div><div class="kpi-value">{{ fmtNum(structure?.current_inventory_quantity) }}</div></div> -->
         </div>
-        <h4>5. 项目库存占比 TOP 10</h4>
+        <h4>10. 项目库存占比 TOP 10</h4>
         <table class="data-table" v-if="structure?.project_ratios?.length">
           <thead><tr><th>项目</th><th class="num">库存金额(万)</th><th class="num">占比</th></tr></thead>
           <tbody><tr v-for="p in structure.project_ratios.filter(p => p.project_code).slice(0,10)" :key="p.project_code"><td>{{ p.project_name || '-' }}</td><td class="num">{{ fmtWan(p.inventory_amount) }}</td><td class="num">{{ (p.ratio * 100).toFixed(2) }}%</td></tr></tbody>
         </table>
-        <h4>6. 提报人库存占比 TOP 10</h4>
+        <h4>11. 提报人库存占比 TOP 10</h4>
         <table class="data-table" v-if="structure?.purchaser_ratios?.length">
           <thead><tr><th>提报人</th><th class="num">库存金额(万)</th><th class="num">占比</th></tr></thead>
           <tbody><tr v-for="p in structure.purchaser_ratios.slice(0,10)" :key="p.purchaser_name"><td>{{ p.purchaser_name }}</td><td class="num">{{ fmtWan(p.inventory_amount) }}</td><td class="num">{{ (p.ratio * 100).toFixed(2) }}%</td></tr></tbody>
@@ -184,19 +184,19 @@ onMounted(loadAll)
       <section>
         <h3>（三）库存时间指标</h3>
         <div class="kpi-cards">
-          <div class="kpi-card"><div class="kpi-label">7. 长库龄库存金额占比（≥1年）</div><div class="kpi-value">{{ (timeIndicators?.aged_ratio_1y * 100).toFixed(1) }}%</div></div>
-          <div class="kpi-card"><div class="kpi-label">8. 库龄 ≥ 1 年库存金额</div><div class="kpi-value">{{ ageAmounts.aged1y }} 万元</div></div>
-          <div class="kpi-card"><div class="kpi-label">9. 库龄 ≥ 3 年库存金额</div><div class="kpi-value">{{ ageAmounts.aged3y }} 万元</div></div>
-          <div class="kpi-card"><div class="kpi-label">10. 平均库龄（金额加权）</div><div class="kpi-formula">= Σ（库存金额 × 库龄） / 总库存金额</div><div class="kpi-value">{{ timeIndicators?.avg_age_weighted_days }} 天</div></div>
+          <div class="kpi-card"><div class="kpi-label">6. 长库龄库存金额占比（≥1年）</div><div class="kpi-value">{{ (timeIndicators?.aged_ratio_1y * 100).toFixed(1) }}%</div></div>
+          <div class="kpi-card"><div class="kpi-label">7. 库龄 ≥ 1 年库存金额</div><div class="kpi-value">{{ ageAmounts.aged1y }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">8. 库龄 ≥ 3 年库存金额</div><div class="kpi-value">{{ ageAmounts.aged3y }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">9. 平均库龄（金额加权）</div><div class="kpi-formula">= Σ（库存金额 × 库龄） / 总库存金额</div><div class="kpi-value">{{ timeIndicators?.avg_age_weighted_days }} 天</div></div>
         </div>
-        <h4>11. 库龄结构占比</h4>
+        <h4>12. 库龄结构占比</h4>
         <div class="age-bars" v-if="timeIndicators?.age_structure">
           <div v-for="seg in timeIndicators.age_structure" :key="seg.range" class="age-bar">
             <span class="age-range">{{ seg.range }}</span><div class="age-track"><div class="age-fill" :style="{ width: Math.max(seg.ratio*100,1)+'%' }"></div></div>
             <span class="age-pct">{{ (seg.ratio*100).toFixed(2) }}%</span><span class="age-count">{{ seg.count }}笔</span>
           </div>
         </div>
-        <h4>12. 库龄分层统计（库存 &gt; 10万 且 库龄 &gt; 1年）</h4>
+        <h4>13. 库龄分层统计（库存 &gt; 10万 且 库龄 &gt; 1年）</h4>
         <table class="data-table" v-if="ageLayersSample?.length">
           <thead><tr><th>物料编码</th><th>物资名称</th><th>项目名称</th><th>批次</th><th class="num">库存金额(万)</th><th class="num">数量</th><th class="num">库龄(天)</th></tr></thead>
           <tbody><tr v-for="item in ageLayersSample.slice(0,10)" :key="item.id">
@@ -254,22 +254,22 @@ onMounted(loadAll)
       <!-- (六) TOP类指标 -->
       <section>
         <h3>（六）TOP 类指标</h3>
-        <h4>13. 未领用库存 TOP10（金额）</h4>
+        <h4>14. 未领用库存 TOP10（金额）</h4>
         <table class="data-table" v-if="topUnclaimedAmt.length">
           <thead><tr><th>物料编码</th><th>物料名称</th><th class="num">库存金额(万)</th><th class="num">库龄(天)</th><th>项目</th><th>采购人</th></tr></thead>
           <tbody><tr v-for="item in topUnclaimedAmt" :key="item.material_code"><td><code>{{ item.material_code }}</code></td><td>{{ item.material_name }}</td><td class="num">{{ fmtWan(item.inventory_amount) }}</td><td class="num">{{ formatDays(item.age_days) }}</td><td>{{ item.owner_project_name || '-' }}</td><td>{{ item.purchaser_name || '-' }}</td></tr></tbody>
         </table>
-        <h4>14. 未领用库存 TOP10（数量）</h4>
+        <h4>15. 未领用库存 TOP10（数量）</h4>
         <table class="data-table" v-if="topUnclaimedQty.length">
           <thead><tr><th>物料编码</th><th>物料名称</th><th class="num">库存数量</th><th class="num">库存金额(万)</th><th class="num">库龄(天)</th></tr></thead>
           <tbody><tr v-for="item in topUnclaimedQty" :key="item.material_code"><td><code>{{ item.material_code }}</code></td><td>{{ item.material_name }}</td><td class="num">{{ item.current_quantity }} {{ item.unit }}</td><td class="num">{{ fmtWan(item.inventory_amount) }}</td><td class="num">{{ formatDays(item.age_days) }}</td></tr></tbody>
         </table>
-        <h4>15. 领用 TOP10（金额）</h4>
+        <h4>16. 领用 TOP10（金额）</h4>
         <table class="data-table" v-if="topClaimedAmt.length">
           <thead><tr><th>物料编码</th><th>物料名称</th><th class="num">领用金额(万)</th><th class="num">入库金额(万)</th><th>入库日期</th></tr></thead>
           <tbody><tr v-for="item in topClaimedAmt" :key="item.material_code"><td><code>{{ item.material_code }}</code></td><td>{{ item.material_name }}</td><td class="num">{{ fmtWan(item.claimed_amount) }}</td><td class="num">{{ fmtWan(item.inbound_amount) }}</td><td>{{ item.inbound_date?.slice(0,10) }}</td></tr></tbody>
         </table>
-        <h4>16. 领用 TOP10（数量）</h4>
+        <h4>17. 领用 TOP10（数量）</h4>
         <table class="data-table" v-if="topClaimedQty.length">
           <thead><tr><th>物料编码</th><th>物料名称</th><th class="num">领用数量</th><th class="num">入库数量</th><th>入库日期</th></tr></thead>
           <tbody><tr v-for="item in topClaimedQty" :key="item.material_code"><td><code>{{ item.material_code }}</code></td><td>{{ item.material_name }}</td><td class="num">{{ item.claimed_quantity?.toLocaleString() }}</td><td class="num">{{ item.inbound_quantity?.toLocaleString() }}</td><td>{{ item.inbound_date?.slice(0,10) }}</td></tr></tbody>
