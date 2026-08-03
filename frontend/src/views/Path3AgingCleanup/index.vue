@@ -84,8 +84,8 @@ function buildChartData(
   }
   if (projs.length > 0) {
     ageGauge.value = projs
-      .filter(p => p.project_name !== '非项目物资')
-      .map(p => ({ project: p.project_code, projectName: (p.project_name && p.project_name !== p.project_code) ? p.project_name : p.project_code, avgAgeDays: p.avg_age_days, over90Rate: p.over90_ratio, unclaimedAmount: p.unclaimed_amount }))
+      .filter(p => p.project_name && p.project_name !== '非项目物资')
+      .map(p => ({ project: p.project_code, projectName: p.project_name, avgAgeDays: p.avg_age_days, over90Rate: p.over90_ratio, unclaimedAmount: p.unclaimed_amount }))
       .sort((a, b) => b.avgAgeDays - a.avgAgeDays)
       .slice(0, 8)
   }
