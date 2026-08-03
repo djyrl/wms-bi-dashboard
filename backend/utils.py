@@ -580,6 +580,8 @@ def _get_wide_structure_aggregates(start_date=None, end_date=None) -> Dict[str, 
             SELECT
                 w.owner_project_code,
                 w.project_name,
+                w.project_submitter,
+                w.project_contact,
                 ba.batch_inventory,
                 {_PROJECT_RATIO_SQL} AS project_ratio
             FROM v_project_inventory_wide w
@@ -593,6 +595,8 @@ def _get_wide_structure_aggregates(start_date=None, end_date=None) -> Dict[str, 
         SELECT
             owner_project_code,
             MAX(project_name) AS project_name,
+            MAX(project_submitter) AS project_submitter,
+            MAX(project_contact) AS project_contact,
             SUM(batch_inventory * project_ratio) AS inventory_amount
         FROM wide_with_ratio
         GROUP BY owner_project_code

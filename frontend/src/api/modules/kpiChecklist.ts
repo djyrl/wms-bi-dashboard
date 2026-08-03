@@ -48,6 +48,8 @@ export interface K9PurchaserItem {
 export interface ProjectRatioItem {
   project_code: string
   project_name: string
+  project_submitter: string
+  project_contact: string
   inventory_amount_wan: number
   ratio: number
 }
