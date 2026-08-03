@@ -2,6 +2,8 @@
 import { onMounted, computed, ref } from 'vue'
 import { getKpiChecklist } from '@/api/modules/kpiChecklist'
 import type { KpiChecklistRes, KpiItem } from '@/api/modules/kpiChecklist'
+import { getErpClaim } from '@/api/modules/theme1'
+import type { ErpClaimSplit } from '@/api/modules/theme1'
 
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
@@ -11,6 +13,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 const summary = ref<KpiChecklistRes['summary'] | null>(null)
+const erpClaim = ref<ErpClaimSplit | null>(null)
 const coreKpis = ref<Record<string, KpiItem>>({})
 const constraintKpis = ref<Record<string, KpiItem>>({})
 const structureKpis = ref<KpiChecklistRes['structure_kpis'] | null>(null)
@@ -20,8 +23,9 @@ async function loadAllData() {
   loading.value = true
   error.value = null
   try {
-    const data = await getKpiChecklist()
+    const [data, ec] = await Promise.all([getKpiChecklist(), getErpClaim()])
     summary.value = data.summary
+    erpClaim.value = ec
     coreKpis.value = data.core_kpis
     constraintKpis.value = data.constraint_kpis
     structureKpis.value = data.structure_kpis
@@ -63,11 +67,12 @@ function formatNumber(val: number | undefined | null): string {
 // 数据概览卡片
 const overviewCards = computed(() => {
   if (!summary.value) return []
+  const ec = erpClaim.value
   return [
      { icon: '📦', label: '当前库存', value: summary.value.current_inventory_wan, unit: '万元', color: '#f59e0b' },
-    { icon: '📤', label: '领用总额', value: summary.value.total_claimed_wan, unit: '万元', color: '#10b981' },
-    { icon: '📥', label: '入库总额', value: summary.value.total_inbound_wan, unit: '万元', color: '#3b82f6' },
-   { icon: '📈', label: '综合领用率', value: summary.value.overall_claim_rate, unit: '%', color: '#8b5cf6' },
+    { icon: '📤', label: '出库总额', value: ec?.year?.total_outbound_amount ?? 0, unit: '万元', color: '#10b981' },
+    { icon: '📥', label: '入库总额', value: ec?.year?.total_inbound_amount ?? 0, unit: '万元', color: '#3b82f6' },
+   { icon: '📈', label: '综合领用率', value: ec?.year?.claim_rate_amount ?? 0, unit: '%', color: '#8b5cf6' },
   ]
 })
 

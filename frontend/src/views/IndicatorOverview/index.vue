@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
-import { getWmsSummary, getWmsClaim } from '@/api/modules/theme1'
-import type { WmsClaimSplit, WmsClaimRange } from '@/api/modules/theme1'
+import { getWmsSummary, getWmsClaim, getErpClaim } from '@/api/modules/theme1'
+import type { WmsClaimSplit, WmsClaimRange, ErpClaimSplit, ErpClaimRange } from '@/api/modules/theme1'
 import { getStructure, getByProject, getByPurchaser } from '@/api/modules/theme2'
 import { getTimeIndicators, getAgeLayers } from '@/api/modules/theme3'
 import { getTopUnclaimedAmount, getTopUnclaimedQuantity } from '@/api/modules/theme4'
@@ -13,6 +13,7 @@ const errorMsg = ref('')
 
 const summary = ref<any>(null)
 const claim = ref<WmsClaimSplit | null>(null)
+const erpClaim = ref<ErpClaimSplit | null>(null)
 const structure = ref<any>(null)
 const timeIndicators = ref<any>(null)
 const projectIndicators = ref<any[]>([])
@@ -27,14 +28,14 @@ async function loadAll() {
   loading.value = true
   errorMsg.value = ''
   try {
-    const [s, c, st, ti, proj, purch, tua, tuq, tca, tcq, al] = await Promise.all([
-      getWmsSummary(), getWmsClaim(), getStructure(), getTimeIndicators(),
+    const [s, c, ec, st, ti, proj, purch, tua, tuq, tca, tcq, al] = await Promise.all([
+      getWmsSummary(), getWmsClaim(), getErpClaim(), getStructure(), getTimeIndicators(),
       getByProject(), getByPurchaser(),
       getTopUnclaimedAmount(10), getTopUnclaimedQuantity(10),
       getTopClaimedAmount(10), getTopClaimedQuantity(10),
       getAgeLayers({ min_amount: 100000, min_age: 365 }),
     ])
-    summary.value = s; claim.value = c; structure.value = st
+    summary.value = s; claim.value = c; erpClaim.value = ec; structure.value = st
     timeIndicators.value = ti; projectIndicators.value = proj
     purchaserIndicators.value = purch; topUnclaimedAmt.value = tua
     topUnclaimedQty.value = tuq; topClaimedAmt.value = tca
@@ -62,6 +63,14 @@ function claimRange(type: 'year' | 'all'): WmsClaimRange {
     total_claimed_amount: 0,
     total_inbound_quantity: 0,
     total_claimed_quantity: 0,
+  }
+}
+function erpClaimRange(type: 'year' | 'all'): ErpClaimRange {
+  return erpClaim.value?.[type] ?? {
+    claim_rate_amount: 0, claim_rate_quantity: 0,
+    unclaimed_amount: 0, unclaimed_amount_ratio: 0,
+    total_inbound_amount: 0, total_outbound_amount: 0,
+    total_inbound_quantity: 0, total_outbound_quantity: 0,
   }
 }
 
@@ -123,49 +132,39 @@ onMounted(loadAll)
       <!-- (一) 库存领用指标 -->
       <section>
         <h3>（一）库存领用指标</h3>
-        <div class="kpi-section-hint" v-if="claim">
-          统计区间：当年 {{ claim.year_start }} ~ {{ claim.year_end }} / 全部
+        <div class="kpi-section-hint" v-if="erpClaim">
+          数据来源：ERP (erp_catalog_mb51) | 当年 {{ erpClaim.year_start }} ~ {{ erpClaim.year_end }}
         </div>
         <div class="kpi-cards">
           <div class="kpi-card">
             <div class="kpi-label">1a. 当年采购领用率（金额）</div>
-            <div class="kpi-formula">= 当年领用金额 / 当年入库金额</div>
-            <div class="kpi-value">{{ fmtPct(claimRange('year').claim_rate_amount) }}</div>
+            <div class="kpi-formula">= {{ erpClaimRange('year').total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaimRange('year').total_inbound_amount?.toFixed(0) || 0 }}万</div>
+            <div class="kpi-value">{{ fmtPct(erpClaimRange('year').claim_rate_amount) }}</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">1b. 历史采购领用率（金额）</div>
-            <div class="kpi-formula">= 历史领用金额 / 历史入库金额</div>
-            <div class="kpi-value">{{ fmtPct(claimRange('all').claim_rate_amount) }}</div>
+            <div class="kpi-formula">= {{ erpClaimRange('all').total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaimRange('all').total_inbound_amount?.toFixed(0) || 0 }}万</div>
+            <div class="kpi-value">{{ fmtPct(erpClaimRange('all').claim_rate_amount) }}</div>
           </div>
-          <!-- <div class="kpi-card">
-            <div class="kpi-label">2a. 当年采购领用率（数量）</div>
-            <div class="kpi-formula">= 当年领用数量 / 当年入库数量</div>
-            <div class="kpi-value">{{ fmtPct(claimRange('year').claim_rate_quantity) }}</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">2b. 历史采购领用率（数量）</div>
-            <div class="kpi-formula">= 历史领用数量 / 全部入库数量</div>
-            <div class="kpi-value">{{ fmtPct(claimRange('all').claim_rate_quantity) }}</div>
-          </div> -->
           <div class="kpi-card">
             <div class="kpi-label">2a. 当年未领用采购金额</div>
-            <div class="kpi-formula">= 当年入库金额 - 当年领用金额</div>
-            <div class="kpi-value">{{ claimRange('year').unclaimed_amount?.toLocaleString() }} 万元</div>
+            <div class="kpi-formula">= 当年入库金额 - 当年出库金额</div>
+            <div class="kpi-value">{{ erpClaimRange('year').unclaimed_amount?.toLocaleString() }} 万元</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">2b. 全部未领用采购金额</div>
-            <div class="kpi-formula">= 全部入库金额 - 全部领用金额</div>
-            <div class="kpi-value">{{ claimRange('all').unclaimed_amount?.toLocaleString() }} 万元</div>
+            <div class="kpi-formula">= 全部入库金额 - 全部出库金额</div>
+            <div class="kpi-value">{{ erpClaimRange('all').unclaimed_amount?.toLocaleString() }} 万元</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">3a. 当年未领用采购占比（金额）</div>
             <div class="kpi-formula">= 当年未领用金额 / 当年入库金额</div>
-            <div class="kpi-value">{{ fmtPct(claimRange('year').unclaimed_amount_ratio) }}</div>
+            <div class="kpi-value">{{ fmtPct(erpClaimRange('year').unclaimed_amount_ratio) }}</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">3b. 全部未领用采购占比（金额）</div>
             <div class="kpi-formula">= 全部未领用金额 / 全部入库金额</div>
-            <div class="kpi-value">{{ fmtPct(claimRange('all').unclaimed_amount_ratio) }}</div>
+            <div class="kpi-value">{{ fmtPct(erpClaimRange('all').unclaimed_amount_ratio) }}</div>
           </div>
         </div>
       </section>
