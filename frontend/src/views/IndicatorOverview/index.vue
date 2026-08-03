@@ -7,6 +7,7 @@ import { getTimeIndicators, getAgeLayers } from '@/api/modules/theme3'
 import { getTopUnclaimedAmount, getTopUnclaimedQuantity } from '@/api/modules/theme4'
 import { getTopClaimedAmount, getTopClaimedQuantity } from '@/api/modules/dashboard'
 import { formatDays } from '@/utils/format'
+import { filterExcluded } from '@/utils/excludeMaterials'
 
 const loading = ref(false)
 const errorMsg = ref('')
@@ -36,9 +37,9 @@ async function loadAll() {
     ])
     summary.value = s; erpClaim.value = ec; structure.value = st
     timeIndicators.value = ti; projectIndicators.value = proj
-    purchaserIndicators.value = purch; topUnclaimedAmt.value = tua
-    topUnclaimedQty.value = tuq; topClaimedAmt.value = tca
-    topClaimedQty.value = tcq; ageLayersSample.value = al
+    purchaserIndicators.value = purch; topUnclaimedAmt.value = filterExcluded(tua)
+    topUnclaimedQty.value = filterExcluded(tuq); topClaimedAmt.value = filterExcluded(tca)
+    topClaimedQty.value = filterExcluded(tcq); ageLayersSample.value = al
   } catch (e: any) {
     errorMsg.value = e.message || '加载失败'
   } finally {

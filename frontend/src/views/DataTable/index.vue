@@ -5,6 +5,7 @@ import { getInventoryReport } from '@/api/modules/dataTable'
 import type { InventoryRow } from '@/api/modules/dataTable'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import { formatDays } from '@/utils/format'
+import { filterExcluded } from '@/utils/excludeMaterials'
 import { exportCsv, exportExcel, type ExportHeader } from '@/utils/exportData'
 
 const loading = ref(false)
@@ -79,7 +80,7 @@ async function loadData() {
       limit: pageSize.value,
       offset: (currentPage.value - 1) * pageSize.value,
     })
-    rows.value = res.rows
+    rows.value = filterExcluded(res.rows)
     total.value = res.total
   } catch (e: any) {
     error.value = e.message || '加载失败'

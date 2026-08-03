@@ -3,6 +3,7 @@ import { ref, onMounted, reactive } from 'vue'
 import { getInventoryReport } from '@/api/modules/inventoryReport'
 import type { InventoryReportRow, InventoryReportSummary } from '@/api/modules/inventoryReport'
 import { formatDays } from '@/utils/format'
+import { filterExcluded } from '@/utils/excludeMaterials'
 
 // ---- 状态 ----
 const loading = ref(false)
@@ -30,7 +31,7 @@ async function loadData() {
       limit: pageParams.page_size,
       offset: (pageParams.page - 1) * pageParams.page_size,
     })
-    rows.value = res.rows
+    rows.value = filterExcluded(res.rows)
     total.value = res.total
     summary.value = res.summary
   } finally {

@@ -8,6 +8,7 @@ import type { ErpClaimSplit } from '@/api/modules/theme1'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
 import { formatDays } from '@/utils/format'
+import { filterExcluded } from '@/utils/excludeMaterials'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -18,6 +19,20 @@ const coreKpis = ref<Record<string, KpiItem>>({})
 const constraintKpis = ref<Record<string, KpiItem>>({})
 const structureKpis = ref<KpiChecklistRes['structure_kpis'] | null>(null)
 const topKpis = ref<KpiChecklistRes['top_kpis'] | null>(null)
+
+// 过滤掉排除物资的 TOP 数据
+const filteredTopKpis = computed(() => {
+  if (!topKpis.value) return null
+  return {
+    ...topKpis.value,
+    T1: topKpis.value.T1 ? { ...topKpis.value.T1, items: filterExcluded(topKpis.value.T1.items || []) } : undefined,
+    T2: topKpis.value.T2 ? {
+      ...topKpis.value.T2,
+      by_amount: filterExcluded(topKpis.value.T2.by_amount || []),
+      by_quantity: filterExcluded(topKpis.value.T2.by_quantity || []),
+    } : undefined,
+  }
+})
 
 async function loadAllData() {
   loading.value = true
@@ -321,7 +336,7 @@ onMounted(() => {
         <ChartCard title="K6 · 库存结构分析 — 项目库存占比">
           <table class="mini-table" v-if="structureKpis?.K6?.project_ratios?.length">
             <thead>
-              <tr><th>项目</th><th>采购人</th><th>联系人</th><th>库存(万元)</th><th>占比</th></tr>
+              <tr><th>项目</th><th>计划提报人</th><th>项目负责人</th><th>库存(万元)</th><th>占比</th></tr>
             </thead>
             <tbody>
               <tr v-for="p in structureKpis.K6.project_ratios.filter(p => p.project_code).slice(0, 8)" :key="p.project_code">
@@ -479,7 +494,7 @@ onMounted(() => {
               </thead>
               <tbody>
                 <tr
-                  v-for="item in topKpis.T1.items"
+                  v-for="item in filteredTopKpis.T1.items"
                   :key="item.material_code"
                   :class="{ 'row-alert': item.age_days > 365 }"
                 >
@@ -509,7 +524,7 @@ onMounted(() => {
         <ChartCard title="T2 · 领用 TOP10">
           <el-tabs type="border-card" v-if="topKpis?.T2">
             <el-tab-pane label="按金额排序">
-              <table class="data-table" v-if="topKpis.T2.by_amount?.length">
+              <table class="data-table" v-if="filteredTopKpis?.T2.by_amount?.length">
                 <thead>
                   <tr>
                     <th style="text-align:center">#</th>
@@ -521,7 +536,7 @@ onMounted(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in topKpis.T2.by_amount" :key="item.material_code">
+                  <tr v-for="item in filteredTopKpis?.T2.by_amount" :key="item.material_code">
                     <td>
                       <span class="rank-badge" :class="item.rank <= 3 ? `rank-${item.rank}` : ''">
                         {{ item.rank }}
@@ -537,7 +552,7 @@ onMounted(() => {
               </table>
             </el-tab-pane>
             <el-tab-pane label="按数量排序">
-              <table class="data-table" v-if="topKpis.T2.by_quantity?.length">
+              <table class="data-table" v-if="filteredTopKpis?.T2.by_quantity?.length">
                 <thead>
                   <tr>
                     <th style="text-align:center">#</th>
@@ -549,7 +564,7 @@ onMounted(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in topKpis.T2.by_quantity" :key="item.material_code">
+                  <tr v-for="item in filteredTopKpis?.T2.by_quantity" :key="item.material_code">
                     <td>
                       <span class="rank-badge" :class="item.rank <= 3 ? `rank-${item.rank}` : ''">
                         {{ item.rank }}

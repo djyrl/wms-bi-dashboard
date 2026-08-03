@@ -9,6 +9,7 @@ import { getTopUnclaimedAmount, getOptimizeSuggest } from '@/api/modules/theme4'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
 import { formatDays } from '@/utils/format'
+import { filterExcluded } from '@/utils/excludeMaterials'
 
 const router = useRouter()
 
@@ -36,7 +37,7 @@ async function loadAll() {
     erpClaim.value = ec
     structure.value = st
     timeIndicators.value = ti
-    topUnclaimed.value = top
+    topUnclaimed.value = filterExcluded(top)
     ageMonthly.value = am
     optimizeSuggest.value = os
   } catch (e: any) {
@@ -132,14 +133,14 @@ const paths = [
             <div class="kpi-sub">{{ structure?.current_inventory_quantity?.toLocaleString() }} 项库存</div>
           </div>
         </el-tooltip>
-        <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%（erp_catalog_mb51）" placement="top">
+        <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%" placement="top">
           <div class="kpi-box" style="border-left-color:#10b981">
             <div class="kpi-label">采购领用率（金额）</div>
             <div class="kpi-num">{{ erpClaim?.year?.claim_rate_amount?.toFixed(2) }}%</div>
             <div class="kpi-sub">= {{ erpClaim?.year?.total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaim?.year?.total_inbound_amount?.toFixed(0) || 0 }}万</div>
           </div>
         </el-tooltip>
-        <el-tooltip content="ERP数据：SUM(DMBTR) 101+102 移动类型（erp_catalog_mb51）" placement="top">
+        <el-tooltip content="ERP数据：SUM(DMBTR) 101 移动类型" placement="top">
           <div class="kpi-box" style="border-left-color:#3b82f6">
             <div class="kpi-label">入库总额</div>
             <div class="kpi-num">{{ erpClaim?.year?.total_inbound_amount?.toFixed(2) }} 万</div>
