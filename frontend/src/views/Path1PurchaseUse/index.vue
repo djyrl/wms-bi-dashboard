@@ -10,10 +10,12 @@ import {
   getAnomalyDaily,
   getWmsSummary,
   getWmsClaim,
+  getErpClaim,
 } from '@/api/modules/theme1'
 import type {
   WmsSummary,
   WmsClaimSplit,
+  ErpClaimSplit,
 } from '@/api/modules/theme1'
 import type { UsageRatePoint, InOutPoint, WaterLevelItem, AnomalyDay, KpiCardData } from '@/types/inventory'
 import ErrorResult from '@/components/common/ErrorResult.vue'
@@ -34,6 +36,7 @@ const timeGranularity = ref<TimeGranularity>('week')
 const timeLabels = ref<string[]>([])
 const summary = ref<WmsSummary | null>(null)
 const claim = ref<WmsClaimSplit | null>(null)
+const erpClaim = ref<ErpClaimSplit | null>(null)
 const claimUsageRate = ref<UsageRatePoint[]>([])
 const claimInOut = ref<InOutPoint[]>([])
 const claimWaterLevel = ref<WaterLevelItem[]>([])
@@ -50,12 +53,12 @@ const chartTitle = computed(() => {
 
 const kpiCards = computed<KpiCardData[]>(() => {
   const s = summary.value
-  const c = claim.value?.all
+  const ec = erpClaim.value?.year
   return [
-    { icon: '\u{1F4C9}', label: '采购领用率（金额）', value: c?.claim_rate_amount ?? 0, unit: '%', change: `未领用 ${c?.unclaimed_amount_ratio ?? 0}%`, changeType: (c?.claim_rate_amount ?? 0) >= 70 ? 'up' : 'down', color: '#f43f5e' },
-    { icon: '\u{1F4E6}', label: '入库总额', value: s?.total_inbound_amount ?? 0, unit: '万元', change: `${s?.total_records ?? 0} 条记录`, changeType: 'up', color: '#f59e0b' },
+    { icon: '\u{1F4C9}', label: '采购领用率（金额）', value: ec?.claim_rate_amount ?? 0, unit: '%', change: `未领用 ${ec?.unclaimed_amount_ratio ?? 0}%`, changeType: (ec?.claim_rate_amount ?? 0) >= 70 ? 'up' : 'down', color: '#f43f5e' },
+    { icon: '\u{1F4E6}', label: '入库总额', value: ec?.total_inbound_amount ?? 0, unit: '万元', change: `出库 ${ec?.total_outbound_amount?.toFixed(0) ?? 0} 万元`, changeType: 'up', color: '#f59e0b' },
     { icon: '⏱', label: '加权平均库龄', value: s?.avg_age_weighted_days ?? 0, unit: '天', change: `长库龄(≥1年)占比 ${((s?.aged_ratio_1y ?? 0) * 100).toFixed(1)}%`, changeType: (s?.avg_age_weighted_days ?? 0) <= 90 ? 'up' : 'down', color: '#8b5cf6' },
-    { icon: '\u{1F4CB}', label: '当前库存总额', value: s?.total_inventory_amount ?? 0, unit: '万元', change: `已领用 ${c?.total_claimed_amount ?? 0} 万元`, changeType: 'up', color: '#10b981' },
+    { icon: '\u{1F4CB}', label: '当前库存总额', value: s?.total_inventory_amount ?? 0, unit: '万元', change: `库存记录 ${s?.total_records ?? 0} 条`, changeType: 'up', color: '#10b981' },
   ]
 })
 
@@ -80,6 +83,7 @@ async function loadAllData() {
   const g = timeGranularity.value
   try { summary.value = await getWmsSummary() } catch (e: any) { errs.push('总览: ' + (e?.message || '失败')) }
   try { claim.value = await getWmsClaim() } catch (e: any) { errs.push('领用指标: ' + (e?.message || '失败')) }
+  try { erpClaim.value = await getErpClaim() } catch (e: any) { errs.push('ERP领用率: ' + (e?.message || '失败')) }
   try {
     if (g === 'day') {
       const raw = await getClaimDaily()
