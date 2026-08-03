@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SluggishItem } from '@/types/inventory'
+import { formatDays } from '@/utils/format'
 
 defineProps<{ data: SluggishItem[] }>()
 
@@ -22,7 +23,7 @@ function levelType(level: string): 'danger' | 'warning' | 'success' {
     <el-table-column prop="name" label="物料名称" min-width="167" show-overflow-tooltip />
     <el-table-column prop="age" label="库龄(天)" min-width="76" sortable>
       <template #default="{ row }">
-        <span :style="row.level !== 'green' ? { color: row.level === 'red' ? '#f43f5e' : '#f59e0b', fontWeight: 600 } : {}">{{ row.age }}天</span>
+        <span :style="row.level !== 'green' ? { color: row.level === 'red' ? '#f43f5e' : '#f59e0b', fontWeight: 600 } : {}">{{ formatDays(row.age) }}</span>
       </template>
     </el-table-column>
     <el-table-column prop="amount" label="金额(万)" min-width="76" sortable>

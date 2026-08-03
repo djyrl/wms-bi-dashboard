@@ -15,10 +15,25 @@ export function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`
 }
 
-/** 天数 */
+/** 天数 → X年X月X天（自然月30天） */
 export function formatDays(days: number): string {
-  if (days >= 365) return `${(days / 365).toFixed(1)}年`
-  return `${Math.round(days)}天`
+  if (days == null || isNaN(days)) return '-'
+  const d = Math.round(days)
+  if (d >= 365) {
+    const y = Math.floor(d / 365)
+    const r = d % 365
+    const m = Math.floor(r / 30)
+    const rd = r % 30
+    if (m > 0 && rd > 0) return `${y}年${m}月${rd}天`
+    if (m > 0) return `${y}年${m}月`
+    return `${y}年`
+  }
+  if (d >= 30) {
+    const m = Math.floor(d / 30)
+    const rd = d % 30
+    return rd > 0 ? `${m}月${rd}天` : `${m}月`
+  }
+  return `${d}天`
 }
 
 /** 领用率颜色 */

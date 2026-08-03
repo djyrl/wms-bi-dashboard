@@ -10,7 +10,7 @@ const chart = useECharts()
 
 const detailHeaders = ['项目编码', '项目名称', '库存金额(万)', '领用率(%)']
 // 明细表显示全部数据（含未关联项目）
-const detailRows = computed(() => props.data.map(d => [d.projectCode, d.projectName, Number(d.value).toFixed(2), d.usageRate] as (string | number)[]))
+const detailRows = computed(() => props.data.filter(d => d.projectCode).map(d => [d.projectCode, d.projectName, Number(d.value).toFixed(2), d.usageRate] as (string | number)[]))
 // ECharts 只显示已关联项目名称的项目
 const chartData = computed(() => props.data.filter(d => d.name !== '(未关联)' && d.projectName !== '(未关联)'))
 

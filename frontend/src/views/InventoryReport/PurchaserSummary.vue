@@ -2,6 +2,7 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import { getPurchaserSummary } from '@/api/modules/inventoryReport'
 import type { PurchaserSummaryRow } from '@/api/modules/inventoryReport'
+import { formatDays } from '@/utils/format'
 
 const loading = ref(false)
 const rows = ref<PurchaserSummaryRow[]>([])
@@ -40,7 +41,7 @@ function onSortChange({ prop, order }: { prop: string | null; order: string | nu
 
 function fmtWan(v: number) { return (v / 10000).toFixed(2) + '万' }
 function fmtRate(v: number | null) { return v != null ? v.toFixed(1) + '%' : '-' }
-function fmtDays(v: number) { return v != null ? v.toFixed(0) + '天' : '-' }
+function fmtDays(v: number) { return v != null ? formatDays(v) : '-' }
 function rateColor(rate: number) {
   if (rate >= 80) return '#67c23a'
   if (rate >= 50) return '#e6a23c'

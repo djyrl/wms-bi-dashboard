@@ -26,6 +26,7 @@ import type {
 } from '@/api/modules/traceability'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
+import { formatDays } from '@/utils/format'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -297,7 +298,7 @@ function sortArrow(col: string, currentSort: string, currentOrder: string) {
             <div class="chain-node-icon">📦</div>
             <div class="chain-node-title">库存沉淀</div>
             <div class="chain-node-value">{{ fmtWan(traceChain?.remain.value || 0) }} 万</div>
-            <div class="chain-node-desc">库龄 {{ summary.avg_age_weighted_days }} 天</div>
+            <div class="chain-node-desc">库龄 {{ formatDays(summary.avg_age_weighted_days) }}</div>
           </div>
         </div>
       </div>
@@ -331,7 +332,7 @@ function sortArrow(col: string, currentSort: string, currentOrder: string) {
                   {{ fmtWan(p.unclaimed_amount) }}万
                 </td>
                 <td class="num" :style="{ color: p.avg_age_days > 180 ? '#f43f5e' : '#64748b' }">
-                  {{ p.avg_age_days }}天
+                  {{ formatDays(p.avg_age_days) }}
                 </td>
               </tr>
             </tbody>
@@ -366,7 +367,7 @@ function sortArrow(col: string, currentSort: string, currentOrder: string) {
                   {{ fmtWan(p.unclaimed_amount) }}万
                 </td>
                 <td class="num" :style="{ color: p.avg_age_days > 180 ? '#f43f5e' : '#64748b' }">
-                  {{ p.avg_age_days }}天
+                  {{ formatDays(p.avg_age_days) }}
                 </td>
               </tr>
             </tbody>
@@ -491,7 +492,7 @@ function sortArrow(col: string, currentSort: string, currentOrder: string) {
                   }">{{ row.claim_rate.toFixed(1) }}%</span>
                 </td>
                 <td class="num" :style="{ color: row.avg_age_days > 180 ? '#f43f5e' : row.avg_age_days > 90 ? '#f59e0b' : '#64748b' }">
-                  {{ row.avg_age_days }}天
+                  {{ formatDays(row.avg_age_days) }}
                 </td>
               </tr>
             </tbody>
@@ -548,7 +549,7 @@ function sortArrow(col: string, currentSort: string, currentOrder: string) {
                   }">{{ row.claim_rate.toFixed(1) }}%</span>
                 </td>
                 <td class="num" :style="{ color: row.avg_age_days > 180 ? '#f43f5e' : row.avg_age_days > 90 ? '#f59e0b' : '#64748b' }">
-                  {{ row.avg_age_days }}天
+                  {{ formatDays(row.avg_age_days) }}
                 </td>
               </tr>
             </tbody>

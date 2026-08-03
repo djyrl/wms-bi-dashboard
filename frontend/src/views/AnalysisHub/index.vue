@@ -8,6 +8,7 @@ import { getTimeIndicators, getAgeMonthly } from '@/api/modules/theme3'
 import { getTopUnclaimedAmount, getOptimizeSuggest } from '@/api/modules/theme4'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
+import { formatDays } from '@/utils/format'
 
 const router = useRouter()
 
@@ -49,12 +50,7 @@ function truncateText(text: string, maxLen = 20): string {
 }
 function fmtAge(days: number | undefined | null): string {
   if (days == null) return '-'
-  if (days >= 365) {
-    const y = Math.floor(days / 365)
-    const d = Math.round(days % 365)
-    return d > 0 ? `${y}年${d}天` : `${y}年`
-  }
-  return `${Math.round(days)} 天`
+  return formatDays(days)
 }
 
 // 实时时钟
@@ -123,10 +119,15 @@ const paths = [
       <!-- 核心KPI -->
       <div class="kpi-row">
         <el-tooltip content="SUM(original_quantity × unit_price) 全部入库金额" placement="top">
-          <div class="kpi-box" style="border-left-color:#3b82f6">
+          <!-- <div class="kpi-box" style="border-left-color:#3b82f6">
             <div class="kpi-label">入库总额</div>
             <div class="kpi-num">{{ summary?.total_inbound_amount?.toFixed(2) }} 万</div>
             <div class="kpi-sub">累计采购入库金额</div>
+          </div> -->
+          <div class="kpi-box" style="border-left-color:#f59e0b">
+            <div class="kpi-label">当前库存总额</div>
+            <div class="kpi-num">{{ structure?.current_inventory_amount?.toFixed(2) }} 万</div>
+            <div class="kpi-sub">{{ structure?.current_inventory_quantity?.toLocaleString() }} 项库存</div>
           </div>
         </el-tooltip>
         <el-tooltip content="领用金额 / 入库金额 × 100%（全部历史数据）" placement="top">
@@ -136,11 +137,16 @@ const paths = [
             <div class="kpi-sub">= 领用 / 入库 × 100%</div>
           </div>
         </el-tooltip>
-        <el-tooltip content="SUM(current_quantity × unit_price) 按 v_project_inventory_wide 批次去重聚合" placement="top">
-          <div class="kpi-box" style="border-left-color:#f59e0b">
+        <el-tooltip content="SUM(current_quantity × unit_price) 按批次去重聚合" placement="top">
+          <!-- <div class="kpi-box" style="border-left-color:#f59e0b">
             <div class="kpi-label">当前库存总额</div>
             <div class="kpi-num">{{ structure?.current_inventory_amount?.toFixed(2) }} 万</div>
             <div class="kpi-sub">{{ structure?.current_inventory_quantity?.toLocaleString() }} 项库存</div>
+          </div> -->
+          <div class="kpi-box" style="border-left-color:#3b82f6">
+            <div class="kpi-label">入库总额</div>
+            <div class="kpi-num">{{ summary?.total_inbound_amount?.toFixed(2) }} 万</div>
+            <div class="kpi-sub">累计采购入库金额</div>
           </div>
         </el-tooltip>
         <el-tooltip content="Σ(库存金额 × 库龄天数) / Σ(库存金额)  金额加权平均" placement="top">
@@ -208,7 +214,7 @@ const paths = [
           <table class="mini-table" v-if="ageMonthly?.data">
             <tr v-for="d in ageMonthly.data.slice(-8).reverse()" :key="d.month">
               <td>{{ d.month }}</td>
-              <td class="num" :style="{ color: d.avg_age > 90 ? '#f43f5e' : '#334155' }">{{ d.avg_age }} 天</td>
+              <td class="num" :style="{ color: d.avg_age > 90 ? '#f43f5e' : '#334155' }">{{ fmtAge(d.avg_age) }}</td>
               <td class="num" style="font-size:11px;color:#94a3b8">{{ d.over90_rate?.toFixed(1) }}% ≥90天</td>
             </tr>
           </table>

@@ -5,6 +5,7 @@ import type { KpiChecklistRes, KpiItem } from '@/api/modules/kpiChecklist'
 
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
+import { formatDays } from '@/utils/format'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -63,10 +64,10 @@ function formatNumber(val: number | undefined | null): string {
 const overviewCards = computed(() => {
   if (!summary.value) return []
   return [
-    { icon: '📥', label: '入库总额', value: summary.value.total_inbound_wan, unit: '万元', color: '#3b82f6' },
+     { icon: '📦', label: '当前库存', value: summary.value.current_inventory_wan, unit: '万元', color: '#f59e0b' },
     { icon: '📤', label: '领用总额', value: summary.value.total_claimed_wan, unit: '万元', color: '#10b981' },
-    { icon: '📦', label: '当前库存', value: summary.value.current_inventory_wan, unit: '万元', color: '#f59e0b' },
-    { icon: '📈', label: '综合领用率', value: summary.value.overall_claim_rate, unit: '%', color: '#8b5cf6' },
+    { icon: '📥', label: '入库总额', value: summary.value.total_inbound_wan, unit: '万元', color: '#3b82f6' },
+   { icon: '📈', label: '综合领用率', value: summary.value.overall_claim_rate, unit: '%', color: '#8b5cf6' },
   ]
 })
 
@@ -268,7 +269,7 @@ onMounted(() => {
                           {{ p.claim_rate }}%
                         </span>
                       </td>
-                      <td>{{ p.avg_age_days }}天</td>
+                      <td>{{ formatDays(p.avg_age_days) }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -342,13 +343,13 @@ onMounted(() => {
           <div class="time-metrics" v-if="structureKpis?.K7">
             <el-tooltip content="= Σ(库存金额 × 库龄天数) / Σ(库存金额)，按物理批次去重计算" placement="top">
               <div class="time-metric-card">
-                <div class="time-metric-card__value">{{ structureKpis.K7.avg_age_weighted_days }}</div>
+                <div class="time-metric-card__value">{{ formatDays(structureKpis.K7.avg_age_weighted_days) }}</div>
                 <div class="time-metric-card__label">加权平均库龄（天）</div>
               </div>
             </el-tooltip>
-            <el-tooltip content="= Σ(从未被领用的库存金额 × 库龄天数) / Σ(从未被领用的库存金额)" placement="top">
+            <el-tooltip content="Σ(未动用库存金额 × 库龄) / Σ(未动用库存金额),仅从未被领用过的库存物料" placement="top">
               <div class="time-metric-card">
-                <div class="time-metric-card__value">{{ structureKpis.K7.unused_days }}</div>
+                <div class="time-metric-card__value">{{ formatDays(structureKpis.K7.unused_days) }}</div>
                 <div class="time-metric-card__label">未动用天数（天）</div>
               </div>
             </el-tooltip>
@@ -382,7 +383,7 @@ onMounted(() => {
         </ChartCard>
 
         <!-- K8 项目分析 -->
-        <ChartCard title="K8 · 项目分析 — 哪个项目带来库存？">
+        <ChartCard title="K8 · 项目分析">
           <div class="kpi-table-wrap" v-if="structureKpis?.K8?.items?.length">
             <table class="data-table">
               <thead>
@@ -411,7 +412,7 @@ onMounted(() => {
                     </span>
                   </td>
                   <td>{{ (p.inventory_amount_wan || 0).toLocaleString() }}</td>
-                  <td>{{ p.avg_age_days }}</td>
+                  <td>{{ formatDays(p.avg_age_days) }}</td>
                   <td>{{ p.over90_ratio || 0 }}%</td>
                 </tr>
               </tbody>
@@ -446,7 +447,7 @@ onMounted(() => {
                     </span>
                   </td>
                   <td>{{ (p.unclaimed_amount_wan || 0).toLocaleString() }}</td>
-                  <td>{{ p.avg_age_days }}</td>
+                  <td>{{ formatDays(p.avg_age_days) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -460,8 +461,8 @@ onMounted(() => {
       <div class="section">
         <div class="section-header">
           <span class="section-badge top">第四类</span>
-          <span class="section-title">TOP 指标（不考核，管理抓手）</span>
-          <span class="section-desc">T1 · T2 — 每月必须输出，用于责任到人、优化备货</span>
+          <span class="section-title">TOP 指标</span>
+          <!-- <span class="section-desc">T1 · T2 — 每月必须输出，用于责任到人、优化备货</span> -->
         </div>
 
         <!-- T1 未领用库存TOP10 -->
@@ -497,7 +498,7 @@ onMounted(() => {
                   <td>{{ item.current_quantity }} {{ item.unit }}</td>
                   <td>
                     <span :style="{ color: item.age_days > 365 ? '#f43f5e' : item.age_days > 180 ? '#f59e0b' : '#10b981' }">
-                      {{ item.age_days }}
+                      {{ formatDays(item.age_days) }}
                     </span>
                   </td>
                   <td>{{ item.owner_project_name || item.owner_project_code || '-' }}</td>
@@ -509,16 +510,17 @@ onMounted(() => {
         </ChartCard>
 
         <!-- T2 领用TOP10 -->
-        <ChartCard title="T2 · 领用 TOP10 — 识别关键物资、优化备货">
+        <ChartCard title="T2 · 领用 TOP10">
           <el-tabs type="border-card" v-if="topKpis?.T2">
             <el-tab-pane label="按金额排序">
               <table class="data-table" v-if="topKpis.T2.by_amount?.length">
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th style="text-align:center">#</th>
                     <th>物料编码</th>
-                    <th>领用金额(万元)</th>
-                    <th>入库金额(万元)</th>
+                    <th>物料名称</th>
+                    <th style="text-align:right">领用金额(万元)</th>
+                    <th style="text-align:right">入库金额(万元)</th>
                     <th>入库日期</th>
                   </tr>
                 </thead>
@@ -530,6 +532,7 @@ onMounted(() => {
                       </span>
                     </td>
                     <td><code>{{ item.material_code }}</code></td>
+                    <td>{{ item.material_name }}</td>
                     <td class="num">{{ item.claimed_amount_wan?.toLocaleString() }}</td>
                     <td class="num">{{ item.inbound_amount_wan?.toLocaleString() }}</td>
                     <td>{{ item.inbound_date }}</td>
@@ -541,10 +544,11 @@ onMounted(() => {
               <table class="data-table" v-if="topKpis.T2.by_quantity?.length">
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th style="text-align:center">#</th>
                     <th>物料编码</th>
-                    <th>领用数量</th>
-                    <th>入库数量</th>
+                    <th>物料名称</th>
+                    <th style="text-align:right">领用数量</th>
+                    <th style="text-align:right">入库数量</th>
                     <th>入库日期</th>
                   </tr>
                 </thead>
@@ -556,6 +560,7 @@ onMounted(() => {
                       </span>
                     </td>
                     <td><code>{{ item.material_code }}</code></td>
+                    <td>{{ item.material_name }}</td>
                     <td class="num">{{ item.claimed_quantity?.toLocaleString() }}</td>
                     <td class="num">{{ item.inbound_quantity?.toLocaleString() }}</td>
                     <td>{{ item.inbound_date }}</td>

@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { getInventoryReport } from '@/api/modules/dataTable'
 import type { InventoryRow } from '@/api/modules/dataTable'
 import ErrorResult from '@/components/common/ErrorResult.vue'
+import { formatDays } from '@/utils/format'
+import { exportCsv, exportExcel, type ExportHeader } from '@/utils/exportData'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+const exporting = ref(false)
 const rows = ref<InventoryRow[]>([])
 const total = ref(0)
 const pageSize = ref(50)
@@ -83,6 +87,25 @@ async function loadData() {
   loading.value = false
 }
 
+async function handleExport(format: 'csv' | 'excel') {
+  exporting.value = true
+  try {
+    const headers: ExportHeader[] = visibleColumns.value.map((c) => ({ key: c.key, label: c.label }))
+    const res = await getInventoryReport({ sort_by: sortBy.value, sort_order: sortOrder.value, limit: 10000, offset: 0 })
+    const rows = res.rows as unknown as Record<string, unknown>[]
+    const filename = '批次追溯明细表'
+    if (format === 'csv') {
+      exportCsv(headers, rows, `${filename}.csv`)
+    } else {
+      exportExcel(headers, rows, `${filename}.xlsx`)
+    }
+    ElMessage.success(`已导出 ${rows.length} 条记录`)
+  } catch (e: any) {
+    ElMessage.error(e.message || '导出失败')
+  }
+  exporting.value = false
+}
+
 function onSortChange({ prop, order }: { prop: string | null; order: string | null }) {
   if (!prop) return
   sortBy.value = prop
@@ -119,12 +142,23 @@ onMounted(() => loadData())
         明细表（批次追溯表）
         <span class="total-info">共 {{ total }} 条</span>
         <div class="toolbar-right">
-          <el-popover :visible="columnPickerVisible" trigger="click" :width="260" @show="openColumnPicker">
+          <el-dropdown @command="handleExport">
+            <el-button size="small" :loading="exporting">
+              导出 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="csv">导出 CSV</el-dropdown-item>
+                <el-dropdown-item command="excel">导出 Excel</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-popover :visible="columnPickerVisible" trigger="click" :width="420" @show="openColumnPicker">
             <template #reference>
               <el-button size="small" @click="columnPickerVisible = true">列管理</el-button>
             </template>
-            <div v-for="col in columnPreview" :key="col.key" style="margin-bottom:4px">
-              <el-checkbox v-model="col.checked" size="small">{{ col.label }}</el-checkbox>
+            <div class="column-grid">
+              <el-checkbox v-for="col in columnPreview" :key="col.key" v-model="col.checked" size="small">{{ col.label }}</el-checkbox>
             </div>
             <div style="margin-top:6px;display:flex;gap:6px">
               <el-button size="small" text @click="columnPreview.forEach(c => c.checked = true)">全选</el-button>
@@ -173,7 +207,7 @@ onMounted(() => loadData())
           </template>
           <template #default="{ row }">
             <span :style="col.key === 'inventory_amount' && row[col.key] > 0 ? 'color:#f43f5e;font-weight:600' : ''">
-              {{ row[col.key] ?? '' }}
+              {{ col.key === 'age_days' ? formatDays(row[col.key]) : row[col.key] ?? '' }}
             </span>
           </template>
         </el-table-column>
@@ -200,5 +234,6 @@ onMounted(() => loadData())
 .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .toolbar-right { display: flex; align-items: center; gap: 8px; }
 .total-info { color: #94a3b8; font-size: 13px; }
+.column-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
 .pagination { margin-top: 16px; display: flex; justify-content: center; }
 </style>

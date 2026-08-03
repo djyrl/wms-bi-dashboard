@@ -1,0 +1,4993 @@
+# ============================================================
+# WMS 物资全流程追溯系统 — API 接口分类清单 (含详细描述)
+# 用于封装 MCP Server 的接口组织参考
+# 生成时间：2026-07-31 | 接口总数：915 | 业务域：22
+# ============================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+一、入库管理  (54 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 入库单总览Api
+
+    GET     /api/order/inbound/overview/list
+            查询入库单总览列表
+            参数: [arrivalEndTime string(可) 到货结束时间]  [arrivalStartTime string(可) 到货开始时间]  [keyword string(可) 关键字（入库单号/采购订单号/采购合同号/采购合同名称 模糊匹配）]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 入库单状态]  [type string(可) 入库单类型（限：采购入库、冲销入库）]
+            返回: → WebMsg«查询入库单总览输出参数»
+
+  ## 入库单明细Api
+
+    GET     /api/order/inbound/inboundOrderItem/list
+            查询入库单明细列表
+            参数: [inboundOrderId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询入库单明细输出参数»
+
+  ## 初始化入库Api
+
+    POST    /api/order/inbound/init/quickInit
+            快速初始化入库
+            参数: [input (必) input]
+            返回: → WebMsg«快速初始化入库输出参数»
+
+    POST    /api/order/inbound/init/quickInitByBarcode
+            通过库存条码快速初始化入库
+            参数: [input (必) input]
+            返回: → WebMsg«通过库存条码快速初始化入库输出参数»
+
+  ## 待修入库Api
+
+    POST    /api/order/inbound/repair/createByManual
+            手动新增待修入库
+            参数: [input (必) input]
+            返回: → WebMsg«手动新增待修入库输出参数»
+
+    POST    /api/order/inbound/repair/createFromRecycle
+            通过交旧单创建待修入库单
+            参数: [input (必) input]
+            返回: → WebMsg«通过交旧单创建待修入库单输出参数»
+
+    GET     /api/order/inbound/repair/list
+            查询待修入库单列表
+            参数: [endTime string(可) 入库结束时间]  [orderCode string(可) 入库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [startTime string(可) 入库开始时间]  [status string(可) 入库单状态]
+            返回: → WebMsg«查询待修入库单输出参数»
+
+  ## 报废入库Api
+
+    POST    /api/order/inbound/scrap/createByManual
+            手动新增报废入库
+            参数: [input (必) input]
+            返回: → WebMsg«手动新增报废入库输出参数»
+
+    POST    /api/order/inbound/scrap/createFromRecycle
+            通过交旧单创建报废入库单
+            参数: [input (必) input]
+            返回: → WebMsg«通过交旧单创建报废入库单输出参数»
+
+    POST    /api/order/inbound/scrap/createFromRepairOrder
+            通过维修单创建报废入库
+            参数: [input (必) input]
+            返回: → WebMsg«通过维修单明细创建报废入库输出参数»
+
+    GET     /api/order/inbound/scrap/list
+            查询报废入库单列表
+            参数: [endTime string(可) 入库结束时间]  [orderCode string(可) 入库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [startTime string(可) 入库开始时间]  [status string(可) 入库单状态]
+            返回: → WebMsg«查询报废入库单输出参数»
+
+  ## 次新品入库Api
+
+    POST    /api/order/inbound/secondary-new/createByManual
+            手动新增次新品入库
+            参数: [input (必) input]
+            返回: → WebMsg«手动新增次新品入库输出参数»
+
+  ## 良品入库Api
+
+    POST    /api/order/inbound/repaired/createByManual
+            手动新增良品入库
+            参数: [input (必) input]
+            返回: → WebMsg«手动新增良品入库输出参数»
+
+    POST    /api/order/inbound/repaired/createFromRepairOrder
+            通过维修单创建良品入库
+            参数: [input (必) input]
+            返回: → WebMsg«通过维修单明细创建良品入库输出参数»
+
+    GET     /api/order/inbound/repaired/list
+            查询良品入库单列表
+            参数: [endTime string(可) 入库结束时间]  [orderCode string(可) 入库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [startTime string(可) 入库开始时间]  [status string(可) 入库单状态]
+            返回: → WebMsg«查询良品入库单输出参数»
+
+  ## 采购入库Api
+
+    POST    /api/order/inbound/purchase/create
+            新增入库单
+            参数: [input (必) input]
+            返回: → WebMsg«新增采购入库单输出参数»
+
+    POST    /api/order/inbound/purchase/delete
+            删除入库单
+            参数: [input (必) input]
+            返回: → WebMsg«删除入库单输出参数»
+
+    GET     /api/order/inbound/purchase/list
+            查询入库单列表
+            参数: [arrivalEndTime string(可) 到货结束时间]  [arrivalStartTime string(可) 到货开始时间]  [hasPendingDataCompletion string(可) 资料待完善]  [hasPendingDataSubmission string(可) 资料待填报]  [hasPendingDemandInspection string(可) 待需求质检]  [hasPendingDocumentReview string(可) 资料待审核]  [hasPendingLabeling string(可) 待贴码]  [hasPendingReceipt string(可) 待收货]  [hasPendingShelving string(可) 待上架]  [hasPendingTechnicalInspection string(可) 待技术质检]  [keyword string(可) 关键字（采购订单号/采购合同号/采购入库单号/采购合同名称 模糊匹配）]  [materialCode string(可) 物资编码]  [materialName string(可) 物资名称]  [pageNo integer(可)]  [pageSize integer(可)]  [purchaseContractCode string(可) 采购合同号]  [purchaseContractName string(可) 采购合同名称]  [purchaseOrderCode string(可) 采购订单号]  [rejected string(可) 拒收]
+            返回: → WebMsg«查询采购入库单输出参数»
+
+    POST    /api/order/inbound/purchase/repair
+            采购入库历史修复（数量回填/诊断报告）
+            参数: [input (必) input]
+            返回: → WebMsg«采购入库历史修复输出»
+
+    POST    /api/order/inbound/purchase/update
+            更新入库单
+            参数: [input (必) input]
+            返回: → WebMsg«更新采购入库单输出参数»
+
+    GET     /api/order/inbound/purchase/viewById
+            查询入库单详情
+            参数: [inboundOrderId string(必)]
+            返回: → WebMsg«通过ID查看采购入库单输出参数»
+
+  ## 采购入库批次号回填 Api
+
+    POST    /api/erp/inventory-movement/batch-code-fill-back/one
+            单条触发回填（用于手动重试某条流转记录所在分组）
+            参数: [input (必) input]
+            返回: → WebMsg«批次号回填单条触发输出参数»
+
+  ## 采购入库明细Api
+
+    POST    /api/order/inbound/purchase/item/assign
+            指派库管员
+            参数: [input (必) input]
+            返回: → WebMsg«指派库管员输出参数»
+
+    POST    /api/order/inbound/purchase/item/cancel
+            取消
+            参数: [input (必) input]
+            返回: → WebMsg«取消输出参数»
+
+    POST    /api/order/inbound/purchase/item/completeDocument
+            资料完善
+            参数: [input (必) input]
+            返回: → WebMsg«资料完善输出参数»
+
+    POST    /api/order/inbound/purchase/item/demandInspect
+            需求部门质检
+            参数: [input (必) input]
+            返回: → WebMsg«需求部门质检输出参数»
+
+    POST    /api/order/inbound/purchase/item/erpIntervention/completeFreeze
+            解除采购入库 ERP 冻结待办
+            参数: [input (必) input]
+            返回: → WebMsg«解除采购入库冻结输出»
+
+    POST    /api/order/inbound/purchase/item/erpIntervention/completeNotInStock
+            货不在库：关闭冲销出库待办
+            参数: [input (必) input]
+            返回: → WebMsg«货不在库关单输出»
+
+    GET     /api/order/inbound/purchase/item/materialManagementList
+            采购入库物资管理列表
+            参数: [arrivalEndDate string(可) 到货结束时间]  [arrivalStartDate string(可) 到货开始时间]  [batchCode string(可) 批次号]  [demandDept string(可) 需求部门]  [demandReporter string(可) 需求填报人]  [hasPendingDataCompletion string(可) 是否资料待完善]  [hasPendingDataSubmission string(可) 是否资料待填报]  [hasPendingDemandInspection string(可) 是否待需求质检]  [hasPendingDocumentReview string(可) 是否资料待审核]  [hasPendingLabeling string(可) 是否待贴码]  [hasPendingReceipt string(可) 是否待收货]  [hasPendingShelving string(可) 是否待上架]  [hasPendingTechnicalInspection string(可) 是否待技术质检]  [inboundOrderCode string(可) 入库单号]  [materialCode string(可) 物资编号]  [materialName string(可) 物资名称]  [pageNo integer(可)]  [pageSize integer(可)]  [purchaseOrderCode string(可) 采购订单号]  [warehouseKeeperId string(可) 库管员Id]
+            返回: → WebMsg«采购入库物资管理查询输出参数»
+
+    GET     /api/order/inbound/purchase/item/operableList
+            查询当前登录人可操作的采购入库单明细列表
+            参数: [hasPendingDataCompletion boolean(可) 资料待完善]  [hasPendingDataSubmission boolean(可) 资料待填报]  [hasPendingDemandInspection boolean(可) 待需求质检]  [hasPendingDocumentReview boolean(可) 资料待审核]  [hasPendingLabeling boolean(可) 待贴码]  [hasPendingReceipt boolean(可) 待收货]  [hasPendingShelving boolean(可) 待上架]  [hasPendingTechnicalInspection boolean(可) 待技术质检]  [hasRejectedOrException boolean(可) 拒收/异常]  [inboundOrderCode string(可) 入库单号]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询可操作入库单明细输出参数»
+
+    GET     /api/order/inbound/purchase/item/operableStatusCount
+            查询当前登录人可操作的采购入库单明细各状态数量统计
+            返回: → WebMsg«查询可操作入库单明细状态数量输出参数»
+
+    POST    /api/order/inbound/purchase/item/receive
+            收货
+            参数: [input (必) input]
+            返回: → WebMsg«收货输出参数»
+
+    POST    /api/order/inbound/purchase/item/reject
+            拒收
+            参数: [input (必) input]
+            返回: → WebMsg«拒收输出参数»
+
+    POST    /api/order/inbound/purchase/item/reviewDocument
+            审核资料
+            参数: [input (必) input]
+            返回: → WebMsg«审核资料输出参数»
+
+    POST    /api/order/inbound/purchase/item/submitDocument
+            填报资料
+            参数: [input (必) input]
+            返回: → WebMsg«填报资料输出参数»
+
+    POST    /api/order/inbound/purchase/item/techInspect
+            主管部门质检
+            参数: [input (必) input]
+            返回: → WebMsg«主管部门质检输出参数»
+
+    GET     /api/order/inbound/purchase/item/viewById
+            查看明细详情
+            参数: [inboundOrderItemId string(可) 入库单明细ID]
+            返回: → WebMsg«查看明细详情输出参数»
+
+  ## 采购入库明细上架Api
+
+    POST    /api/order/inbound/purchase/item/putaway/complete
+            入库单明细上架完成
+            参数: [input (必) input]
+            返回: → WebMsg«上架完成输出参数»
+
+    GET     /api/order/inbound/purchase/item/putaway/putawayable
+            查找入库单明细对应可上架详情
+            参数: [inboundOrderItemId string(可) 入库单明细ID]
+            返回: → WebMsg«查找入库单明细对应可上架详情输出参数»
+
+    POST    /api/order/inbound/purchase/item/putaway/recommendLocation
+            货位推荐
+            参数: [input (必) input]
+            返回: → WebMsg«入库单明细货位推荐输出参数»
+
+    POST    /api/order/inbound/purchase/item/putaway/record/createMany
+            非一物一码上架 - 新增入库单明细上架记录
+            参数: [input (必) input]
+            返回: → WebMsg«非一物一码上架输出参数»
+
+    POST    /api/order/inbound/purchase/item/putaway/record/createOne
+            一物一码上架 - 新增入库单明细上架记录
+            参数: [input (必) input]
+            返回: → WebMsg«一物一码上架输出参数»
+
+    POST    /api/order/inbound/purchase/item/putaway/record/delete
+            删除入库单明细上架记录
+            参数: [input (必) input]
+            返回: → WebMsg«删除入库单明细上架记录输出参数»
+
+    GET     /api/order/inbound/purchase/item/putaway/record/list
+            查询入库单明细上架记录列表
+            参数: [inboundOrderItemId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询入库单明细上架记录输出参数»
+
+    GET     /api/order/inbound/purchase/item/putaway/record/viewById
+            查询入库单明细上架记录详情
+            参数: [inboundOrderItemPutawayRecordId string(必)]
+            返回: → WebMsg«通过ID查看入库单明细上架记录输出参数»
+
+  ## 采购入库明细赋码Api
+
+    POST    /api/order/inbound/purchase/item/assignTag/assignTagComplete
+            入库单明细赋码完成
+            参数: [input (必) input]
+            返回: → WebMsg«赋码完成输出参数»
+
+    POST    /api/order/inbound/purchase/item/assignTag/record/createOne
+            新增入库单明细一物一码赋码记录
+            参数: [input (必) input]
+            返回: → WebMsg«新增入库单明细一物一码赋码记录输出参数»
+
+    POST    /api/order/inbound/purchase/item/assignTag/record/delete
+            删除入库单明细赋码记录
+            参数: [input (必) input]
+            返回: → WebMsg«删除入库单明细赋码记录输出参数»
+
+    GET     /api/order/inbound/purchase/item/assignTag/record/list
+            查询入库单明细赋码记录列表
+            参数: [inboundOrderItemId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询入库单明细赋码记录输出参数»
+
+    GET     /api/order/inbound/purchase/item/assignTag/record/viewById
+            查询入库单明细赋码记录详情
+            参数: [inboundOrderItemAssignTagRecordId string(必)]
+            返回: → WebMsg«通过ID查看入库单明细赋码记录输出参数»
+
+    GET     /api/order/inbound/purchase/item/assignTag/tagAssignable
+            查找入库单明细对应可赋码详情
+            参数: [inboundOrderItemId string(可) 入库单明细ID]
+            返回: → WebMsg«查找入库单明细对应可赋码详情输出参数»
+
+  ## 零价值库入库Api
+
+    POST    /api/order/inbound/zero-value/create
+            零价值库标准入库
+            参数: [input (必) input]
+            返回: → WebMsg«零价值库标准入库输出参数»
+
+    GET     /api/order/inbound/zero-value/list
+            查询零价值入库单列表
+            参数: [arrivalEndTime string(可) 入库结束时间]  [arrivalStartTime string(可) 入库开始时间]  [keyword string(可) 关键字（入库单号模糊匹配）]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 入库单状态]  [type string(可) 入库单类型（限：零价值库入库、零价值库ERP导入入库）]
+            返回: → WebMsg«查询零价值入库单列表输出参数»
+
+  ## 零价值库初始化开放Api
+
+    POST    /api/open/zero-value/init-from-erp
+            零价值库初始化导入（ZMMRP065 catalog）
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«零价值库初始化导入输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+七、领料管理  (38 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## ERP领料单导入开放Api
+
+    POST    /api/open/erp/requisition/026/import/map
+            领料单026 Map导入 ZMMDG026
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«领料单026 Map导入输出参数»
+
+    POST    /api/open/erp/requisition/026/import/save
+            领料单026 导入保存 ZMMDG026
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«领料单026导入保存输出参数»
+
+    POST    /api/open/erp/requisition/026/import/upload
+            领料单026 上传导入文件 ZMMDG026
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/erp/requisition/036/import/map
+            领料单036 Map导入 ZWMRP036
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«领料单036 Map导入输出参数»
+
+    POST    /api/open/erp/requisition/036/import/save
+            领料单036 导入保存 ZWMRP036
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«领料单036导入保存输出参数»
+
+    POST    /api/open/erp/requisition/036/import/upload
+            领料单036 上传导入文件 ZWMRP036
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/erp/requisition/102/import/map
+            领料单102 Map导入 ZMMRP102
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«领料单102 Map导入输出参数»
+
+    POST    /api/open/erp/requisition/102/import/save
+            领料单102 导入保存 ZMMRP102
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«领料单102导入保存输出参数»
+
+    POST    /api/open/erp/requisition/102/import/upload
+            领料单102 上传导入文件 ZMMRP102
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/erp/requisition/bootstrap-erp-effective-items
+            上线bootstrap：按102暂存重建ERP有效领料投影（开放；不改业务表）
+            参数: [accessToken string(必) accessToken]  [input (可) input]
+            返回: → WebMsg«ERP有效投影 bootstrap 出参»
+
+  ## 领料单026Api
+
+    POST    /api/erp/requisition/026/import/map
+            领料单026 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«领料单026 Map导入输出参数»
+
+    POST    /api/erp/requisition/026/import/save
+            领料单026导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«领料单026导入保存输出参数»
+
+    POST    /api/erp/requisition/026/import/upload
+            上传导入文件 ZMMDG026
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 领料单036Api
+
+    POST    /api/erp/requisition/036/import/map
+            领料单036 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«领料单036 Map导入输出参数»
+
+    POST    /api/erp/requisition/036/import/save
+            领料单036导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«领料单036导入保存输出参数»
+
+    POST    /api/erp/requisition/036/import/upload
+            上传导入文件 ZWMRP036
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 领料单102Api
+
+    POST    /api/erp/requisition/102/import/map
+            领料单102 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«领料单102 Map导入输出参数»
+
+    POST    /api/erp/requisition/102/import/save
+            领料单102导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«领料单102导入保存输出参数»
+
+    POST    /api/erp/requisition/102/import/upload
+            上传导入文件 ZMMRP102
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 领料单Api
+
+    POST    /api/order/outbound/requisitionOrder/bootstrap-erp-effective-items
+            上线bootstrap：按102暂存重建ERP有效领料投影（不改业务表；后续由catalog/open增量维护）
+            参数: [input (可) input]
+            返回: → WebMsg«ERP有效投影 bootstrap 出参»
+
+    POST    /api/order/outbound/requisitionOrder/create
+            新增领料单
+            参数: [input (必) input]
+            返回: → WebMsg«新增领料单输出参数»
+
+    POST    /api/order/outbound/requisitionOrder/delete
+            删除领料单
+            参数: [input (必) input]
+            返回: → WebMsg«删除领料单输出参数»
+
+    GET     /api/order/outbound/requisitionOrder/erp-effective-diff
+            领料单详情：业务明细 vs ERP有效投影差分（只读；MULTI_ACTIVE_OK为INFO）
+            参数: [requisitionOrderId string(必) 领料单 ID]
+            返回: → WebMsg«领料单 ERP 有效投影对比输出»
+
+    POST    /api/order/outbound/requisitionOrder/item/saveFulfillmentConstraints
+            补录领料明细履约约束（ERP同步后）
+            参数: [input (必) input]
+            返回: → WebMsg«补录领料履约约束输出»
+
+    POST    /api/order/outbound/requisitionOrder/link
+            ERP领料单关联加急/PDA领料单
+            参数: [input (必) input]
+            返回: → WebMsg«ERP领料单关联输出参数»
+
+    GET     /api/order/outbound/requisitionOrder/linkCandidateList
+            查询关联候选领料单
+            参数: [erpRequisitionOrderId string(必) ERP领料单ID]  [keyword string(可) 关键字（领料单号模糊搜索）]  [orderType string(可) 候选领料单类型，可选 PAPER/QUICK，不传则两者都返回]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询关联候选领料单输出参数»
+
+    GET     /api/order/outbound/requisitionOrder/list
+            查询领料单列表
+            参数: [erpBusinessStage string(可) 按 PENDING ERP stage 精筛，如 ERP_REVERSAL_INBOUND]  [hasErpException boolean(可) true=仅返回有 ERP 异常的领料单（PENDING ERP_* 或 BLOCKED 明细）]  [hasOutstandingReversal boolean(可) true=仅返回有未退尽冲销待办的领料单]  [keyword string(可) 关键词（领料单号/工单号）]  [materialCode string(可) 物资编码]  [materialName string(可) 物资名称]  [orderType string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [pickerName string(可)]  [status string(可)]
+            返回: → WebMsg«查询领料单输出参数»
+
+    GET     /api/order/outbound/requisitionOrder/queryMaterialInventory
+            查询物资可用库存
+            参数: [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«领料单物资可用库存查询输出参数»
+
+    POST    /api/order/outbound/requisitionOrder/repair-lifecycle
+            领料明细启停历史回填（G-D01）
+            参数: [input (必) input]
+            返回: → WebMsg«领料启停回填输出»
+
+    POST    /api/order/outbound/requisitionOrder/unlink
+            解除ERP领料单与加急/PDA领料单的关联
+            参数: [input (必) input]
+            返回: → WebMsg«解除关联输出参数»
+
+    POST    /api/order/outbound/requisitionOrder/update
+            更新领料单
+            参数: [input (必) input]
+            返回: → WebMsg«更新领料单输出参数»
+
+    GET     /api/order/outbound/requisitionOrder/viewById
+            查询领料单详情
+            参数: [requisitionOrderId string(必)]
+            返回: → WebMsg«通过ID查看领料单输出参数»
+
+  ## 领料单明细Api
+
+    POST    /api/order/outbound/requisitionOrderItem/delete
+            删除领料单明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除领料单明细输出参数»
+
+    POST    /api/order/outbound/requisitionOrderItem/erpIntervention/completeUnreturnable
+            货退不回：关闭冲销入库待办
+            参数: [input (必) input]
+            返回: → WebMsg«货退不回关单输出»
+
+    GET     /api/order/outbound/requisitionOrderItem/list
+            查询领料单明细列表
+            参数: [requisitionOrderId string(可)]
+            返回: → WebMsg«查询领料单明细输出参数»
+
+    GET     /api/order/outbound/requisitionOrderItem/listAllByOrderId
+            查询领料单下所有的明细列表
+            参数: [requisitionOrderId string(可)]
+            返回: → WebMsg«查询领料单下所有的明细列表输出参数»
+
+    POST    /api/order/outbound/requisitionOrderItem/update
+            更新领料单明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新领料单明细输出参数»
+
+    GET     /api/order/outbound/requisitionOrderItem/viewById
+            查询领料单明细详情
+            参数: [requisitionOrderItemId string(必)]
+            返回: → WebMsg«通过ID查看领料单明细输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+三、移库管理  (23 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 移库单Api
+
+    POST    /api/order/transfer/transferOrder/batchAuto
+            批量自动移库（一步完成建单与库存变更）
+            参数: [input (必) input]
+            返回: → WebMsg«批量自动移库输出参数»
+
+    POST    /api/order/transfer/transferOrder/cancel
+            取消移库单
+            参数: [input (必) input]
+            返回: → WebMsg«取消移库单输出参数»
+
+    POST    /api/order/transfer/transferOrder/delete
+            删除移库单
+            参数: [input (必) input]
+            返回: → WebMsg«删除移库单输出参数»
+
+    POST    /api/order/transfer/transferOrder/deletePickRecord
+            删除拣货记录（撤销拣货操作）
+            参数: [input (必) input]
+            返回: → WebMsg«删除拣货记录输出参数»
+
+    POST    /api/order/transfer/transferOrder/executeItem
+            执行移库操作
+            参数: [input (必) input]
+            返回: → WebMsg«执行移库操作输出参数»
+
+    GET     /api/order/transfer/transferOrder/list
+            查询移库单列表
+            参数: [createType string(可)]  [executorName string(可)]  [materialCode string(可) 物料编码]  [materialName string(可) 物料名称]  [orderCode string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可)]
+            返回: → WebMsg«查询移库单输出参数»
+
+    GET     /api/order/transfer/transferOrder/listByExecutor
+            查询当前登录人的移库单列表
+            参数: [status string(可)]
+            返回: → WebMsg«查询当前登录人的移库单列表输出参数»
+
+    GET     /api/order/transfer/transferOrder/listItemRecord
+            查询移库明细下的移库记录列表（拣货后用于上架选择）
+            参数: [transferOrderItemId string(必) 移库单明细ID]
+            返回: → WebMsg«移库明细记录列表输出参数»
+
+    POST    /api/order/transfer/transferOrder/manualCreate
+            手动创建移库单
+            参数: [input (必) input]
+            返回: → WebMsg«手动创建移库单输出参数»
+
+    POST    /api/order/transfer/transferOrder/pickItem
+            拣货操作（从源库位取出物资）
+            参数: [input (必) input]
+            返回: → WebMsg«拣货操作输出参数»
+
+    POST    /api/order/transfer/transferOrder/placeItem
+            上架操作（放置到目标库位）
+            参数: [input (必) input]
+            返回: → WebMsg«上架操作输出参数»
+
+    POST    /api/order/transfer/transferOrder/resetLocation
+            重置库存库位
+            参数: [input (必) input]
+            返回: → WebMsg«重置库存库位输出参数»
+
+    POST    /api/order/transfer/transferOrder/startExecute
+            开始执行移库单
+            参数: [input (必) input]
+            返回: → WebMsg«开始执行移库单输出参数»
+
+    POST    /api/order/transfer/transferOrder/submit
+            提交移库单
+            参数: [input (必) input]
+            返回: → WebMsg«提交移库单输出参数»
+
+    POST    /api/order/transfer/transferOrder/update
+            更新移库单
+            参数: [input (必) input]
+            返回: → WebMsg«更新移库单输出参数»
+
+    GET     /api/order/transfer/transferOrder/viewById
+            查询移库单详情
+            参数: [transferOrderId string(必) transferOrderId]
+            返回: → WebMsg«通过ID查看移库单输出参数»
+
+  ## 移库单明细Api
+
+    POST    /api/order/transfer/transferOrderItem/create
+            添加移库单明细
+            参数: [input (必) input]
+            返回: → WebMsg«添加移库单明细输出参数»
+
+    POST    /api/order/transfer/transferOrderItem/delete
+            删除移库单明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除移库单明细输出参数»
+
+    GET     /api/order/transfer/transferOrderItem/list
+            查询移库单明细列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [status string(可)]  [transferOrderId string(可)]
+            返回: → WebMsg«查询移库单明细输出参数»
+
+    POST    /api/order/transfer/transferOrderItem/update
+            更新移库单明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新移库单明细输出参数»
+
+    GET     /api/order/transfer/transferOrderItem/viewById
+            查询移库单明细详情
+            参数: [transferOrderItemId string(必) transferOrderItemId]
+            返回: → WebMsg«通过ID查看移库单明细输出参数»
+
+  ## 移库开放Api
+
+    POST    /api/open/transfer/batchAuto
+            批量自动移库（物资+批次，一步完成建单与库存变更）
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«批量自动移库Open输出参数»
+
+    GET     /api/open/transfer/record
+            查询完成移库明细记录（按操作时间倒序）
+            参数: [accessToken string(必) accessToken]  [endTime string(必) endTime]  [pageNo integer(可) pageNo]  [pageSize integer(可) pageSize]  [startTime string(必) startTime]
+            返回: → WebMsg«开放接口-完成移库明细记录查询输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+九、交旧管理  (10 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 交旧单Api
+
+    POST    /api/order/recycle/recycleOrder/create
+            新增交旧单
+            参数: [input (必) input]
+            返回: → WebMsg«新增交旧单输出参数»
+
+    POST    /api/order/recycle/recycleOrder/delete
+            删除交旧单
+            参数: [input (必) input]
+            返回: → WebMsg«删除交旧单输出参数»
+
+    GET     /api/order/recycle/recycleOrder/list
+            查询交旧单列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询交旧单输出参数»
+
+    POST    /api/order/recycle/recycleOrder/update
+            更新交旧单
+            参数: [input (必) input]
+            返回: → WebMsg«更新交旧单输出参数»
+
+    GET     /api/order/recycle/recycleOrder/viewById
+            查询交旧单详情
+            参数: [recycleOrderId string(必) recycleOrderId]
+            返回: → WebMsg«通过ID查看交旧单输出参数»
+
+  ## 交旧单明细Api
+
+    POST    /api/order/recycle/recycleOrderItem/create
+            新增交旧单明细
+            参数: [input (必) input]
+            返回: → WebMsg«新增交旧单明细输出参数»
+
+    POST    /api/order/recycle/recycleOrderItem/delete
+            删除交旧单明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除交旧单明细输出参数»
+
+    GET     /api/order/recycle/recycleOrderItem/list
+            查询交旧单明细列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [recycleOrderId string(可)]
+            返回: → WebMsg«查询交旧单明细输出参数»
+
+    POST    /api/order/recycle/recycleOrderItem/update
+            更新交旧单明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新交旧单明细输出参数»
+
+    GET     /api/order/recycle/recycleOrderItem/viewById
+            查询交旧单明细详情
+            参数: [recycleOrderItemId string(必) recycleOrderItemId]
+            返回: → WebMsg«通过ID查看交旧单明细输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二、出库管理  (63 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 冲销出库Api
+
+    POST    /api/order/outbound/reversal/create
+            冲销出库
+            参数: [input (必) input]
+            返回: → WebMsg«冲销出库输出参数»
+
+    POST    /api/order/outbound/reversal/delete
+            删除冲销出库单
+            参数: [input (必) input]
+            返回: → WebMsg«删除冲销出库单输出参数»
+
+    POST    /api/order/outbound/reversal/edit
+            编辑冲销出库单
+            参数: [input (必) input]
+            返回: → WebMsg«冲销出库编辑输出参数»
+
+    POST    /api/order/outbound/reversal/goods-receipt/create
+            采购入库明细强制冲销出库
+            参数: [input (必) input]
+            返回: → WebMsg«采购入库强制冲销出库输出参数»
+
+    GET     /api/order/outbound/reversal/goods-receipt/list
+            查询收货冲销出库单列表
+            参数: [endTime string(可) 出库结束时间]  [orderCode string(可) 出库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [purchaseOrderCode string(可) 采购订单号]  [startTime string(可) 出库开始时间]  [status string(可) 出库单状态]
+            返回: → WebMsg«查询收货冲销出库单列表输出参数»
+
+    GET     /api/order/outbound/reversal/goods-receipt/view
+            查看收货冲销出库单详情
+            参数: [outboundOrderId string(必)]
+            返回: → WebMsg«查看收货冲销出库单详情输出参数»
+
+    GET     /api/order/outbound/reversal/list
+            查询冲销出库单列表
+            参数: [endTime string(可) 出库结束时间]  [orderCode string(可) 出库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [startTime string(可) 出库开始时间]  [status string(可) 出库单状态]
+            返回: → WebMsg«查询冲销出库单列表输出参数»
+
+    GET     /api/order/outbound/reversal/view
+            查看冲销出库单详情
+            参数: [outboundOrderId string(必)]
+            返回: → WebMsg«查看冲销出库单详情输出参数»
+
+  ## 出库单Api
+
+    GET     /api/order/outbound/outboundOrder/assignmentHistory
+            出库单执行人转移历史
+            参数: [outboundOrderId string(必) 出库单Id]
+            返回: → WebMsg«出库单转移历史输出参数»
+
+    POST    /api/order/outbound/outboundOrder/cancel
+            取消出库单
+            参数: [input (必) input]
+            返回: → WebMsg«取消出库单输出参数»
+
+    POST    /api/order/outbound/outboundOrder/claim
+            认领领料出库单（明细转移）
+            参数: [input (必) input]
+            返回: → WebMsg«认领出库单输出参数»
+
+    POST    /api/order/outbound/outboundOrder/complete
+            出库单确认出库
+            参数: [input (必) input]
+            返回: → WebMsg«出库单完成输出参数»
+
+    GET     /api/order/outbound/outboundOrder/countByStatus
+            出库单分状态数量统计
+            返回: → WebMsg«出库单分状态数量统计输出参数»
+
+    POST    /api/order/outbound/outboundOrder/createByPaperRequisition
+            纸质领料单创建出库单
+            参数: [input (必) input]
+            返回: → WebMsg«纸质领料单创建出库单输出参数»
+
+    POST    /api/order/outbound/outboundOrder/createByRequisition
+            根据领料单新增出库单
+            参数: [input (必) input]
+            返回: → WebMsg«新增领料出库单输出参数»
+
+    POST    /api/order/outbound/outboundOrder/delete
+            删除出库单
+            参数: [input (必) input]
+            返回: → WebMsg«删除出库单输出参数»
+
+    POST    /api/order/outbound/outboundOrder/endPick
+            出库单完成拣货
+            参数: [input (必) input]
+            返回: → WebMsg«出库单完成拣货输出参数»
+
+    GET     /api/order/outbound/outboundOrder/list
+            查询出库单列表
+            参数: [keyword string(可) 关键词（模糊匹配：出库单号、领料单号）]  [orderCode string(可) 出库单编码]  [pageNo integer(可)]  [pageSize integer(可)]  [requisitionOrderId string(可) 领料单ID]  [status string(可) 出库单状态]  [type string(可) 出库单类型]
+            返回: → WebMsg«查询出库单输出参数»
+
+    GET     /api/order/outbound/outboundOrder/listClaimable
+            查询待认领领料出库单列表
+            参数: [excludeSelf boolean(可) 是否排除当前用户已是执行人的单，默认 true]  [pageNo integer(可)]  [pageSize integer(可)]  [warehouseCode string(可) 逻辑仓编码]
+            返回: → WebMsg«查询待认领出库单列表输出参数»
+
+    GET     /api/order/outbound/outboundOrder/listPendingPick
+            查询待拣货的出库单列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询待拣货的出库单列表输出参数»
+
+    GET     /api/order/outbound/outboundOrder/listPendingReview
+            查询待复核出库的出库单列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询待复核出库的出库单列表输出参数»
+
+    POST    /api/order/outbound/outboundOrder/reassignOperator
+            改派领料出库单执行人（明细转移）
+            参数: [input (必) input]
+            返回: → WebMsg«改派出库单执行人输出参数»
+
+    GET     /api/order/outbound/outboundOrder/requisitionOrder/list
+            查询领料出库单列表
+            参数: [createTimeEnd string(可) 创建时间截止]  [createTimeStart string(可) 创建时间起始]  [keyword string(可) 关键词（模糊匹配：出库单号、领料单号）]  [materialCode string(可) 物资编码]  [materialName string(可) 物资名称]  [orderCode string(可) 出库单编码]  [pageNo integer(可)]  [pageSize integer(可)]  [requisitionOrderId string(可) 领料单ID]  [status string(可) 出库单状态]  [type string(可) 出库单类型]
+            返回: → WebMsg«查询领料出库单输出参数»
+
+    POST    /api/order/outbound/outboundOrder/startPick
+            出库单发起拣货
+            参数: [input (必) input]
+            返回: → WebMsg«发起拣货输出参数»
+
+    POST    /api/order/outbound/outboundOrder/startReview
+            出库单发起复核
+            参数: [input (必) input]
+            返回: → WebMsg«发起复核输出参数»
+
+    GET     /api/order/outbound/outboundOrder/suggestLocations
+            按出库明细推荐可拣库位（不占用）
+            参数: [batchCode string(可)]  [outboundOrderItemId string(可)]  [quantity number(可)]
+            返回: → WebMsg«推荐拣货库位输出»
+
+    POST    /api/order/outbound/outboundOrder/update
+            更新出库单
+            参数: [input (必) input]
+            返回: → WebMsg«更新出库单输出参数»
+
+    GET     /api/order/outbound/outboundOrder/viewById
+            查询出库单详情
+            参数: [outboundOrderId string(必)]
+            返回: → WebMsg«通过ID查看出库单输出参数»
+
+  ## 出库单引导明细Api
+
+    POST    /api/order/outbound/outboundOrderItemGuide/allocate
+            拣货分配库位（L3→L4 allocate）
+            参数: [input (必) input]
+            返回: → WebMsg«allocate 输出»
+
+    POST    /api/order/outbound/outboundOrderItemGuide/delete
+            删除出库单引导明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除出库单引导明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemGuide/list
+            查询出库单引导明细列表
+            参数: [outboundOrderItemId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询出库单引导明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemGuide/listAllByOrderId
+            查询指定出库单下的所有引导明细
+            参数: [outboundOrderId string(可)]
+            返回: → WebMsg«查询指定出库单下的所有引导明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemGuide/listAllByOrderItemId
+            查询指定出库单明细下的所有引导明细
+            参数: [outboundOrderItemId string(可)]
+            返回: → WebMsg«查询指定出库单明细下的所有引导明细输出参数»
+
+    POST    /api/order/outbound/outboundOrderItemGuide/update
+            更新出库单引导明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新出库单引导明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemGuide/viewById
+            查询出库单引导明细详情
+            参数: [outboundOrderItemGuideId string(必)]
+            返回: → WebMsg«通过ID查看出库单引导明细输出参数»
+
+  ## 出库单总览Api
+
+    GET     /api/order/outbound/overview/list
+            查询出库单总览列表
+            参数: [completedEndTime string(可) 出库结束时间]  [completedStartTime string(可) 出库开始时间]  [keyword string(可) 关键字（出库单号/领料单号/退货单号 模糊匹配）]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 出库单状态]  [type string(可) 出库单类型（限：领料单出库、PDA快速出库、冲销出库、退货出库）]
+            返回: → WebMsg«查询出库单总览输出参数»
+
+  ## 出库单拣货明细Api
+
+    POST    /api/order/outbound/outboundOrderItemPick/delete
+            删除出库单拣货明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除出库单拣货明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemPick/list
+            查询出库单拣货明细列表
+            参数: [outboundOrderId string(可)]  [outboundOrderItemGuideId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询出库单拣货明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemPick/listAllByGuideId
+            查询出库单明细引导记录下的所有拣货明细
+            参数: [outboundOrderItemGuideId string(可)]
+            返回: → WebMsg«查询出库单明细引导记录下的所有拣货明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemPick/listAllByOrderId
+            查询出库单下的所有拣货明细
+            参数: [outboundOrderId string(可)]
+            返回: → WebMsg«查询出库单下的所有拣货明细输出参数»
+
+    POST    /api/order/outbound/outboundOrderItemPick/pickMany
+            非一物一码拣货
+            参数: [input (必) input]
+            返回: → WebMsg«非一物一码拣货输出参数»
+
+    POST    /api/order/outbound/outboundOrderItemPick/pickOne
+            一物一码拣货
+            参数: [input (必) input]
+            返回: → WebMsg«一物一码拣货输出参数»
+
+    POST    /api/order/outbound/outboundOrderItemPick/update
+            更新出库单拣货明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新出库单拣货明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemPick/viewById
+            查询出库单拣货明细详情
+            参数: [outboundOrderItemPickId string(必)]
+            返回: → WebMsg«通过ID查看出库单拣货明细输出参数»
+
+  ## 出库单明细Api
+
+    POST    /api/order/outbound/outboundOrderItem/checkMany
+            出库单明细（非一物一码）复核
+            参数: [input (必) input]
+            返回: → WebMsg«出库单明细（非一物一码）复核输出参数»
+
+    POST    /api/order/outbound/outboundOrderItem/checkOne
+            出库单明细（一物一码）复核
+            参数: [input (必) input]
+            返回: → WebMsg«出库单明细（一物一码）复核输出参数»
+
+    POST    /api/order/outbound/outboundOrderItem/delete
+            删除出库单明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除出库单明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItem/list
+            查询出库单明细列表
+            参数: [outboundOrderId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询出库单明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItem/listAllByOrderId
+            查询指定出库单的所有明细
+            参数: [outboundOrderId string(可)]
+            返回: → WebMsg«查询指定出库单的所有明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItem/listAllByOrderIdForReview
+            复核专用查询指定出库单的所有明细 (返回每个明细的复核数量)
+            参数: [outboundOrderId string(可)]
+            返回: → WebMsg«查询指定出库单的所有明细输出参数»
+
+    POST    /api/order/outbound/outboundOrderItem/update
+            更新出库单明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新出库单明细输出参数»
+
+    GET     /api/order/outbound/outboundOrderItem/viewById
+            查询出库单明细详情
+            参数: [outboundOrderItemId string(必)]
+            返回: → WebMsg«通过ID查看出库单明细输出参数»
+
+  ## 出库单明细复核记录Api
+
+    POST    /api/order/outbound/outboundOrderItemReview/cancelPassed
+            取消复核通过的出库单明细复核记录
+            参数: [input (必) input]
+            返回: → WebMsg«取消复核通过的出库单明细复核记录输出参数»
+
+    GET     /api/order/outbound/outboundOrderItemReview/listAllByOrderItemId
+            查询出库单明细下的所有复核操作记录
+            参数: [outboundOrderItemId string(可)]
+            返回: → WebMsg«查询出库单明细复核记录输出参数»
+
+  ## 待修出库Api
+
+    GET     /api/order/outbound/repair/list
+            查询待修出库单列表
+            参数: [endTime string(可) 出库结束时间]  [orderCode string(可) 出库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [startTime string(可) 出库开始时间]  [status string(可) 出库单状态]
+            返回: → WebMsg«查询待修出库单输出参数»
+
+  ## 快速出库Api
+
+    POST    /api/order/outbound/quick/execute
+            快速出库
+            参数: [input (必) input]
+            返回: → WebMsg«快速出库输出参数»
+
+  ## 报废出库Api
+
+    POST    /api/order/outbound/scrap/create
+            废品处置出库
+            参数: [input (必) input]
+            返回: → WebMsg«废品处置出库输出参数»
+
+    GET     /api/order/outbound/scrap/list
+            查询报废出库单列表
+            参数: [endTime string(可) 出库结束时间]  [orderCode string(可) 出库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [startTime string(可) 出库开始时间]  [status string(可) 出库单状态]
+            返回: → WebMsg«查询报废出库单输出参数»
+
+  ## 良品出库Api
+
+    POST    /api/order/outbound/repaired/create
+            良品领用出库
+            参数: [input (必) input]
+            返回: → WebMsg«良品领用出库输出参数»
+
+    GET     /api/order/outbound/repaired/list
+            查询良品出库单列表
+            参数: [endTime string(可) 出库结束时间]  [orderCode string(可) 出库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [startTime string(可) 出库开始时间]  [status string(可) 出库单状态]
+            返回: → WebMsg«查询良品出库单输出参数»
+
+  ## 退货出库Api
+
+    POST    /api/order/outbound/return/complete
+            完成退货出库
+            参数: [input (必) input]
+            返回: → WebMsg«退货出库完成输出参数»
+
+    GET     /api/order/outbound/return/item/operable-list
+            查询可操作退货出库单明细列表
+            参数: [outboundOrderCode string(可) 出库单号]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 明细状态]
+            返回: → WebMsg«查询可操作退货出库单明细输出参数»
+
+    POST    /api/order/outbound/return/pick
+            退货出库拣货
+            参数: [input (必) input]
+            返回: → WebMsg«退货出库拣货输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十、AI与数字人  (11 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 工作流数据调试Api
+
+    GET     /api/workflow-data/debug/collect
+            采集指定模块数据（不传moduleKey则采集全部）
+            参数: [moduleKey string(可) 模块标识，不传则采集全部]
+            返回: → WebMsg«工作流数据-采集数据输出参数»
+
+    GET     /api/workflow-data/debug/modules
+            列出所有已注册的采集器模块
+            返回: → WebMsg«工作流数据-列出模块输出参数»
+
+  ## 数字人Api
+
+    GET     /api/digitalhuman/voice/list
+            获取音色列表
+            返回: → WebMsg«获取数字人音色列表输出参数»
+
+  ## 数字人开放Api
+
+    GET     /api/open/digitalhuman/voice/list
+            获取音色列表
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«获取数字人音色列表输出参数»
+
+  ## 数字人配置开放Api
+
+    GET     /api/open/aiConfig/default
+            获取默认配置
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«获取AI配置输出参数»
+
+  ## 数字人配置管理Api
+
+    GET     /api/aiConfig/default
+            获取默认配置
+            返回: → WebMsg«获取AI配置输出参数»
+
+    POST    /api/aiConfig/saveAiModelList
+            保存AI模型列表
+            参数: [input (必) input]
+            返回: → WebMsg«保存AI模型列表输出参数»
+
+    POST    /api/aiConfig/saveAvatarList
+            保存数字人形象列表
+            参数: [input (必) input]
+            返回: → WebMsg«保存数字人形象列表输出参数»
+
+    POST    /api/aiConfig/setDefaultAiModel
+            设置默认AI模型
+            参数: [input (必) input]
+            返回: → WebMsg«设置默认AI模型输出参数»
+
+    POST    /api/aiConfig/setDefaultAvatar
+            设置默认数字人形象
+            参数: [input (必) input]
+            返回: → WebMsg«设置默认数字人形象输出参数»
+
+    POST    /api/aiConfig/uploadAvatarImage
+            上传数字人形象图片
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十一、空间管理  (11 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 空间位置点Api
+
+    GET     /api/space/spaceLocation/all
+            查询所有空间位置点
+            参数: [keyword string(可) 关键字（名称或编码模糊匹配）]  [locationType string(可) 类型]  [status string(可) 状态]
+            返回: → WebMsg«查询所有空间位置点输出参数»
+
+    GET     /api/space/spaceLocation/checkCodeExists
+            检查空间位置点编码是否存在
+            参数: [code string(必) 编码]  [excludeId string(可) 排除的ID（用于更新时排除自身）]
+            返回: → WebMsg«检查空间位置点编码是否存在输出参数»
+
+    POST    /api/space/spaceLocation/create
+            新增空间位置点
+            参数: [input (必) input]
+            返回: → WebMsg«新增空间位置点输出参数»
+
+    POST    /api/space/spaceLocation/delete
+            删除空间位置点
+            参数: [input (必) input]
+            返回: → WebMsg«删除空间位置点输出参数»
+
+    GET     /api/space/spaceLocation/list
+            查询空间位置点列表
+            参数: [code string(可)]  [locationType string(可)]  [name string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可)]
+            返回: → WebMsg«查询空间位置点输出参数»
+
+    GET     /api/space/spaceLocation/listByEntity
+            根据关联实体查询空间点位列表
+            参数: [entityCode string(必) 关联实体编码]  [entityType string(必) 关联实体类型]
+            返回: → WebMsg«根据关联实体查询空间点位列表输出参数»
+
+    POST    /api/space/spaceLocation/update
+            更新空间位置点
+            参数: [input (必) input]
+            返回: → WebMsg«更新空间位置点输出参数»
+
+    GET     /api/space/spaceLocation/viewById
+            查询空间位置点详情
+            参数: [spaceLocationId string(必) spaceLocationId]
+            返回: → WebMsg«通过ID查看空间位置点输出参数»
+
+  ## 空间位置点关联实体Api
+
+    POST    /api/space/spaceLocationEntityRel/create
+            新增空间位置点关联实体
+            参数: [input (必) input]
+            返回: → WebMsg«新增空间位置点关联实体输出参数»
+
+    POST    /api/space/spaceLocationEntityRel/delete
+            删除空间位置点关联实体
+            参数: [input (必) input]
+            返回: → WebMsg«删除空间位置点关联实体输出参数»
+
+    GET     /api/space/spaceLocationEntityRel/list
+            查询空间位置点关联实体列表
+            参数: [spaceLocationId string(可)]
+            返回: → WebMsg«查询空间位置点关联实体输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+二十二、外部对接  (10 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## CEIC集成Api
+
+    GET     /api/ceic/executionLog/list
+            查询CEIC执行记录列表
+            参数: [callType string(可) 调用类型: TASK_GROUP / SINGLE_TASK]  [endTime string(可) 结束时间]  [operatorName string(可) 执行人姓名]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页条数]  [startTime string(可) 开始时间]  [success boolean(可) 是否成功]  [targetId string(可) 目标ID]
+            返回: → WebMsg«查询CEIC执行记录输出参数»
+
+    POST    /api/ceic/singleTask/run
+            执行CEIC单任务
+            参数: [input (必) input]
+            返回: → WebMsg«执行CEIC单任务输出参数»
+
+    POST    /api/ceic/taskGroup/run
+            执行CEIC任务组
+            参数: [input (必) input]
+            返回: → WebMsg«执行CEIC任务组输出参数»
+
+  ## IMS调试
+
+    GET     /ims/develop1
+            IMS调试接口1
+            返回: → WebMsg«string»
+
+    GET     /ims/download/{fileAttachmentId}
+            下载附件
+            参数: [fileAttachmentId string(必) fileAttachmentId]  [refType string(必) refType]
+
+  ## 经营管理系统对接开放Api
+
+    POST    /api/open/custody/inbound
+            代保管入库
+            参数: [accessToken string(必) accessToken]  [data (必) data]
+            返回: → 报废单据保存输出参数»
+
+    POST    /api/open/custody/outbound
+            代保管领料出库
+            参数: [accessToken string(必) accessToken]  [data (必) data]
+            返回: → 报废单据保存输出参数»
+
+    GET     /api/open/custody/recycle
+            交旧单查询
+            参数: [accessToken string(必) accessToken]  [createTimeEnd string(可) createTimeEnd]  [createTimeStart string(可) createTimeStart]  [itemStatus integer(可) itemStatus]  [keyword string(可) keyword]  [orderStatus integer(可) orderStatus]  [pageNo integer(可) pageNo]  [pageSize integer(可) pageSize]
+            返回: → WebMsg«开放接口-查询交旧单输出参数»
+
+    POST    /api/open/custody/return
+            代保管退库
+            参数: [accessToken string(必) accessToken]  [data (必) data]
+            返回: → 报废单据保存输出参数»
+
+    POST    /api/open/custody/scrap-inbound
+            报废入库
+            参数: [accessToken string(必) accessToken]  [data (必) data]
+            返回: → 报废单据保存输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+五、盘点管理  (38 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 盘点任务Api
+
+    POST    /api/inventory/inventoryCountTask/batchCancel
+            批量取消盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«批量取消盘点任务输出参数»
+
+    POST    /api/inventory/inventoryCountTask/createByLocation
+            按货位创建盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«按货位创建盘点任务输出参数»
+
+    POST    /api/inventory/inventoryCountTask/createManual
+            手动创建盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«手动创建盘点任务输出参数»
+
+    GET     /api/inventory/inventoryCountTask/list
+            查询盘点任务列表
+            参数: [assigneeKeyword string(可) 执行人关键字（名称模糊匹配）]  [assigneeType string(可) 执行人类型]  [countPlanCode string(可) 盘点计划编码]  [countPlanId string(可) 盘点计划Id]  [countPlanKeyword string(可) 盘点计划关键字（编码/名称）]  [countTaskCode string(可) 盘点任务编码]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 盘点任务状态]
+            返回: → WebMsg«查询盘点任务输出参数»
+
+    GET     /api/inventory/inventoryCountTask/operableList
+            查询当前登录人的盘点任务
+            参数: [countPlanCode string(可) 盘点计划编码]  [countPlanId string(可) 盘点计划Id]  [countPlanKeyword string(可) 盘点计划关键字（编码/名称）]  [countTaskCode string(可) 盘点任务编码]  [pageNo integer(可)]  [pageSize integer(可)]  [statusList array(可) 盘点任务状态]
+            返回: → WebMsg«查询盘点任务输出参数»
+
+    POST    /api/inventory/inventoryCountTask/rfid/batchQuery
+            盘库RFID批量查询物资信息
+            参数: [input (必) input]
+            返回: → WebMsg«盘库RFID批量查询物资信息输出参数»
+
+    POST    /api/inventory/inventoryCountTask/submit
+            提交盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«提交盘点任务输出参数»
+
+    GET     /api/inventory/inventoryCountTask/viewById
+            查询盘点任务详情
+            参数: [inventoryCountTaskId string(必) inventoryCountTaskId]
+            返回: → WebMsg«通过ID查看盘点任务输出参数»
+
+  ## 盘点任务明细Api
+
+    GET     /api/inventory/inventoryCountTaskItem/locations
+            查询盘点任务关联的所有库位
+            参数: [countTaskId string(必) countTaskId]
+            返回: → WebMsg«查询盘点任务关联库位输出参数»
+
+  ## 盘点任务明细V2Api（货位维度）
+
+    POST    /api/v2/inventory/countTask/item/complete
+            手动完成货位明细（空库位或物资已全部盘完）
+            参数: [input (必) input]
+            返回: → WebMsg«手动完成货位明细V2输出参数»
+
+    GET     /api/v2/inventory/countTask/item/list
+            查询盘点任务货位明细列表
+            参数: [countTaskId string(必) 盘点任务Id]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 货位明细状态筛选]
+            返回: → WebMsg«查询盘点任务明细列表V2输出参数»
+
+    GET     /api/v2/inventory/countTask/item/viewById
+            查询盘点任务货位明细详情
+            参数: [countTaskItemId string(必) countTaskItemId]
+            返回: → WebMsg«通过ID查看盘点任务货位明细详情V2输出参数»
+
+  ## 盘点任务物资V2Api（物资维度）
+
+    POST    /api/v2/inventory/countTask/item/material/addDiscovery
+            添加发现物资
+            参数: [input (必) input]
+            返回: → WebMsg«添加发现物资V2输出参数»
+
+    POST    /api/v2/inventory/countTask/item/material/batchSubmit
+            按货位批量提交物资盘点结果
+            参数: [input (必) input]
+            返回: → WebMsg«批量提交物资盘点结果V2输出参数»
+
+    POST    /api/v2/inventory/countTask/item/material/deleteDiscovery
+            删除发现物资
+            参数: [input (必) input]
+            返回: → WebMsg«删除发现物资V2输出参数»
+
+    POST    /api/v2/inventory/countTask/item/material/submit
+            提交单条物资盘点结果
+            参数: [input (必) input]
+            返回: → WebMsg«提交单条物资盘点结果V2输出参数»
+
+  ## 盘点策略Api
+
+    POST    /api/inventory/inventoryCountStrategy/create
+            新增盘点策略
+            参数: [input (必) input]
+            返回: → WebMsg«新增盘点策略输出参数»
+
+    GET     /api/inventory/inventoryCountStrategy/list
+            查询盘点策略列表
+            参数: [code string(可) 策略编号]  [name string(可) 策略名称]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 状态]
+            返回: → WebMsg«查询盘点策略列表输出参数»
+
+    GET     /api/inventory/inventoryCountStrategy/scopePage
+            分页查询盘点策略作业区域
+            参数: [inventoryCountStrategyId string(必)]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页数量]
+            返回: → WebMsg«分页查询盘点策略作业区域输出参数»
+
+    POST    /api/inventory/inventoryCountStrategy/toggleStatus
+            切换盘点策略启用/禁用状态
+            参数: [input (必) input]
+            返回: → WebMsg«切换盘点策略状态输出参数»
+
+    POST    /api/inventory/inventoryCountStrategy/update
+            更新盘点策略
+            参数: [input (必) input]
+            返回: → WebMsg«更新盘点策略输出参数»
+
+    GET     /api/inventory/inventoryCountStrategy/viewById
+            查询盘点策略详情
+            参数: [inventoryCountStrategyId string(必) inventoryCountStrategyId]
+            返回: → WebMsg«通过ID查看盘点策略输出参数»
+
+  ## 盘点结果单Api
+
+    GET     /api/inventory/inventoryCountResult/exportItems
+            导出盘点结果明细Excel
+            参数: [countPlanId string(可) countPlanId]  [countResultId string(可) countResultId]
+
+    POST    /api/inventory/inventoryCountResult/item/adjust
+            基于结果明细生成库存调整单
+            参数: [input (必) input]
+            返回: → WebMsg«基于结果明细生成库存调整单输出参数»
+
+    POST    /api/inventory/inventoryCountResult/item/confirm
+            人工确认免调整
+            参数: [input (必) input]
+            返回: → WebMsg«人工确认免调整输出参数»
+
+    GET     /api/inventory/inventoryCountResult/item/history
+            盘点结果明细历史溯源
+            参数: [resultItemId string(必) resultItemId]
+            返回: → WebMsg«盘点结果明细历史溯源输出参数»
+
+    POST    /api/inventory/inventoryCountResult/item/process
+            单条明细统一处理（选择采纳盘点记录）
+            参数: [input (必) input]
+            返回: → WebMsg«差异处理单单条明细统一处理输出参数»
+
+    POST    /api/inventory/inventoryCountResult/item/recount
+            基于结果明细生成复盘任务
+            参数: [input (必) input]
+            返回: → WebMsg«基于结果明细生成复盘任务输出参数»
+
+    GET     /api/inventory/inventoryCountResult/item/viewById
+            按ID查询盘点结果明细详情
+            参数: [resultItemId string(必) resultItemId]
+            返回: → WebMsg«按ID查询盘点结果明细输出参数»
+
+    GET     /api/inventory/inventoryCountResult/items
+            查询盘点结果明细列表
+            参数: [batchCode string(可) 批次号]  [countPlanId string(必) 盘点计划Id]  [itemStatus string(可) 盘点物资业务状态]  [locationCode string(可) 库位编码]  [materialCode string(可) 物资编码]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 结果明细处理状态]  [varianceType string(可) 差异类型筛选: SURPLUS-盘盈, LOSS-盘亏]
+            返回: → WebMsg«查询盘点结果明细列表输出参数»
+
+    GET     /api/inventory/inventoryCountResult/list
+            查询盘点结果单列表
+            参数: [countPlanId string(可) 盘点计划Id]  [keyword string(可) 编号/计划编号/名称（关键字）]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 结果单状态]
+            返回: → WebMsg«查询盘点结果单列表输出参数»
+
+    GET     /api/inventory/inventoryCountResult/summary
+            盘点结果单统计摘要
+            参数: [countPlanId string(可) 盘点计划Id（与 countResultId 二选一）]  [countResultId string(可) 盘点结果单Id（与 countPlanId 二选一）]
+            返回: → WebMsg«盘点结果单统计摘要输出参数»
+
+    GET     /api/inventory/inventoryCountResult/viewById
+            按ID查询盘点结果单详情
+            参数: [countResultId string(必) countResultId]
+            返回: → WebMsg«按ID查询盘点结果单输出参数»
+
+    GET     /api/inventory/inventoryCountResult/viewByPlanId
+            按盘点计划ID查询盘点结果单
+            参数: [countPlanId string(必) 盘点计划Id]
+            返回: → WebMsg«按盘点计划ID查询盘点结果单输出参数»
+
+  ## 盘点计划Api
+
+    POST    /api/inventory/inventoryCountPlan/cancel
+            取消盘点计划
+            参数: [input (必) input]
+            返回: → WebMsg«取消盘点计划输出参数»
+
+    GET     /api/inventory/inventoryCountPlan/list
+            查询盘点计划列表
+            参数: [keyword string(可) 计划编号或名称（关键字）]  [pageNo integer(可)]  [pageSize integer(可)]  [source string(可) 来源]  [status string(可) 状态]  [strategyKeyword string(可) 策略编号或名称（关键字，source=STRATEGY 时生效）]
+            返回: → WebMsg«查询盘点计划输出参数»
+
+    GET     /api/inventory/inventoryCountPlan/materialDetail/list
+            查询盘点计划盘盈/盘亏物资明细
+            参数: [countPlanId string(必) 盘点计划ID]  [pageNo integer(可)]  [pageSize integer(可)]  [varianceType string(可) 差异类型：SURPLUS=盘盈, LOSS=盘亏]
+            返回: → WebMsg«查询盘点计划物资明细输出参数»
+
+    GET     /api/inventory/inventoryCountPlan/viewById
+            查询盘点计划详情
+            参数: [inventoryCountPlanId string(必) inventoryCountPlanId]
+            返回: → WebMsg«通过ID查看盘点计划输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+八、维修管理  (12 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 维修单Api
+
+    POST    /api/order/repair/repairOrder/create
+            新增维修单
+            参数: [input (必) input]
+            返回: → WebMsg«新增维修单输出参数»
+
+    POST    /api/order/repair/repairOrder/createAndSend
+            创建并送修维修单
+            参数: [input (必) input]
+            返回: → WebMsg«创建并送修维修单输出参数»
+
+    POST    /api/order/repair/repairOrder/delete
+            删除维修单
+            参数: [input (必) input]
+            返回: → WebMsg«删除维修单输出参数»
+
+    GET     /api/order/repair/repairOrder/list
+            查询维修单列表
+            参数: [orderCode string(可) 按单号模糊搜索]  [pageNo integer(可)]  [pageSize integer(可)]  [recycleOrderCode string(可) 按关联交旧单号模糊搜索]  [repairVendorName string(可) 按维修商名称模糊搜索]  [status string(可) 按状态筛选]
+            返回: → WebMsg«查询维修单输出参数»
+
+    POST    /api/order/repair/repairOrder/send
+            送修维修单
+            参数: [input (必) input]
+            返回: → WebMsg«发送维修输出参数»
+
+    POST    /api/order/repair/repairOrder/update
+            更新维修单
+            参数: [input (必) input]
+            返回: → WebMsg«更新维修单输出参数»
+
+    GET     /api/order/repair/repairOrder/viewById
+            查询维修单详情
+            参数: [repairOrderId string(必) repairOrderId]
+            返回: → WebMsg«通过ID查看维修单输出参数»
+
+  ## 维修单明细Api
+
+    POST    /api/order/repair/repairOrderItem/create
+            新增维修单明细
+            参数: [input (必) input]
+            返回: → WebMsg«新增维修单明细输出参数»
+
+    POST    /api/order/repair/repairOrderItem/delete
+            删除维修单明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除维修单明细输出参数»
+
+    GET     /api/order/repair/repairOrderItem/list
+            查询维修单明细列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [repairOrderId string(必)]
+            返回: → WebMsg«查询维修单明细输出参数»
+
+    POST    /api/order/repair/repairOrderItem/update
+            更新维修单明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新维修单明细输出参数»
+
+    GET     /api/order/repair/repairOrderItem/viewById
+            查询维修单明细详情
+            参数: [repairOrderItemId string(必) repairOrderItemId]
+            返回: → WebMsg«通过ID查看维修单明细输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+六、采购管理  (41 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## ERP采购订单导入开放Api
+
+    POST    /api/open/erp/purchase/029/import/map
+            采购订单029 Map导入 ZWMRP029
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«采购订单029 Map导入输出参数»
+
+    POST    /api/open/erp/purchase/029/import/save
+            采购订单029 导入保存 ZWMRP029
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«采购订单029导入保存输出参数»
+
+    POST    /api/open/erp/purchase/029/import/upload
+            采购订单029 上传导入文件 ZWMRP029
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/erp/purchase/048/import/map
+            采购订单048 Map导入 ZMMRP048
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«采购订单048 Map导入输出参数»
+
+    POST    /api/open/erp/purchase/048/import/save
+            采购订单048 导入保存 ZMMRP048
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«采购订单048导入保存输出参数»
+
+    POST    /api/open/erp/purchase/048/import/upload
+            采购订单048 上传导入文件 ZMMRP048
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/erp/purchase/054/import/map
+            采购订单054 Map导入 ZMMRP054
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«采购订单054 Map导入输出参数»
+
+    POST    /api/open/erp/purchase/054/import/save
+            采购订单054 导入保存 ZMMRP054
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«采购订单054导入保存输出参数»
+
+    POST    /api/open/erp/purchase/054/import/upload
+            采购订单054 上传导入文件 ZMMRP054
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 采购合同Api
+
+    POST    /api/purchase/contract/create
+            新增采购合同
+            参数: [input (必) input]
+            返回: → WebMsg«新增采购合同输出参数»
+
+    POST    /api/purchase/contract/delete
+            删除采购合同
+            参数: [input (必) input]
+            返回: → WebMsg«删除采购合同输出参数»
+
+    GET     /api/purchase/contract/list
+            查询采购合同列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询采购合同输出参数»
+
+    POST    /api/purchase/contract/update
+            更新采购合同
+            参数: [input (必) input]
+            返回: → WebMsg«更新采购合同输出参数»
+
+    GET     /api/purchase/contract/viewById
+            查询采购合同详情
+            参数: [purchaseContractId string(必) purchaseContractId]
+            返回: → WebMsg«通过ID查看采购合同输出参数»
+
+  ## 采购订单029Api
+
+    POST    /api/erp/purchase/029/import/map
+            采购订单029 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«采购订单029 Map导入输出参数»
+
+    POST    /api/erp/purchase/029/import/save
+            采购订单029导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«采购订单029导入保存输出参数»
+
+    POST    /api/erp/purchase/029/import/upload
+            上传导入文件 ZWMRP029
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 采购订单048Api
+
+    POST    /api/erp/purchase/048/import/map
+            采购订单048 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«采购订单048 Map导入输出参数»
+
+    POST    /api/erp/purchase/048/import/save
+            采购订单048导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«采购订单048导入保存输出参数»
+
+    POST    /api/erp/purchase/048/import/upload
+            上传导入文件 ZMMRP048
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 采购订单054Api
+
+    POST    /api/erp/purchase/054/import/map
+            采购订单054 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«采购订单054 Map导入输出参数»
+
+    POST    /api/erp/purchase/054/import/save
+            采购订单054导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«采购订单054导入保存输出参数»
+
+    POST    /api/erp/purchase/054/import/upload
+            上传导入文件 ZMMRP054
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 采购订单Api
+
+    POST    /api/purchase/order/create
+            新增采购订单
+            参数: [input (必) input]
+            返回: → WebMsg«新增采购订单输出参数»
+
+    POST    /api/purchase/order/delete
+            删除采购订单
+            参数: [input (必) input]
+            返回: → WebMsg«删除采购订单输出参数»
+
+    GET     /api/purchase/order/list
+            查询采购订单列表
+            参数: [code string(可)]  [contractCode string(可)]  [materialCode string(可) 物料编码]  [materialName string(可) 物料名称]  [orderDateEnd string(可) 订单日期结束]  [orderDateStart string(可) 订单日期开始]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询采购订单输出参数»
+
+    POST    /api/purchase/order/quickCreate
+            快速创建采购单（调试用）
+            参数: [input (必) input]
+            返回: → WebMsg«快速创建采购单输出参数»
+
+    POST    /api/purchase/order/update
+            更新采购订单
+            参数: [input (必) input]
+            返回: → WebMsg«更新采购订单输出参数»
+
+    GET     /api/purchase/order/viewByCode
+            通过code查询采购订单详情
+            参数: [purchaseOrderCode string(必) purchaseOrderCode]
+            返回: → WebMsg«通过编码查看采购订单输出参数»
+
+    GET     /api/purchase/order/viewById
+            通过Id查询采购订单详情
+            参数: [purchaseOrderId string(必) purchaseOrderId]
+            返回: → WebMsg«通过ID查看采购订单输出参数»
+
+  ## 采购订单明细Api
+
+    POST    /api/purchase/orderItem/create
+            新增采购订单明细
+            参数: [input (必) input]
+            返回: → WebMsg«新增采购订单明细输出参数»
+
+    POST    /api/purchase/orderItem/delete
+            删除采购订单明细
+            参数: [input (必) input]
+            返回: → WebMsg«删除采购订单明细输出参数»
+
+    GET     /api/purchase/orderItem/list
+            查询采购订单明细列表
+            参数: [materialCode string(可)]  [materialName string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [purchaseOrderCode string(可)]  [purchaseOrderId string(可)]
+            返回: → WebMsg«查询采购订单明细输出参数»
+
+    POST    /api/purchase/orderItem/update
+            更新采购订单明细
+            参数: [input (必) input]
+            返回: → WebMsg«更新采购订单明细输出参数»
+
+    GET     /api/purchase/orderItem/viewById
+            查询采购订单明细详情
+            参数: [purchaseOrderItemId string(必) purchaseOrderItemId]
+            返回: → WebMsg«通过ID查看采购订单明细输出参数»
+
+  ## 采购退货单
+
+    POST    /api/order/purchase-return/cancel
+            取消退货单
+            参数: [input (必) input]
+            返回: → WebMsg«取消采购退货单输出参数»
+
+    POST    /api/order/purchase-return/create-outbound
+            生成退货出库单
+            参数: [input (必) input]
+            返回: → WebMsg«生成退货出库单输出参数»
+
+    GET     /api/order/purchase-return/item/operable-list
+            查询可操作退货单明细列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [purchaseReturnOrderCode string(可) 退货单号]  [status string(可) 明细状态]
+            返回: → WebMsg«查询可操作退货单明细输出参数»
+
+    GET     /api/order/purchase-return/list
+            查询采购退货单列表
+            参数: [keyword string(可) 关键字]  [materialCode string(可) 物资编码]  [materialName string(可) 物资名称]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页数量]  [status string(可) 状态]
+            返回: → WebMsg«查询采购退货单列表输出参数»
+
+    POST    /api/order/purchase-return/review
+            审核采购退货单
+            参数: [input (必) input]
+            返回: → WebMsg«审核采购退货单输出参数»
+
+    GET     /api/order/purchase-return/{id}
+            查看采购退货单详情
+            参数: [id string(必) id]
+            返回: → WebMsg«查看采购退货单详情输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十、追溯管理  (29 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 库位追溯Api
+
+    GET     /api/trace/location/traceByBarcode
+            通过库位条码追溯查询
+            参数: [barcode string(必) 库位条码]
+            返回: → WebMsg«通过库位条码追溯查询输出参数»
+
+  ## 库位追溯Api v2
+
+    GET     /api/v2/trace/location/byBarcode
+            通过库位条码追溯查询（v2）
+            参数: [barcode string(必) 库位条码]  [endTime string(可) 结束时间（可选）]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«通过库位条码追溯查询输出参数（v2）»
+
+  ## 数字孪生Api
+
+    GET     /api/digitaltwin/location/list
+            货位列表查询
+            参数: [locationFunction string(可) 货位功能]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页条数]  [storageArea string(可) 存储区（智慧仓 A00 内）]  [warehouseCode string(可) 仓库编码（已废弃，忽略；物理范围固定为智慧仓储库区 A00）]  [warehouseShelfCodes array(可) 货架编码列表]
+            返回: → WebMsg«数字孪生货位列表查询输出参数»
+
+    GET     /api/digitaltwin/locationTraceByBarcode
+            数字孪生通过库位条码追溯
+            参数: [barcode string(必) 库位条码]
+            返回: → WebMsg«数字孪生通过库位条码追溯查询输出参数»
+
+    GET     /api/digitaltwin/material/flowRecords
+            物资流转记录查询
+            参数: [materialCode string(可) 物资编码]  [page integer(可) 页码，从1开始]  [pageSize integer(可) 每页大小]  [shelfCode string(可) 货架编码（可选）]
+            返回: → WebMsg«数字孪生物资流转记录查询输出参数»
+
+    GET     /api/digitaltwin/material/shelfLocations
+            物资所在货架货位查询
+            参数: [materialCode string(可) 物资编码]  [materialName string(可) 物资名称（模糊匹配）]
+            返回: → WebMsg«数字孪生物资货架货位查询输出参数»
+
+    GET     /api/digitaltwin/materialTraceListByRfid
+            数字孪生通过RFID标签追溯全流程
+            参数: [rfidTag string(必) RFID标签]
+            返回: → WebMsg«数字孪生通过RFID标签追溯全流程查询输出参数»
+
+    GET     /api/digitaltwin/shelf/allFloorStacks
+            获取所有地堆
+            参数: [shelfType string(可) 货架类型，可选；不传则返回全部]
+            返回: → WebMsg«数字孪生获取所有地堆输出参数»
+
+    GET     /api/digitaltwin/shelf/allShelves
+            获取所有货架
+            参数: [shelfType string(可) 货架类型，可选；不传则返回全部]
+            返回: → WebMsg«数字孪生获取所有货架输出参数»
+
+    GET     /api/digitaltwin/shelf/inventory
+            货架物资库存查询
+            参数: [shelfCode string(可) 货架编码]
+            返回: → WebMsg«数字孪生货架物资库存查询输出参数»
+
+  ## 数字孪生开放Api
+
+    GET     /api/open/digitaltwin/location/findByBarcode
+            通过库位条码查询库位信息
+            参数: [accessToken string(必) accessToken]  [barcode string(可) 库位条码]
+            返回: → WebMsg«数字孪生通过库位条码查询库位输出参数»
+
+    GET     /api/open/digitaltwin/location/list
+            货位列表查询
+            参数: [accessToken string(必) accessToken]  [locationFunction string(可) 货位功能]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页条数]  [storageArea string(可) 存储区（智慧仓 A00 内）]  [warehouseCode string(可) 仓库编码（已废弃，忽略；物理范围固定为智慧仓储库区 A00）]  [warehouseShelfCodes array(可) 货架编码列表]
+            返回: → WebMsg«数字孪生货位列表查询输出参数»
+
+    GET     /api/open/digitaltwin/locationTraceByBarcode
+            数字孪生通过库位条码追溯
+            参数: [accessToken string(必) accessToken]  [barcode string(必) 库位条码]
+            返回: → WebMsg«数字孪生通过库位条码追溯查询输出参数»
+
+    GET     /api/open/digitaltwin/material/flowRecords
+            物资流转记录查询
+            参数: [accessToken string(必) accessToken]  [materialCode string(可) 物资编码]  [page integer(可) 页码，从1开始]  [pageSize integer(可) 每页大小]  [shelfCode string(可) 货架编码（可选）]
+            返回: → WebMsg«数字孪生物资流转记录查询输出参数»
+
+    GET     /api/open/digitaltwin/material/locations
+            物资所在货位查询
+            参数: [accessToken string(必) accessToken]  [materialCode string(可) 物资编码]
+            返回: → WebMsg«数字孪生物资所在货位查询输出参数»
+
+    GET     /api/open/digitaltwin/material/shelfLocations
+            物资所在货架货位查询
+            参数: [accessToken string(必) accessToken]  [materialCode string(可) 物资编码]  [materialName string(可) 物资名称（模糊匹配）]
+            返回: → WebMsg«数字孪生物资货架货位查询输出参数»
+
+    GET     /api/open/digitaltwin/materialTraceListByRfid
+            数字孪生通过RFID标签追溯全流程
+            参数: [accessToken string(必) accessToken]  [rfidTag string(必) RFID标签]
+            返回: → WebMsg«数字孪生通过RFID标签追溯全流程查询输出参数»
+
+    GET     /api/open/digitaltwin/shelf/allFloorStacks
+            获取所有地堆
+            参数: [accessToken string(必) accessToken]  [shelfType string(可) 货架类型，可选；不传则返回全部]
+            返回: → WebMsg«数字孪生获取所有地堆输出参数»
+
+    GET     /api/open/digitaltwin/shelf/allShelves
+            获取所有货架
+            参数: [accessToken string(必) accessToken]  [shelfType string(可) 货架类型，可选；不传则返回全部]
+            返回: → WebMsg«数字孪生获取所有货架输出参数»
+
+    GET     /api/open/digitaltwin/shelf/inventory
+            货架物资库存查询
+            参数: [accessToken string(必) accessToken]  [shelfCode string(可) 货架编码]
+            返回: → WebMsg«数字孪生货架物资库存查询输出参数»
+
+    GET     /api/open/digitaltwin/shelf/viewByCode
+            通过编码查看货架信息
+            参数: [accessToken string(必) accessToken]  [warehouseShelfCode string(必)]
+            返回: → WebMsg«数字孪生通过编码查看货架输出参数»
+
+  ## 物资追溯Api
+
+    GET     /api/trace/material/listByBarcode
+            通过库存条码追溯全流程查询
+            参数: [barcode string(必) 库存条码]  [businessTypes array(可) 业务类型列表（可选，使用BusinessType常量）]  [endTime string(可) 结束时间（可选）]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«通过库存条码追溯全流程查询输出参数»
+
+    GET     /api/trace/material/listByMaterialCode
+            通过物资编码追溯全流程查询
+            参数: [businessTypes array(可) 业务类型列表（可选，使用BusinessType常量）]  [endTime string(可) 结束时间（可选）]  [materialCode string(必) 物料编码]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«物资追溯查询输出参数»
+
+    GET     /api/trace/material/listByMaterialCodeAndBatchCode
+            通过物资编码和批次码追溯全流程查询
+            参数: [batchCode string(必) 批次号]  [businessTypes array(可) 业务类型列表（可选，使用BusinessType常量）]  [endTime string(可) 结束时间（可选）]  [materialCode string(必) 物料编码]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«物资追溯查询输出参数»
+
+    GET     /api/trace/material/listByRfid
+            通过RFID标签追溯全流程查询
+            参数: [businessTypes array(可) 业务类型列表（可选，使用BusinessType常量）]  [endTime string(可) 结束时间（可选）]  [rfidTag string(必) RFID标签]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«通过RFID标签追溯全流程查询输出参数»
+
+  ## 物资追溯Api v2
+
+    GET     /api/v2/trace/material/byBarcode
+            通过库存条码追溯查询（v2）
+            参数: [barcode string(必) 库存条码]  [endTime string(可) 结束时间（可选）]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«通过库存条码追溯查询输出参数（v2）»
+
+    GET     /api/v2/trace/material/byBatch
+            通过批次追溯查询（v2）
+            参数: [batchCode string(必) 批次号]  [endTime string(可) 结束时间（可选）]  [materialCode string(必) 物料编码]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«通过批次追溯查询输出参数（v2）»
+
+    GET     /api/v2/trace/material/byMaterialCode
+            通过物资编码追溯查询（v2）
+            参数: [endTime string(可) 结束时间（可选）]  [materialCode string(必) 物料编码]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«通过物资编码追溯查询输出参数（v2）»
+
+    GET     /api/v2/trace/material/byRfid
+            通过RFID标签追溯查询（v2）
+            参数: [endTime string(可) 结束时间（可选）]  [rfidTag string(必) RFID标签]  [startTime string(可) 开始时间（可选）]
+            返回: → WebMsg«通过RFID追溯查询输出参数（v2）»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十一、ERP集成  (77 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## ERP catalog 导入Api
+
+    POST    /api/erp/catalog-import/run
+            执行 ERP catalog → staging 同步
+            参数: [input (必) input]
+            返回: → WebMsg«ERP catalog 导入输出»
+
+  ## ERP catalog 导入开放Api
+
+    POST    /api/open/erp/catalog-import/run
+            执行 ERP catalog → staging 同步（开放）
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«ERP catalog 导入输出»
+
+  ## ERP 协作任务
+
+    GET     /api/erp/task/list
+            任务列表
+            参数: [businessCode string(可) businessCode]  [businessId string(可) businessId]  [businessItemId string(可) businessItemId]  [page integer(可) page]  [pageNo integer(可) pageNo]  [pageSize integer(可) pageSize]  [size integer(可) size]  [status string(可) status]  [taskType string(可) taskType]
+            返回: → WebMsg«ErpTaskListResult»
+
+    POST    /api/erp/task/repush/cancelled
+            触发 CANCELLED 任务补推（retry→PENDING）
+            参数: [limit integer(可) limit]
+            返回: → WebMsg«Map«string,int»»
+
+    GET     /api/erp/task/{taskId}
+            任务详情
+            参数: [taskId string(必) taskId]
+            返回: → WebMsg«ErpTaskViewResult»
+
+    POST    /api/erp/task/{taskId}/cancel
+            取消任务
+            参数: [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/erp/task/{taskId}/claim
+            认领任务
+            参数: [request (可) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/erp/task/{taskId}/items/result
+            回写明细结果
+            参数: [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«Map«string,int»»
+
+    POST    /api/erp/task/{taskId}/reject
+            拒绝任务
+            参数: [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/erp/task/{taskId}/result
+            回写结果
+            参数: [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/erp/task/{taskId}/retry
+            重开任务
+            参数: [request (可) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/erp/task/{taskId}/status
+            更新状态
+            参数: [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+  ## ERP 协作任务 Open API
+
+    GET     /api/open/erp/task/list
+            查询任务列表
+            参数: [accessToken string(必) accessToken]  [businessCode string(可) businessCode]  [businessId string(可) businessId]  [businessItemId string(可) businessItemId]  [page integer(可) page]  [size integer(可) size]  [status string(可) status]  [taskType string(可) taskType]
+            返回: → WebMsg«ErpTaskListResult»
+
+    POST    /api/open/erp/task/repush/cancelled
+            触发 CANCELLED 任务补推（retry→PENDING）
+            参数: [accessToken string(必) accessToken]  [limit integer(可) limit]
+            返回: → WebMsg«Map«string,int»»
+
+    GET     /api/open/erp/task/{taskId}
+            查询任务详情
+            参数: [accessToken string(必) accessToken]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTaskViewResult»
+
+    POST    /api/open/erp/task/{taskId}/cancel
+            取消任务
+            参数: [accessToken string(必) accessToken]  [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/open/erp/task/{taskId}/claim
+            认领任务
+            参数: [accessToken string(必) accessToken]  [request (可) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/open/erp/task/{taskId}/items/result
+            回写明细结果
+            参数: [accessToken string(必) accessToken]  [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«Map«string,int»»
+
+    POST    /api/open/erp/task/{taskId}/reject
+            拒绝任务
+            参数: [accessToken string(必) accessToken]  [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/open/erp/task/{taskId}/result
+            回写任务结果
+            参数: [accessToken string(必) accessToken]  [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/open/erp/task/{taskId}/retry
+            重开任务
+            参数: [accessToken string(必) accessToken]  [request (可) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+    POST    /api/open/erp/task/{taskId}/status
+            更新状态
+            参数: [accessToken string(必) accessToken]  [request (必) request]  [taskId string(必) taskId]
+            返回: → WebMsg«ErpTask»
+
+  ## ERP库存快照差异Api
+
+    POST    /api/erp/inventory/snapshot/diff/compare
+            立即执行比对
+            参数: [importDate string(可) importDate]
+            返回: → WebMsg«立即比对输出参数»
+
+    GET     /api/erp/inventory/snapshot/diff/dates
+            查询有差异记录的日期列表
+            返回: → WebMsg«ERP库存快照差异日期查询输出参数»
+
+    GET     /api/erp/inventory/snapshot/diff/exportDiff
+            导出ERP库存差异明细
+            参数: [importDate string(可) importDate]
+
+    GET     /api/erp/inventory/snapshot/diff/grouped-list
+            按物资+批次分组分页查询差异
+            参数: [diffType string(可) diffType]  [importDate string(可) importDate]  [keyword string(可) keyword]  [oneCodePerItem string(可) oneCodePerItem]  [pageNo integer(可) pageNo]  [pageSize integer(可) pageSize]
+            返回: → WebMsg«ERP库存快照差异分组查询输出参数»
+
+    GET     /api/erp/inventory/snapshot/diff/list
+            分页查询差异明细
+            参数: [diffType string(可) diffType]  [importDate string(可) importDate]  [keyword string(可) keyword]  [pageNo integer(可) pageNo]  [pageSize integer(可) pageSize]
+            返回: → WebMsg«ERP库存快照差异明细查询输出参数»
+
+  ## ERP库存快照差异开放Api
+
+    POST    /api/open/erp/inventory/snapshot/diff/compare
+            立即执行比对
+            参数: [accessToken string(必) accessToken]  [importDate string(可) importDate]
+            返回: → WebMsg«立即比对输出参数»
+
+    GET     /api/open/erp/inventory/snapshot/diff/dates
+            查询有差异记录的日期列表
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«ERP库存快照差异日期查询输出参数»
+
+    GET     /api/open/erp/inventory/snapshot/diff/exportDiff
+            导出ERP库存差异明细
+            参数: [accessToken string(必) accessToken]  [importDate string(可) importDate]
+
+    GET     /api/open/erp/inventory/snapshot/diff/grouped-list
+            按物资+批次分组分页查询差异
+            参数: [accessToken string(必) accessToken]  [diffType string(可) diffType]  [importDate string(可) importDate]  [keyword string(可) keyword]  [oneCodePerItem string(可) oneCodePerItem]  [pageNo integer(可) pageNo]  [pageSize integer(可) pageSize]
+            返回: → WebMsg«ERP库存快照差异分组查询输出参数»
+
+    GET     /api/open/erp/inventory/snapshot/diff/list
+            分页查询差异明细
+            参数: [accessToken string(必) accessToken]  [diffType string(可) diffType]  [importDate string(可) importDate]  [keyword string(可) keyword]  [pageNo integer(可) pageNo]  [pageSize integer(可) pageSize]
+            返回: → WebMsg«ERP库存快照差异明细查询输出参数»
+
+  ## ERP库存数据导入开放Api
+
+    POST    /api/open/erp/inventory/004/import/map
+            库存数据004 Map导入 ZWMRP004
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«库存数据004 Map导入输出参数»
+
+    POST    /api/open/erp/inventory/004/import/save
+            库存数据004 导入保存 ZWMRP004
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«库存数据004导入保存输出参数»
+
+    POST    /api/open/erp/inventory/004/import/upload
+            库存数据004 上传导入文件 ZWMRP004
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+    GET     /api/open/erp/inventory/004/queryByDate
+            根据导入日期查询库存数据004
+            参数: [accessToken string(必) accessToken]  [importDate string(必) importDate]
+            返回: → WebMsg«库存数据004按导入日期查询输出参数»
+
+  ## ERP时间线Api
+
+    GET     /api/erp/timeline/by-reservation
+            按预留查询ERP时间线（仅 MB51 catalog）
+            参数: [lineNumber string(可) 可选行号（RSPOS）过滤]  [reservationCode string(必) 预留号]
+            返回: → WebMsg«按预留查询ERP时间线输出»
+
+    GET     /api/erp/timeline/by-work-order
+            按工单查询ERP 036时间线
+            参数: [workOrderCode string(必) 工单号]
+            返回: → WebMsg«按工单查询ERP时间线输出»
+
+  ## ERP时间线开放Api
+
+    GET     /api/open/erp/timeline/by-reservation
+            按预留查询ERP时间线（仅 MB51 catalog，开放）
+            参数: [accessToken string(必) accessToken]  [lineNumber string(可) 可选行号（RSPOS）过滤]  [reservationCode string(必) 预留号]
+            返回: → WebMsg«按预留查询ERP时间线输出»
+
+    GET     /api/open/erp/timeline/by-work-order
+            按工单查询ERP 036时间线（开放）
+            参数: [accessToken string(必) accessToken]  [workOrderCode string(必) 工单号]
+            返回: → WebMsg«按工单查询ERP时间线输出»
+
+  ## ERP物料主数据导入开放Api
+
+    POST    /api/open/erp/material/60/import/save
+            物料主数据 导入保存 MM60
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«物料导入保存输出参数»
+
+    POST    /api/open/erp/material/60/import/upload
+            物料主数据 上传导入文件 MM60
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## ERP物料凭证Api
+
+    GET     /api/order/erp/material-document/list
+            查询ERP物料凭证列表
+            参数: [batchNumber string(可)]  [inventoryBarcode string(可)]  [keyword string(可)]  [materialCode string(可)]  [materialDocument string(可)]  [movementCategory string(可) 移动分类筛选：ALL_INBOUND/NORMAL_INBOUND/ISSUE_REVERSAL_INBOUND/ALL_OUTBOUND/NORMAL_OUTBOUND/RECEIPT_REVERSAL_OUTBOUND/TRANSFER/INTERNAL/OTHER]  [movementType string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [postingDateFrom string(可)]  [postingDateTo string(可)]  [purchaseOrderCode string(可)]  [reservationNumber string(可)]  [workOrderCode string(可) 工单号（SAP AUFNR；按凭证行 work_order_code 精确匹配过滤）]
+            返回: → WebMsg«查询ERP物料凭证列表输出参数»
+
+    GET     /api/order/erp/material-document/viewById
+            查看ERP物料凭证详情
+            参数: [materialDocumentId string(可) 凭证头ID]
+            返回: → WebMsg«查看ERP物料凭证详情输出参数»
+
+    GET     /api/order/erp/material-document/viewByMaterialDocument
+            按凭证号查看ERP物料凭证详情
+            参数: [materialDocument string(可) 物料凭证号]
+            返回: → WebMsg«查看ERP物料凭证详情输出参数»
+
+  ## ERP物料凭证同步开放Api
+
+    POST    /api/open/erp/material-document-import/run
+            执行 ERP 物料凭证同步（开放）
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«ERP物料凭证 import 输出»
+
+  ## ERP物料凭证开放Api
+
+    GET     /api/open/erp/material-document/list
+            查询ERP物料凭证列表（开放）
+            参数: [accessToken string(必) accessToken]  [batchNumber string(可)]  [inventoryBarcode string(可)]  [keyword string(可)]  [materialCode string(可)]  [materialDocument string(可)]  [movementCategory string(可) 移动分类筛选：ALL_INBOUND/NORMAL_INBOUND/ISSUE_REVERSAL_INBOUND/ALL_OUTBOUND/NORMAL_OUTBOUND/RECEIPT_REVERSAL_OUTBOUND/TRANSFER/INTERNAL/OTHER]  [movementType string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [postingDateFrom string(可)]  [postingDateTo string(可)]  [purchaseOrderCode string(可)]  [reservationNumber string(可)]  [workOrderCode string(可) 工单号（SAP AUFNR；按凭证行 work_order_code 精确匹配过滤）]
+            返回: → WebMsg«查询ERP物料凭证列表输出参数»
+
+    GET     /api/open/erp/material-document/viewById
+            查看ERP物料凭证详情（开放）
+            参数: [accessToken string(必) accessToken]  [materialDocumentId string(可) 凭证头ID]
+            返回: → WebMsg«查看ERP物料凭证详情输出参数»
+
+    GET     /api/open/erp/material-document/viewByMaterialDocument
+            按凭证号查看ERP物料凭证详情（开放）
+            参数: [accessToken string(必) accessToken]  [materialDocument string(可) 物料凭证号]
+            返回: → WebMsg«查看ERP物料凭证详情输出参数»
+
+  ## ERP物料凭证行Api
+
+    GET     /api/order/erp/material-document/item/erpSource
+            查看ERP物料凭证行SAP原文
+            参数: [materialDocumentItemId string(可) 凭证行ID]
+            返回: → WebMsg«查看ERP物料凭证行SAP原文输出参数»
+
+    GET     /api/order/erp/material-document/item/list
+            查询ERP物料凭证行列表
+            参数: [inventoryBarcode string(可)]  [materialCode string(可)]  [materialDocumentId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询ERP物料凭证行列表输出参数»
+
+    GET     /api/order/erp/material-document/item/listByPurchaseOrderLine
+            按采购订单行查询ERP物料凭证行
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [purchaseOrderCode string(可)]  [purchaseOrderLineNumber string(可)]
+            返回: → WebMsg«查询ERP物料凭证行列表输出参数»
+
+    GET     /api/order/erp/material-document/item/listByReservation
+            按预留查询ERP物料凭证行
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [reservationItem string(可)]  [reservationNumber string(可)]
+            返回: → WebMsg«查询ERP物料凭证行列表输出参数»
+
+    GET     /api/order/erp/material-document/item/viewById
+            查看ERP物料凭证行详情
+            参数: [materialDocumentItemId string(可) 凭证行ID]
+            返回: → WebMsg«查看ERP物料凭证行详情输出参数»
+
+  ## ERP物料凭证行开放Api
+
+    GET     /api/open/erp/material-document/item/erpSource
+            查看ERP物料凭证行SAP原文（开放）
+            参数: [accessToken string(必) accessToken]  [materialDocumentItemId string(可) 凭证行ID]
+            返回: → WebMsg«查看ERP物料凭证行SAP原文输出参数»
+
+    GET     /api/open/erp/material-document/item/list
+            查询ERP物料凭证行列表（开放）
+            参数: [accessToken string(必) accessToken]  [inventoryBarcode string(可)]  [materialCode string(可)]  [materialDocumentId string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询ERP物料凭证行列表输出参数»
+
+    GET     /api/open/erp/material-document/item/listByPurchaseOrderLine
+            按采购订单行查询ERP物料凭证行（开放）
+            参数: [accessToken string(必) accessToken]  [pageNo integer(可)]  [pageSize integer(可)]  [purchaseOrderCode string(可)]  [purchaseOrderLineNumber string(可)]
+            返回: → WebMsg«查询ERP物料凭证行列表输出参数»
+
+    GET     /api/open/erp/material-document/item/listByReservation
+            按预留查询ERP物料凭证行（开放）
+            参数: [accessToken string(必) accessToken]  [pageNo integer(可)]  [pageSize integer(可)]  [reservationItem string(可)]  [reservationNumber string(可)]
+            返回: → WebMsg«查询ERP物料凭证行列表输出参数»
+
+    GET     /api/open/erp/material-document/item/viewById
+            查看ERP物料凭证行详情（开放）
+            参数: [accessToken string(必) accessToken]  [materialDocumentItemId string(可) 凭证行ID]
+            返回: → WebMsg«查看ERP物料凭证行详情输出参数»
+
+  ## ERP物资移动凭证导入开放Api
+
+    POST    /api/open/erp/inventory-movement/031/import/map
+            物资移动凭证031 Map导入 ZWMRP031
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«物资移动凭证031 Map导入输出参数»
+
+    POST    /api/open/erp/inventory-movement/031/import/save
+            物资移动凭证031 导入保存 ZWMRP031
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«物资移动凭证031导入保存输出参数»
+
+    POST    /api/open/erp/inventory-movement/031/import/upload
+            物资移动凭证031 上传导入文件 ZWMRP031
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/erp/inventory-movement/mb51/import/map
+            物资移动凭证MB51 Map导入
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«物资移动凭证MB51 Map导入输出参数»
+
+    POST    /api/open/erp/inventory-movement/mb51/import/save
+            物资移动凭证MB51 导入保存
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«物资移动凭证MB51导入保存输出参数»
+
+    POST    /api/open/erp/inventory-movement/mb51/import/upload
+            物资移动凭证MB51 上传导入文件
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## ERP需求计划导入开放Api
+
+    POST    /api/open/erp/requirement/226/import/map
+            需求计划226 Map导入 ZMMRP226
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«需求计划226 Map导入输出参数»
+
+    POST    /api/open/erp/requirement/226/import/save
+            需求计划226 导入保存 ZMMRP226
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«需求计划226导入保存输出参数»
+
+    POST    /api/open/erp/requirement/226/import/upload
+            需求计划226 上传导入文件 ZMMRP226
+            参数: [accessToken string(必) accessToken]  [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 物资移动凭证031 Api
+
+    POST    /api/erp/inventory-movement/031/import/map
+            物资移动凭证031 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«物资移动凭证031 Map导入输出参数»
+
+    POST    /api/erp/inventory-movement/031/import/save
+            物资移动凭证031导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«物资移动凭证031导入保存输出参数»
+
+    POST    /api/erp/inventory-movement/031/import/upload
+            上传导入文件 ZWMRP031
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 物资移动凭证MB51 Api
+
+    POST    /api/erp/inventory-movement/mb51/import/map
+            物资移动凭证MB51 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«物资移动凭证MB51 Map导入输出参数»
+
+    POST    /api/erp/inventory-movement/mb51/import/save
+            物资移动凭证MB51导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«物资移动凭证MB51导入保存输出参数»
+
+    POST    /api/erp/inventory-movement/mb51/import/upload
+            上传导入文件 MB51
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+  ## 需求计划226Api
+
+    POST    /api/erp/requirement/226/import/map
+            需求计划226 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«需求计划226 Map导入输出参数»
+
+    POST    /api/erp/requirement/226/import/save
+            需求计划226导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«需求计划226导入保存输出参数»
+
+    POST    /api/erp/requirement/226/import/upload
+            上传导入文件 ZMMRP226
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十七、用户与权限  (40 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 权限Api
+
+    POST    /api/permission/permission/create
+            新增权限
+            参数: [input (必) input]
+            返回: → WebMsg«新增权限输出参数»
+
+    POST    /api/permission/permission/delete
+            删除权限
+            参数: [input (必) input]
+            返回: → WebMsg«删除权限输出参数»
+
+    GET     /api/permission/permission/list
+            查询权限列表
+            参数: [code string(可)]  [name string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询权限输出参数»
+
+    POST    /api/permission/permission/update
+            更新权限
+            参数: [input (必) input]
+            返回: → WebMsg«更新权限输出参数»
+
+    GET     /api/permission/permission/viewById
+            查询权限详情
+            参数: [permissionId string(必) permissionId]
+            返回: → WebMsg«通过ID查看权限输出参数»
+
+  ## 模拟ims-idms认证接口
+
+    GET     /ims-idms/auth/oauth/IUserInfo
+            获取用户信息
+            参数: [page integer(可)]  [pageSize integer(可)]  [session.boundDeviceId string(可)]  [session.boundDeviceType string(可)]  [session.deptId string(可)]  [session.deptName string(可)]  [session.iamCode string(可)]  [session.roles array(可)]  [session.sessionTimeoutSeconds integer(可)]  [session.tenantId string(可)]  [session.token string(可)]  [session.userId string(可)]  [sessionUser.boundDeviceId string(可) 绑定的设备ID]  [sessionUser.createBy string(可) 创建人]  [sessionUser.createByName string(可) 创建人姓名]  [sessionUser.createDate string(可) 创建时间]  [sessionUser.description string(可) 描述]  [sessionUser.email string(可) 邮箱]  [sessionUser.extAttribute.array boolean(可)]  [sessionUser.extAttribute.bigDecimal boolean(可)]  [sessionUser.extAttribute.bigInteger boolean(可)]  [sessionUser.extAttribute.binary boolean(可)]  [sessionUser.extAttribute.boolean boolean(可)]  [sessionUser.extAttribute.containerNode boolean(可)]  [sessionUser.extAttribute.double boolean(可)]  [sessionUser.extAttribute.float boolean(可)]  [sessionUser.extAttribute.floatingPointNumber boolean(可)]  [sessionUser.extAttribute.int boolean(可)]  [sessionUser.extAttribute.integralNumber boolean(可)]  [sessionUser.extAttribute.long boolean(可)]  [sessionUser.extAttribute.missingNode boolean(可)]  [sessionUser.extAttribute.nodeType string(可)]  [sessionUser.extAttribute.null boolean(可)]  [sessionUser.extAttribute.number boolean(可)]  [sessionUser.extAttribute.object boolean(可)]  [sessionUser.extAttribute.pojo boolean(可)]  [sessionUser.extAttribute.short boolean(可)]  [sessionUser.extAttribute.textual boolean(可)]  [sessionUser.extAttribute.valueNode boolean(可)]  [sessionUser.extInteger1 integer(可) 扩展整形1]  [sessionUser.extInteger2 integer(可) 扩展整形2]  [sessionUser.extInteger3 integer(可) 扩展整形3]  [sessionUser.extJson1.array boolean(可)]  [sessionUser.extJson1.bigDecimal boolean(可)]  [sessionUser.extJson1.bigInteger boolean(可)]  [sessionUser.extJson1.binary boolean(可)]  [sessionUser.extJson1.boolean boolean(可)]  [sessionUser.extJson1.containerNode boolean(可)]  [sessionUser.extJson1.double boolean(可)]  [sessionUser.extJson1.float boolean(可)]  [sessionUser.extJson1.floatingPointNumber boolean(可)]  [sessionUser.extJson1.int boolean(可)]  [sessionUser.extJson1.integralNumber boolean(可)]  [sessionUser.extJson1.long boolean(可)]  [sessionUser.extJson1.missingNode boolean(可)]  [sessionUser.extJson1.nodeType string(可)]  [sessionUser.extJson1.null boolean(可)]  [sessionUser.extJson1.number boolean(可)]  [sessionUser.extJson1.object boolean(可)]  [sessionUser.extJson1.pojo boolean(可)]  [sessionUser.extJson1.short boolean(可)]  [sessionUser.extJson1.textual boolean(可)]  [sessionUser.extJson1.valueNode boolean(可)]  [sessionUser.extJson2.array boolean(可)]  [sessionUser.extJson2.bigDecimal boolean(可)]  [sessionUser.extJson2.bigInteger boolean(可)]  [sessionUser.extJson2.binary boolean(可)]  [sessionUser.extJson2.boolean boolean(可)]  [sessionUser.extJson2.containerNode boolean(可)]  [sessionUser.extJson2.double boolean(可)]  [sessionUser.extJson2.float boolean(可)]  [sessionUser.extJson2.floatingPointNumber boolean(可)]  [sessionUser.extJson2.int boolean(可)]  [sessionUser.extJson2.integralNumber boolean(可)]  [sessionUser.extJson2.long boolean(可)]  [sessionUser.extJson2.missingNode boolean(可)]  [sessionUser.extJson2.nodeType string(可)]  [sessionUser.extJson2.null boolean(可)]  [sessionUser.extJson2.number boolean(可)]  [sessionUser.extJson2.object boolean(可)]  [sessionUser.extJson2.pojo boolean(可)]  [sessionUser.extJson2.short boolean(可)]  [sessionUser.extJson2.textual boolean(可)]  [sessionUser.extJson2.valueNode boolean(可)]  [sessionUser.extNumber1 number(可) 扩展数字1]  [sessionUser.extNumber2 number(可) 扩展数字2]  [sessionUser.extNumber3 number(可) 扩展数字3]  [sessionUser.extString1 string(可) 扩展字符串1]  [sessionUser.extString2 string(可) 扩展字符串2]  [sessionUser.extString3 string(可) 扩展字符串3]  [sessionUser.extString4 string(可) 扩展字符串4]  [sessionUser.extString5 string(可) 扩展字符串5]  [sessionUser.externalUserId string(可) 外部用户ID（集团系统）]  [sessionUser.id string(可) 用户Id]  [sessionUser.mobile string(可) 手机号]  [sessionUser.realName string(可) 真实姓名]  [sessionUser.remarks string(可) 备注]  [sessionUser.sourceType string(可) 用户来源类型]  [sessionUser.status string(可) 状态]  [sessionUser.tenantId string(可) 租户Id]  [sessionUser.updateBy string(可) 更新人]  [sessionUser.updateByName string(可) 更新人姓名]  [sessionUser.updateDate string(可) 更新时间]  [sessionUser.username string(可) 用户名]
+            返回: → WebMsg«获取用户信息输出参数»
+
+  ## 用户Api
+
+    POST    /api/user/create
+            新增用户
+            参数: [input (必) input]
+            返回: → WebMsg«新增用户输出参数»
+
+    POST    /api/user/delete
+            删除用户
+            参数: [input (必) input]
+            返回: → WebMsg«删除用户输出参数»
+
+    GET     /api/user/list
+            查询用户列表
+            参数: [mobile string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [realName string(可)]  [roleId string(可)]  [username string(可)]
+            返回: → WebMsg«查询用户输出参数»
+
+    GET     /api/user/listAllWarehouseKeeper
+            查询所有库管员用户
+            返回: → WebMsg«查询所有库管员用户输出参数»
+
+    GET     /api/user/listByRoleCode
+            按角色编码查询用户列表（不分页）
+            参数: [roleCode string(必) 角色编码]
+            返回: → WebMsg«按角色编码查询用户列表输出参数»
+
+    POST    /api/user/modifyPassword
+            修改密码
+            参数: [input (必) input]
+            返回: → WebMsg«用户修改密码输出参数»
+
+    POST    /api/user/setPassword
+            设置密码
+            参数: [input (必) input]
+            返回: → WebMsg«用户设置密码输出参数»
+
+    POST    /api/user/update
+            更新用户
+            参数: [input (必) input]
+            返回: → WebMsg«更新用户输出参数»
+
+    GET     /api/user/viewById
+            查询用户详情
+            参数: [userId string(必) userId]
+            返回: → WebMsg«通过ID查看用户输出参数»
+
+  ## 用户开放Api
+
+    POST    /api/open/user/createSession
+            为指定用户创建Session
+            参数: [accessToken string(必) accessToken]  [username string(必) username]
+            返回: → WebMsg«OpenAPI创建Session Token输出参数»
+
+  ## 登录Api
+
+    POST    /api/login/getSsoAuthorizeUrl
+            获取SSO授权地址（免登录）
+            参数: [input (必) input]
+            返回: → WebMsg«获取SSO授权地址输出参数»
+
+    GET     /api/login/listDeviceByType
+            按设备类型查询设备列表（免登录，供设备端登录前选择设备）
+            参数: [deviceType string(可)]
+            返回: → WebMsg«按设备类型查询所有设备输出参数»
+
+    POST    /api/login/loginByIamCode
+            IAM Code登录
+            参数: [input (必) input]
+            返回: → WebMsg«IAM Code登录输出参数»
+
+    POST    /api/login/loginByIamIdas
+            IAM IDAS登录
+            参数: [input (必) input]
+            返回: → WebMsg«IDAS登录输出参数»
+
+    POST    /api/login/loginByUsernamePassword
+            用户名密码登录
+            参数: [input (必) input]
+            返回: → WebMsg«标准用户名密码登录输出参数»
+
+  ## 菜单Api
+
+    POST    /api/permission/menu/create
+            新增菜单
+            参数: [input (必) input]
+            返回: → WebMsg«新增菜单输出参数»
+
+    POST    /api/permission/menu/delete
+            删除菜单
+            参数: [input (必) input]
+            返回: → WebMsg«删除菜单输出参数»
+
+    GET     /api/permission/menu/exportMenu
+            导出菜单
+            参数: [terminalType string(必) 终端类型]
+
+    POST    /api/permission/menu/import/save
+            菜单导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«菜单导入保存输出参数»
+
+    POST    /api/permission/menu/import/upload
+            上传菜单导入文件
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+    GET     /api/permission/menu/listByCurrentUser
+            获取当前登录用户的菜单列表
+            参数: [terminalType string(可) 终端类型]
+            返回: → WebMsg«获取当前用户菜单输出参数»
+
+    GET     /api/permission/menu/tree
+            查询菜单树
+            参数: [terminalType string(可) 终端类型]
+            返回: → WebMsg«查询菜单树输出参数»
+
+    POST    /api/permission/menu/update
+            更新菜单
+            参数: [input (必) input]
+            返回: → WebMsg«更新菜单输出参数»
+
+    GET     /api/permission/menu/viewById
+            查询菜单详情
+            参数: [menuId string(必) menuId]
+            返回: → WebMsg«通过ID查看菜单输出参数»
+
+  ## 角色Api
+
+    POST    /api/role/role/assignMenus
+            角色菜单分配
+            参数: [input (必) input]
+            返回: → WebMsg«角色菜单分配输出参数»
+
+    POST    /api/role/role/assignPermissions
+            角色权限分配
+            参数: [input (必) input]
+            返回: → WebMsg«角色权限分配输出参数»
+
+    POST    /api/role/role/create
+            新增角色
+            参数: [input (必) input]
+            返回: → WebMsg«新增角色输出参数»
+
+    POST    /api/role/role/delete
+            删除角色
+            参数: [input (必) input]
+            返回: → WebMsg«删除角色输出参数»
+
+    GET     /api/role/role/list
+            查询角色列表
+            参数: [code string(可)]  [name string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询角色输出参数»
+
+    GET     /api/role/role/listAll
+            查询全部角色
+            返回: → WebMsg«查询全部角色输出参数»
+
+    GET     /api/role/role/menuTree
+            查询角色菜单树
+            参数: [roleId string(可) 角色ID]  [terminalType string(可) 终端类型]
+            返回: → WebMsg«查询角色菜单树输出参数»
+
+    GET     /api/role/role/permissionList
+            查询角色权限列表
+            参数: [roleId string(可) 角色ID]
+            返回: → WebMsg«查询角色权限列表输出参数»
+
+    POST    /api/role/role/update
+            更新角色
+            参数: [input (必) input]
+            返回: → WebMsg«更新角色输出参数»
+
+  ## 退出登录Api
+
+    POST    /api/user/logout
+            退出登录
+            参数: [input (必) input]
+            返回: → WebMsg«Output»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十三、设备与物联网  (70 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## RFID标签管理Api
+
+    POST    /api/device/rfidLabel/inbound
+            RFID标签入库登记
+            参数: [input (必) input]
+            返回: → WebMsg«RFID标签入库登记输出参数»
+
+    GET     /api/device/rfidLabel/labelTypes
+            获取所有RFID标签类型
+            返回: → WebMsg«获取所有RFID标签类型输出参数»
+
+    POST    /api/device/rfidLabel/outbound
+            RFID标签领用登记
+            参数: [input (必) input]
+            返回: → WebMsg«RFID标签领用登记输出参数»
+
+    GET     /api/device/rfidLabel/recordList
+            查询RFID标签记录列表
+            参数: [labelType string(可) 标签类型]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询RFID标签记录输出参数»
+
+    GET     /api/device/rfidLabel/summaryList
+            查询RFID标签统计列表
+            返回: → WebMsg«查询RFID标签统计输出参数»
+
+  ## 仓储机器人Api
+
+    POST    /api/device/robot/inventoryCheck
+            盘库
+            参数: [input (必) input]
+            返回: → WebMsg«仓储机器人盘库输出参数»
+
+    POST    /api/device/robot/navigate
+            领航到指定货位
+            参数: [input (必) input]
+            返回: → WebMsg«仓储机器人领航输出参数»
+
+    POST    /api/device/robot/relocate
+            重定位
+            参数: [input (必) input]
+            返回: → WebMsg«仓储机器人重定位输出参数»
+
+    POST    /api/device/robot/returnParking
+            返回停车位
+            参数: [input (必) input]
+            返回: → WebMsg«仓储机器人返回停车位输出参数»
+
+    POST    /api/device/robot/startChargingByDevice
+            设备端开始充电
+            返回: → WebMsg«设备端开始充电输出参数»
+
+    GET     /api/device/robot/status
+            获取机器人状态
+            参数: [deviceId string(必) 设备ID]
+            返回: → WebMsg«获取机器人状态输出参数»
+
+  ## 仓储机器人开放Api
+
+    POST    /api/open/device/robot/inventoryCheck
+            盘库
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«仓储机器人盘库输出参数»
+
+    POST    /api/open/device/robot/navigate
+            领航到指定货位
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«仓储机器人领航输出参数»
+
+    POST    /api/open/device/robot/relocate
+            重定位
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«仓储机器人重定位输出参数»
+
+    POST    /api/open/device/robot/returnParking
+            返回停车位
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«仓储机器人返回停车位输出参数»
+
+    GET     /api/open/device/robot/status
+            获取机器人状态
+            参数: [accessToken string(必) accessToken]  [deviceId string(必) 设备ID]
+            返回: → WebMsg«获取机器人状态输出参数»
+
+  ## 库位NVR关联Api
+
+    POST    /api/device/locationNvrRel/create
+            建立库位和NVR监控设备关联
+            参数: [input (必) input]
+            返回: → WebMsg«建立库位条码和NVR监控设备关联输出参数»
+
+    POST    /api/device/locationNvrRel/delete
+            删除库位和NVR监控设备关联
+            参数: [input (必) input]
+            返回: → WebMsg«删除库位条码和NVR监控设备关联输出参数»
+
+    POST    /api/device/locationNvrRel/list
+            分页查询库位NVR监控设备关联
+            参数: [input (必) input]
+            返回: → WebMsg«分页查询库位NVR监控设备关联输出参数»
+
+  ## 按钮开放Api
+
+    POST    /api/open/device/shelf/button
+            按钮点击回调
+            参数: [accessToken string(必) accessToken]  [request (必) request]
+            返回: → WebMsg«按钮回调输出参数»
+
+  ## 智能库位Api
+
+    GET     /api/warehouse/smartLocation/detail
+            查询智能库位详情
+            参数: [locationBarcode string(必) locationBarcode]
+            返回: → WebMsg«智能库位详情输出参数»
+
+    GET     /api/warehouse/smartLocation/list
+            查询智能库位列表
+            参数: [status string(可) 状态筛选]
+            返回: → WebMsg«智能库位列表输出参数»
+
+    POST    /api/warehouse/smartLocation/updateExpectedWeight
+            修改理论总重
+            参数: [dto (必) dto]
+            返回: → WebMsg«修改智能库位理论总重输出参数»
+
+  ## 智能货柜开放Api
+
+    GET     /api/open/device/smartcabinet/history
+            获取智能货柜历史数据
+            参数: [accessToken string(必) accessToken]  [endTs integer(必) endTs]  [entityId string(必) entityId]  [keyName string(必) keyName]  [limit integer(可) limit]  [startTs integer(必) startTs]
+            返回: → WebMsg«开放API-获取智能货柜历史数据输出参数»
+
+    GET     /api/open/device/smartcabinet/latestData
+            获取所有智能货柜设备最新数据
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«开放API-获取所有智能货柜设备最新数据输出参数»
+
+    POST    /api/open/device/smartcabinet/reset
+            智能货柜复位重启
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«开放API-智能货柜复位重启输出参数»
+
+    POST    /api/open/device/smartcabinet/zero
+            智能货柜称重置零
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«开放API-智能货柜置零输出参数»
+
+  ## 机器人Api
+
+    GET     /api/robot/fetchGlobalSettings
+            机器人拉取全局配置
+            返回: → WebMsg«机器人拉取全局配置输出参数»
+
+  ## 环境传感器Api
+
+    GET     /api/device/environment/history
+            获取环境传感器历史数据
+            参数: [endTs integer(必) endTs]  [entityId string(必) entityId]  [keyName string(必) keyName]  [limit integer(可) limit]  [startTs integer(必) startTs]
+            返回: → WebMsg«开放API-获取环境传感器历史数据输出参数»
+
+    GET     /api/device/environment/latestData
+            获取所有环境传感器设备最新数据
+            返回: → WebMsg«开放API-获取所有环境传感器设备最新数据输出参数»
+
+  ## 环境传感器开放Api
+
+    GET     /api/open/device/environment/history
+            获取环境传感器历史数据
+            参数: [accessToken string(必) accessToken]  [endTs integer(必) endTs]  [entityId string(必) entityId]  [keyName string(必) keyName]  [limit integer(可) limit]  [startTs integer(必) startTs]
+            返回: → WebMsg«开放API-获取环境传感器历史数据输出参数»
+
+    GET     /api/open/device/environment/latestData
+            获取所有环境传感器设备最新数据
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«开放API-获取所有环境传感器设备最新数据输出参数»
+
+  ## 称重控制Api
+
+    POST    /api/device/scale/calibrate
+            校准（标定）
+            参数: [input (必) input]
+            返回: → WebMsg«称重校准输出参数»
+
+    GET     /api/device/scale/countSample/read
+            读计数样本
+            参数: [deviceId string(必) 设备ID]
+            返回: → WebMsg«读计数样本输出参数»
+
+    POST    /api/device/scale/countSample/write
+            写计数样本
+            参数: [input (必) input]
+            返回: → WebMsg«写计数样本输出参数»
+
+    POST    /api/device/scale/device/calibrate
+            设备端校准（标定）
+            参数: [input (必) input]
+            返回: → WebMsg«设备端称重校准输出参数»
+
+    GET     /api/device/scale/device/countSample/read
+            设备端读计数样本
+            返回: → WebMsg«设备端读计数样本输出参数»
+
+    POST    /api/device/scale/device/countSample/write
+            设备端写计数样本
+            参数: [input (必) input]
+            返回: → WebMsg«设备端写计数样本输出参数»
+
+    POST    /api/device/scale/device/manualRead/start
+            设备端开始手动读取
+            参数: [input (必) input]
+            返回: → WebMsg«设备端开始手动读取输出参数»
+
+    POST    /api/device/scale/device/manualRead/stop
+            设备端停止手动读取
+            参数: [input (必) input]
+            返回: → WebMsg«设备端停止手动读取输出参数»
+
+    POST    /api/device/scale/device/reset
+            设备端复位重启
+            参数: [input (必) input]
+            返回: → WebMsg«设备端称重复位重启输出参数»
+
+    POST    /api/device/scale/device/zero
+            设备端置零
+            参数: [input (必) input]
+            返回: → WebMsg«设备端称重置零输出参数»
+
+    POST    /api/device/scale/manualRead/start
+            开始手动读取
+            参数: [input (必) input]
+            返回: → WebMsg«开始手动读取输出参数»
+
+    POST    /api/device/scale/manualRead/stop
+            停止手动读取
+            参数: [input (必) input]
+            返回: → WebMsg«停止手动读取输出参数»
+
+    POST    /api/device/scale/reset
+            复位重启
+            参数: [input (必) input]
+            返回: → WebMsg«称重复位重启输出参数»
+
+    POST    /api/device/scale/zero
+            置零
+            参数: [input (必) input]
+            返回: → WebMsg«称重置零输出参数»
+
+  ## 设备Api
+
+    POST    /api/device/device/create
+            新增设备
+            参数: [input (必) input]
+            返回: → WebMsg«新增设备输出参数»
+
+    POST    /api/device/device/delete
+            删除设备
+            参数: [input (必) input]
+            返回: → WebMsg«删除设备输出参数»
+
+    GET     /api/device/device/getDataByDeviceId
+            获取当前设备数据（免登录，按请求头 deviceId）
+            参数: [X-Device-Id string(必) X-Device-Id]
+            返回: → WebMsg«免登录获取设备数据输出参数»
+
+    GET     /api/device/device/getDataBySession
+            获取当前设备数据
+            返回: → WebMsg«获取当前设备数据输出参数»
+
+    GET     /api/device/device/getPrincipal
+            获取设备凭据
+            参数: [deviceId string(必)]
+            返回: → WebMsg«获取设备凭据输出参数»
+
+    GET     /api/device/device/list
+            查询设备列表
+            参数: [deviceAddress string(可)]  [deviceGroupId string(可)]  [deviceProfileId string(可)]  [deviceType string(可)]  [name string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可)]
+            返回: → WebMsg«查询设备输出参数»
+
+    GET     /api/device/device/listAllWarehouseRobot
+            查询所有仓储助手机器人
+            返回: → WebMsg«按设备类型查询所有设备输出参数»
+
+    GET     /api/device/device/listByDeviceType
+            按设备类型查询所有设备
+            参数: [deviceType string(可)]
+            返回: → WebMsg«按设备类型查询所有设备输出参数»
+
+    GET     /api/device/device/listByDispatchTaskType
+            按调度任务类型查询所有可用设备
+            参数: [dispatchTaskType string(可) 调度任务类型]
+            返回: → WebMsg«按调度任务类型查询所有可用设备输出参数»
+
+    GET     /api/device/device/listByGroup
+            按分组返回设备列表
+            参数: [deviceType string(可) 设备类型(不指定返回所有类型)]
+            返回: → WebMsg«按分组返回设备列表输出参数»
+
+    GET     /api/device/device/listByWorkTaskType
+            按作业类型查询所有可用执行者类型及对应设备列表
+            参数: [workTaskType string(可) 作业类型]
+            返回: → WebMsg«按作业类型查询所有可用执行者类型及对应设备列表输出参数»
+
+    GET     /api/device/device/listScalable
+            查询所有有称重能力的设备
+            返回: → WebMsg«查询所有有称重能力的设备输出参数»
+
+    POST    /api/device/device/update
+            更新设备
+            参数: [input (必) input]
+            返回: → WebMsg«更新设备输出参数»
+
+    GET     /api/device/device/viewById
+            查询设备详情
+            参数: [deviceId string(必)]
+            返回: → WebMsg«通过ID查看设备输出参数»
+
+  ## 设备分组Api
+
+    POST    /api/device/deviceGroup/create
+            新增设备分组
+            参数: [input (必) input]
+            返回: → WebMsg«新增设备分组输出参数»
+
+    POST    /api/device/deviceGroup/delete
+            删除设备分组
+            参数: [input (必) input]
+            返回: → WebMsg«删除设备分组输出参数»
+
+    GET     /api/device/deviceGroup/list
+            查询设备分组列表
+            参数: [deviceType string(可)]  [name string(可)]
+            返回: → WebMsg«查询设备分组列表输出参数»
+
+    POST    /api/device/deviceGroup/update
+            更新设备分组
+            参数: [input (必) input]
+            返回: → WebMsg«更新设备分组输出参数»
+
+    GET     /api/device/deviceGroup/viewById
+            查询设备分组详情
+            参数: [deviceGroupId string(必) deviceGroupId]
+            返回: → WebMsg«通过ID查看设备分组输出参数»
+
+  ## 设备配置Api
+
+    POST    /api/device/deviceProfile/create
+            新增设备配置
+            参数: [input (必) input]
+            返回: → WebMsg«新增设备配置输出参数»
+
+    POST    /api/device/deviceProfile/delete
+            删除设备配置
+            参数: [input (必) input]
+            返回: → WebMsg«删除设备配置输出参数»
+
+    GET     /api/device/deviceProfile/list
+            查询设备配置列表
+            参数: [protocolType string(可)]
+            返回: → WebMsg«查询设备配置输出参数»
+
+    POST    /api/device/deviceProfile/update
+            更新设备配置
+            参数: [input (必) input]
+            返回: → WebMsg«更新设备配置输出参数»
+
+    GET     /api/device/deviceProfile/viewById
+            查询设备配置详情
+            参数: [deviceProfileId string(必) deviceProfileId]
+            返回: → WebMsg«通过ID查看设备配置输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十九、系统配置  (72 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## App版本管理
+
+    GET     /api/common/app/version/checkUpdate
+            检查App更新
+            参数: [appCode string(必) appCode]  [versionCode integer(必) versionCode]
+            返回: → WebMsg«检查App更新输出参数»
+
+    POST    /api/common/app/version/create
+            创建App版本
+            参数: [input (必) input]
+            返回: → WebMsg«创建App版本输出参数»
+
+    POST    /api/common/app/version/delete
+            删除App版本
+            参数: [input (必) input]
+            返回: → WebMsg«删除App版本输出参数»
+
+    GET     /api/common/app/version/getLatest
+            获取App最新版本
+            参数: [appCode string(必) appCode]
+            返回: → WebMsg«获取App最新版本输出参数»
+
+    GET     /api/common/app/version/list
+            查询App版本列表
+            参数: [appCode string(可) 应用编码]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可) 状态]
+            返回: → WebMsg«查询App版本列表输出参数»
+
+    POST    /api/common/app/version/update
+            更新App版本
+            参数: [input (必) input]
+            返回: → WebMsg«更新App版本输出参数»
+
+    POST    /api/common/app/version/upload
+            上传Apk
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+    GET     /api/common/app/version/viewById
+            查询App版本详情
+            参数: [appVersionId string(必) appVersionId]
+            返回: → WebMsg«查询App版本详情输出参数»
+
+  ## KV配置Api
+
+    POST    /api/common/kvconfig/create
+            新增KV配置
+            参数: [input (必) input]
+            返回: → WebMsg«新增KV配置输出参数»
+
+    POST    /api/common/kvconfig/delete
+            删除KV配置
+            参数: [input (必) input]
+            返回: → WebMsg«删除KV配置输出参数»
+
+    GET     /api/common/kvconfig/list
+            查询KV配置列表
+            参数: [configGroup string(可)]  [configKey string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询KV配置输出参数»
+
+    POST    /api/common/kvconfig/update
+            更新KV配置
+            参数: [input (必) input]
+            返回: → WebMsg«更新KV配置输出参数»
+
+    GET     /api/common/kvconfig/viewById
+            查询KV配置详情
+            参数: [kvConfigId string(必) kvConfigId]
+            返回: → WebMsg«通过ID查看KV配置输出参数»
+
+  ## KV配置分组Api
+
+    POST    /api/common/kvconfig/group/create
+            新增KV配置分组
+            参数: [input (必) input]
+            返回: → WebMsg«新增KV配置分组输出参数»
+
+    POST    /api/common/kvconfig/group/delete
+            删除KV配置分组
+            参数: [input (必) input]
+            返回: → WebMsg«删除KV配置分组输出参数»
+
+    GET     /api/common/kvconfig/group/list
+            查询KV配置分组列表
+            返回: → WebMsg«查询KV配置分组输出参数»
+
+    POST    /api/common/kvconfig/group/update
+            更新KV配置分组
+            参数: [input (必) input]
+            返回: → WebMsg«更新KV配置分组输出参数»
+
+    GET     /api/common/kvconfig/group/viewById
+            查询KV配置分组详情
+            参数: [kvConfigGroupId string(必) kvConfigGroupId]
+            返回: → WebMsg«通过ID查看KV配置分组输出参数»
+
+  ## S3Bucket 业务关联配置策略Api
+
+    POST    /api/common/s3/bucket/refPolicy/create
+            新增S3Bucket 业务关联配置策略
+            参数: [input (必) input]
+            返回: → WebMsg«新增S3Bucket 业务关联配置策略输出参数»
+
+    POST    /api/common/s3/bucket/refPolicy/delete
+            删除S3Bucket 业务关联配置策略
+            参数: [input (必) input]
+            返回: → WebMsg«删除S3Bucket 业务关联配置策略输出参数»
+
+    GET     /api/common/s3/bucket/refPolicy/list
+            查询S3Bucket 业务关联配置策略列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询S3Bucket 业务关联配置策略输出参数»
+
+    POST    /api/common/s3/bucket/refPolicy/update
+            更新S3Bucket 业务关联配置策略
+            参数: [input (必) input]
+            返回: → WebMsg«更新S3Bucket 业务关联配置策略输出参数»
+
+    GET     /api/common/s3/bucket/refPolicy/viewById
+            查询S3Bucket 业务关联配置策略详情
+            参数: [s3BucketRefPolicyId string(必) s3BucketRefPolicyId]
+            返回: → WebMsg«通过ID查看S3Bucket 业务关联配置策略输出参数»
+
+  ## S3BucketApi
+
+    POST    /api/common/s3/bucket/create
+            新增S3Bucket
+            参数: [input (必) input]
+            返回: → WebMsg«新增S3Bucket输出参数»
+
+    POST    /api/common/s3/bucket/delete
+            删除S3Bucket
+            参数: [input (必) input]
+            返回: → WebMsg«删除S3Bucket输出参数»
+
+    GET     /api/common/s3/bucket/list
+            查询S3Bucket列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询S3Bucket输出参数»
+
+    POST    /api/common/s3/bucket/update
+            更新S3Bucket
+            参数: [input (必) input]
+            返回: → WebMsg«更新S3Bucket输出参数»
+
+    GET     /api/common/s3/bucket/viewById
+            查询S3Bucket详情
+            参数: [s3BucketId string(必) s3BucketId]
+            返回: → WebMsg«通过ID查看S3Bucket输出参数»
+
+  ## S3文件预览下载
+
+    GET     /api/download/**
+            下载S3文件
+
+    GET     /api/preview/**
+            预览S3文件
+
+  ## 业务附件Api
+
+    POST    /api/order/businessAttachment/create
+            新增业务附件
+            参数: [input (必) input]
+            返回: → WebMsg«新增业务附件输出参数»
+
+    POST    /api/order/businessAttachment/delete
+            删除业务附件
+            参数: [input (必) input]
+            返回: → WebMsg«删除业务附件输出参数»
+
+    GET     /api/order/businessAttachment/list
+            查询业务附件列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询业务附件输出参数»
+
+    GET     /api/order/businessAttachment/listByBusiness
+            根据业务查询附件列表
+            参数: [businessId string(必) businessId]  [businessType string(必) businessType]
+            返回: → WebMsg«根据业务查询附件列表输出参数»
+
+    POST    /api/order/businessAttachment/update
+            更新业务附件
+            参数: [input (必) input]
+            返回: → WebMsg«更新业务附件输出参数»
+
+    POST    /api/order/businessAttachment/upload
+            上传业务附件
+            参数: [attachmentKey string(必) attachmentKey]  [businessType string(必) businessType]  [file file(必) file]
+            返回: → WebMsg«上传业务附件输出参数»
+
+    GET     /api/order/businessAttachment/viewById
+            查询业务附件详情
+            参数: [businessAttachmentId string(必) businessAttachmentId]
+            返回: → WebMsg«通过ID查看业务附件输出参数»
+
+  ## 业务附件配置Api
+
+    POST    /api/order/businessAttachmentConfig/create
+            新增业务附件配置
+            参数: [input (必) input]
+            返回: → WebMsg«新增业务附件配置输出参数»
+
+    POST    /api/order/businessAttachmentConfig/delete
+            删除业务附件配置
+            参数: [input (必) input]
+            返回: → WebMsg«删除业务附件配置输出参数»
+
+    GET     /api/order/businessAttachmentConfig/keyMapping
+            获取附件标识与说明的映射
+            参数: [businessStage string(可) 业务阶段]  [businessType string(可) 业务类型]
+            返回: → WebMsg«获取附件标识映射输出参数»
+
+    GET     /api/order/businessAttachmentConfig/list
+            查询业务附件配置列表
+            参数: [attachmentType string(可)]  [businessStage string(可)]  [businessType string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询业务附件配置输出参数»
+
+    GET     /api/order/businessAttachmentConfig/listByBusinessType
+            根据业务类型查询附件配置列表
+            参数: [businessStage string(可) 业务阶段]  [businessType string(必) 业务类型]
+            返回: → WebMsg«根据业务类型查询附件配置列表输出参数»
+
+    POST    /api/order/businessAttachmentConfig/update
+            更新业务附件配置
+            参数: [input (必) input]
+            返回: → WebMsg«更新业务附件配置输出参数»
+
+    GET     /api/order/businessAttachmentConfig/viewById
+            查询业务附件配置详情
+            参数: [businessAttachmentConfigId string(必) businessAttachmentConfigId]
+            返回: → WebMsg«通过ID查看业务附件配置输出参数»
+
+  ## 任务配置Api
+
+    POST    /api/task/config/create
+            创建任务配置
+            参数: [input (必) input]
+            返回: → WebMsg«创建任务配置输出参数»
+
+    POST    /api/task/config/delete
+            删除任务配置
+            参数: [input (必) input]
+            返回: → WebMsg«删除任务配置输出参数»
+
+    GET     /api/task/config/list
+            分页查询任务配置
+            参数: [category string(可) 任务分类]  [code string(可) 配置编号]  [executionType string(可) 执行类型]  [name string(可) 配置名称]  [operator string(可) 操作者标识]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«分页查询任务配置输出参数»
+
+    POST    /api/task/config/update
+            更新任务配置
+            参数: [input (必) input]
+            返回: → WebMsg«更新任务配置输出参数»
+
+    GET     /api/task/config/viewById
+            查询任务配置详情
+            参数: [id string(必) id]
+            返回: → WebMsg«查看任务配置详情输出参数»
+
+  ## 任务队列Api
+
+    POST    /api/task/queue/create
+            创建任务
+            参数: [input (必) input]
+            返回: → WebMsg«创建任务输出参数»
+
+    GET     /api/task/queue/list
+            分页查询任务队列
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«分页查询任务队列输出参数»
+
+    GET     /api/task/queue/pending
+            获取待执行任务列表
+            参数: [category string(可) 任务分类]  [executionType string(可) 执行类型]  [limit integer(可) 返回数量限制]  [operator string(可) 操作者标识]
+            返回: → WebMsg«获取待执行任务列表输出参数»
+
+    POST    /api/task/queue/result
+            回写任务结果
+            参数: [input (必) input]
+            返回: → WebMsg«回写任务结果输出参数»
+
+    POST    /api/task/queue/start
+            标记任务开始执行
+            参数: [input (必) input]
+            返回: → WebMsg«标记任务开始执行输出参数»
+
+    GET     /api/task/queue/viewById
+            查询任务详情
+            参数: [id string(必) id]
+            返回: → WebMsg«查看任务详情输出参数»
+
+  ## 任务队列开放Api
+
+    GET     /api/open/task/queue/list
+            获取任务队列列表
+            参数: [accessToken string(必) accessToken]  [category string(可) 任务分类]  [configId string(可) 关联配置Id]  [executionType string(可) 执行类型]  [operator string(必) 操作者标识]  [pageSize integer(必) 返回数量限制]  [status string(必) 状态]
+            返回: → WebMsg«开放API-获取任务队列列表输出参数»
+
+  ## 数据字典Api
+
+    POST    /api/common/dict/dictConfig/create
+            新增数据字典
+            参数: [input (必) input]
+            返回: → WebMsg«新增数据字典输出参数»
+
+    POST    /api/common/dict/dictConfig/delete
+            删除数据字典
+            参数: [input (必) input]
+            返回: → WebMsg«删除数据字典输出参数»
+
+    GET     /api/common/dict/dictConfig/list
+            查询数据字典列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询数据字典输出参数»
+
+    POST    /api/common/dict/dictConfig/update
+            更新数据字典
+            参数: [input (必) input]
+            返回: → WebMsg«更新数据字典输出参数»
+
+    GET     /api/common/dict/dictConfig/viewById
+            查询数据字典详情
+            参数: [dictConfigId string(必) dictConfigId]
+            返回: → WebMsg«通过ID查看数据字典输出参数»
+
+  ## 数据字典条目Api
+
+    POST    /api/common/dict/dictConfigItem/create
+            新增数据字典条目
+            参数: [input (必) input]
+            返回: → WebMsg«新增数据字典条目输出参数»
+
+    POST    /api/common/dict/dictConfigItem/delete
+            删除数据字典条目
+            参数: [input (必) input]
+            返回: → WebMsg«删除数据字典条目输出参数»
+
+    GET     /api/common/dict/dictConfigItem/getItemByValue
+            通过字典值获取详情
+            参数: [dictConfigKey string(可) 字典Key]  [itemValue string(可) 条目值]
+            返回: → WebMsg«通过字典值获取详情输出参数»
+
+    GET     /api/common/dict/dictConfigItem/list
+            查询数据字典条目列表
+            参数: [dictConfigId string(可)]
+            返回: → WebMsg«查询数据字典条目输出参数»
+
+    GET     /api/common/dict/dictConfigItem/listByDictConfigKey
+            按字典Key列表数据字典条目
+            参数: [dictConfigKey string(可)]
+            返回: → WebMsg«按字典Key列表数据字典条目输出参数»
+
+    POST    /api/common/dict/dictConfigItem/update
+            更新数据字典条目
+            参数: [input (必) input]
+            返回: → WebMsg«更新数据字典条目输出参数»
+
+    GET     /api/common/dict/dictConfigItem/viewById
+            查询数据字典条目详情
+            参数: [dictConfigItemId string(必) dictConfigItemId]
+            返回: → WebMsg«通过ID查看数据字典条目输出参数»
+
+  ## 时序数据Api
+
+    POST    /api/ts/kv/delete
+            删除实体时序数据
+            参数: [input (必) input]
+            返回: → WebMsg«删除实体时序数据输出参数»
+
+    GET     /api/ts/kv/history
+            查询时序数据历史
+            参数: [endTs integer(必) endTs]  [entityId string(必) entityId]  [keyName string(必) keyName]  [limit integer(可) limit]  [startTs integer(必) startTs]
+            返回: → WebMsg«查询时序数据历史输出参数»
+
+    GET     /api/ts/kv/latest
+            查询实体最新时序数据
+            参数: [entityId string(必) entityId]
+            返回: → WebMsg«查询实体最新时序数据输出参数»
+
+    POST    /api/ts/kv/save
+            保存时序数据
+            参数: [input (必) input]
+            返回: → WebMsg«保存时序数据输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十二、报表与分析  (30 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 大屏数据Api
+
+    GET     /api/dashboard/inbound-outbound-trend
+            出入库趋势
+            参数: [endDate string(必) 结束日期]  [startDate string(必) 开始日期]
+            返回: → WebMsg«大屏出入库趋势输出参数»
+
+    GET     /api/dashboard/inventory/overview
+            库存概览数据
+            返回: → WebMsg«大屏库存概览输出参数»
+
+    GET     /api/dashboard/material-group/amount-ranking
+            物料大类金额排行
+            返回: → WebMsg«大屏物料大类金额排行输出参数»
+
+    GET     /api/dashboard/material-group/inventory
+            物料组库存统计
+            返回: → WebMsg«大屏物料组库存统计输出参数»
+
+    GET     /api/dashboard/material/value-distribution
+            物资金额分布
+            返回: → WebMsg«大屏物资金额分布输出参数»
+
+  ## 大屏数据开放Api
+
+    GET     /api/open/dashboard/inbound-outbound-trend
+            出入库趋势
+            参数: [accessToken string(必) accessToken]  [endDate string(必) 结束日期]  [startDate string(必) 开始日期]
+            返回: → WebMsg«大屏出入库趋势输出参数»
+
+    GET     /api/open/dashboard/inventory/overview
+            库存概览数据
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«大屏库存概览输出参数»
+
+    GET     /api/open/dashboard/material-group/amount-ranking
+            物料大类金额排行
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«大屏物料大类金额排行输出参数»
+
+    GET     /api/open/dashboard/material/value-distribution
+            物资金额分布
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«大屏物资金额分布输出参数»
+
+  ## 报表中心Api
+
+    GET     /api/report/abc-classification
+            物资ABC类统计
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«物资ABC类统计查询输出参数»
+
+    GET     /api/report/aging-slow-moving
+            库龄呆滞物资统计
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«库龄呆滞物资查询输出参数»
+
+    GET     /api/report/expiry-analysis
+            物资效期分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«物资效期分析查询输出参数»
+
+    GET     /api/report/inbound-summary
+            入库统计
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«入库统计查询输出参数»
+
+    GET     /api/report/inventory-age-health
+            库龄健康分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [materialCode string(可) 物资编码（mode=3时可选，筛选指定物资）]  [materialGroupCode string(可) 物料组编码（mode=2时可选，过滤指定物料组）]  [mode integer(必) 查询模式: 1=全厂分析, 2=专业系统分析, 3=物资明细]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«库龄健康分析查询输出参数»
+
+    GET     /api/report/inventory-by-material-group
+            库存物料组统计
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«库存物料组统计查询输出参数»
+
+    GET     /api/report/inventory-summary
+            库存总体统计
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«库存总体统计查询输出参数»
+
+    GET     /api/report/labor-allocation
+            人效调配分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«人效调配分析查询输出参数»
+
+    GET     /api/report/location-utilization
+            库位利用率统计
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«库位利用率查询输出参数»
+
+    GET     /api/report/maintenance-warning
+            保养预警分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«保养预警分析查询输出参数»
+
+    GET     /api/report/material-turnover-heat
+            物资周转热度分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [materialCode string(可) 物资编码（mode=3时可选，筛选指定物资）]  [materialGroupCode string(可) 物料组编码（mode=2时可选，过滤指定物料组）]  [mode integer(必) 查询模式: 1=全厂分析, 2=专业系统分析, 3=物资明细]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«物资周转热度分析查询输出参数»
+
+    GET     /api/report/outbound-summary
+            出库统计
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«出库统计查询输出参数»
+
+    GET     /api/report/purchase-analysis
+            物资采购分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«物资采购分析查询输出参数»
+
+    GET     /api/report/storage-zone-heat
+            存储区热度分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [mode integer(必) 查询模式: 1=全厂概览, 2=按仓库分析, 3=存储区明细]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]  [storageArea string(可) 存储区编码（mode=3时可选，筛选指定存储区）]  [warehouseCode string(可) 仓库编码（mode=2时可选，过滤指定仓库）]
+            返回: → WebMsg«存储区热度分析查询输出参数»
+
+    GET     /api/report/transfer-suggestion
+            移库建议分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«移库建议分析查询输出参数»
+
+    GET     /api/report/urgent-outbound-analysis
+            加急出库物资分析
+            参数: [endDate string(可) 结束日期（与 reportDate 互斥）]  [materialCode string(可) 物资编码（mode=3时可选，筛选指定物资）]  [materialGroupCode string(可) 物料组编码（mode=2时可选，过滤指定物料组）]  [mode integer(必) 查询模式: 1=全厂分析, 2=物料组分析, 3=物资明细, 4=区域分析, 5=时段分析]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]  [zoneCode string(可) 区域编码（mode=4时可选，过滤指定区域）]
+            返回: → WebMsg«加急出库物资分析查询输出参数»
+
+  ## 报表中心开放Api
+
+    GET     /api/open/report/inventory-age-health
+            库龄健康分析
+            参数: [accessToken string(必) accessToken]  [endDate string(可) 结束日期（与 reportDate 互斥）]  [materialCode string(可) 物资编码（mode=3时可选，筛选指定物资）]  [materialGroupCode string(可) 物料组编码（mode=2时可选，过滤指定物料组）]  [mode integer(必) 查询模式: 1=全厂分析, 2=专业系统分析, 3=物资明细]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«库龄健康分析查询输出参数»
+
+    GET     /api/open/report/location-utilization
+            库位利用率统计
+            参数: [accessToken string(必) accessToken]  [endDate string(可) 结束日期（与 reportDate 互斥）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«库位利用率查询输出参数»
+
+    GET     /api/open/report/material-turnover-heat
+            物资周转热度分析
+            参数: [accessToken string(必) accessToken]  [endDate string(可) 结束日期（与 reportDate 互斥）]  [materialCode string(可) 物资编码（mode=3时可选，筛选指定物资）]  [materialGroupCode string(可) 物料组编码（mode=2时可选，过滤指定物料组）]  [mode integer(必) 查询模式: 1=全厂分析, 2=专业系统分析, 3=物资明细]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]
+            返回: → WebMsg«物资周转热度分析查询输出参数»
+
+    GET     /api/open/report/storage-zone-heat
+            存储区热度分析
+            参数: [accessToken string(必) accessToken]  [endDate string(可) 结束日期（与 reportDate 互斥）]  [mode integer(必) 查询模式: 1=全厂概览, 2=按仓库分析, 3=存储区明细]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]  [storageArea string(可) 存储区编码（mode=3时可选，筛选指定存储区）]  [warehouseCode string(可) 仓库编码（mode=2时可选，过滤指定仓库）]
+            返回: → WebMsg«存储区热度分析查询输出参数»
+
+    GET     /api/open/report/urgent-outbound-analysis
+            加急出库物资分析
+            参数: [accessToken string(必) accessToken]  [endDate string(可) 结束日期（与 reportDate 互斥）]  [materialCode string(可) 物资编码（mode=3时可选，筛选指定物资）]  [materialGroupCode string(可) 物料组编码（mode=2时可选，过滤指定物料组）]  [mode integer(必) 查询模式: 1=全厂分析, 2=物料组分析, 3=物资明细, 4=区域分析, 5=时段分析]  [pageNo integer(可) 页码（默认1）]  [pageSize integer(可) 每页条数（默认10）]  [reportDate string(可) 指定日期（与 startDate/endDate 互斥）]  [startDate string(可) 开始日期（与 reportDate 互斥）]  [zoneCode string(可) 区域编码（mode=4时可选，过滤指定区域）]
+            返回: → WebMsg«加急出库物资分析查询输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十五、调度管理  (53 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 调度任务Api
+
+    POST    /api/dispatch/task/attachment/asyncUploadPhoto
+            设备端专属：夜间/闲时后置单独同步盘点照片文件
+            参数: [file file(必) file]  [sourceKey string(必) sourceKey]  [taskId string(必) taskId]
+            返回: → WebMsg«调度任务专用闲时图片上传输出参数»
+
+    POST    /api/dispatch/task/attachment/uploadData
+            上传调度任务数据附件
+            参数: [attachmentKey string(必) attachmentKey]  [file file(必) file]  [taskId string(必) taskId]
+            返回: → WebMsg«调度任务数据附件上传输出参数»
+
+    POST    /api/dispatch/task/batchDelete
+            批量删除调度任务
+            参数: [input (必) input]
+            返回: → WebMsg«批量删除调度任务输出参数»
+
+    POST    /api/dispatch/task/batchHangUp
+            批量挂起调度任务
+            参数: [input (必) input]
+            返回: → WebMsg«批量挂起调度任务输出参数»
+
+    POST    /api/dispatch/task/batchPause
+            批量暂停调度任务
+            参数: [input (必) input]
+            返回: → WebMsg«批量暂停调度任务输出参数»
+
+    POST    /api/dispatch/task/batchResumeFromHangUp
+            批量恢复挂起调度任务
+            参数: [input (必) input]
+            返回: → WebMsg«批量恢复挂起调度任务输出参数»
+
+    POST    /api/dispatch/task/batchResumeFromPause
+            批量恢复暂停调度任务
+            参数: [input (必) input]
+            返回: → WebMsg«批量恢复暂停调度任务输出参数»
+
+    GET     /api/dispatch/task/countResult
+            获取盘点任务结果
+            参数: [taskId string(必) 调度任务ID]
+            返回: → WebMsg«获取盘点结果输出参数»
+
+    POST    /api/dispatch/task/createInventoryCount
+            Web创建盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«创建盘点任务输出参数»
+
+    POST    /api/dispatch/task/createInventoryCountByDevice
+            设备创建盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备创建盘点任务输出参数»
+
+    POST    /api/dispatch/task/createNavigation
+            创建领航任务
+            参数: [input (必) input]
+            返回: → WebMsg«创建领航任务输出参数»
+
+    POST    /api/dispatch/task/createNavigationByDevice
+            设备创建创建领航任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备创建领航任务输出参数»
+
+    POST    /api/dispatch/task/createReview
+            Web创建复查任务
+            参数: [input (必) input]
+            返回: → WebMsg«Web创建复查任务输出参数»
+
+    POST    /api/dispatch/task/createReviewByDevice
+            设备创建复查任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备创建复查任务输出参数»
+
+    POST    /api/dispatch/task/createShelfInventoryCount
+            根据货架创建盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«根据货架创建盘点任务输出参数»
+
+    POST    /api/dispatch/task/createShelfInventoryCountByDevice
+            设备端根据货架创建盘点任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备端根据货架创建盘点任务输出参数»
+
+    POST    /api/dispatch/task/createShelfReview
+            根据货架创建复查任务
+            参数: [input (必) input]
+            返回: → WebMsg«根据货架创建复查任务输出参数»
+
+    POST    /api/dispatch/task/createShelfReviewByDevice
+            设备端根据货架创建复查任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备端根据货架创建复查任务输出参数»
+
+    POST    /api/dispatch/task/delete
+            删除调度任务
+            参数: [input (必) input]
+            返回: → WebMsg«删除调度任务输出参数»
+
+    GET     /api/dispatch/task/device/current
+            获取当前执行中任务
+            返回: → WebMsg«获取设备当前执行中任务输出参数»
+
+    GET     /api/dispatch/task/device/idle
+            检查当前设备是否空闲
+            返回: → WebMsg«检查设备空闲状态输出参数»
+
+    GET     /api/dispatch/task/device/list
+            设备专用调度任务列表
+            参数: [pageNo integer(可) 页码]  [pageSize integer(可) 每页数量]
+            返回: → WebMsg«设备专用调度任务列表输出参数»
+
+    GET     /api/dispatch/task/device/nextPending
+            获取下一个待执行任务
+            返回: → WebMsg«获取下一个待执行任务输出参数»
+
+    GET     /api/dispatch/task/device/pendingList
+            获取待执行任务列表
+            返回: → WebMsg«获取待执行任务列表输出参数»
+
+    POST    /api/dispatch/task/fail
+            标记任务失败
+            参数: [input (必) input]
+            返回: → WebMsg«标记调度任务失败输出参数»
+
+    POST    /api/dispatch/task/failByDevice
+            设备端标记任务失败
+            参数: [input (必) input]
+            返回: → WebMsg«设备端标记调度任务失败输出参数»
+
+    POST    /api/dispatch/task/fullCount
+            全库盘点
+            参数: [input (必) input]
+            返回: → WebMsg«全库盘点输出参数»
+
+    POST    /api/dispatch/task/hangUp
+            Web挂起任务
+            参数: [input (必) input]
+            返回: → WebMsg«挂起调度任务输出参数»
+
+    POST    /api/dispatch/task/hangUpByDevice
+            设备端挂起任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备端挂起调度任务输出参数»
+
+    GET     /api/dispatch/task/inventory/rfidList
+            获取库位RFID列表
+            参数: [inventoryId string(必) 库存ID]  [locationId string(必) 库位ID]
+            返回: → WebMsg«获取库位RFID列表输出参数»
+
+    GET     /api/dispatch/task/inventory/search
+            搜索RFID库存
+            参数: [keyword string(可) 搜索关键字（物资编码或名称）]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]
+            返回: → WebMsg«搜索RFID库存输出参数»
+
+    GET     /api/dispatch/task/inventoryCountDetail
+            获取盘点任务详情
+            参数: [taskId string(必) 调度任务ID]
+            返回: → WebMsg«获取盘点任务详情输出参数»
+
+    GET     /api/dispatch/task/list
+            分页查询调度任务列表
+            参数: [businessId string(可)]  [businessItemId string(可)]  [businessType string(可)]  [code string(可)]  [deviceId string(可)]  [deviceType string(可)]  [name string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [source string(可)]  [status string(可)]  [targetLocationBarcode string(可)]  [taskType string(可)]
+            返回: → WebMsg«查询调度任务输出参数»
+
+    POST    /api/dispatch/task/pause
+            Web暂停任务
+            参数: [input (必) input]
+            返回: → WebMsg«暂停调度任务输出参数»
+
+    POST    /api/dispatch/task/pauseByDevice
+            设备端暂停任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备端暂停调度任务输出参数»
+
+    POST    /api/dispatch/task/resumeFromHangUp
+            Web恢复挂起任务
+            参数: [input (必) input]
+            返回: → WebMsg«Web端恢复挂起任务输出参数»
+
+    POST    /api/dispatch/task/resumeFromHangUpByDevice
+            设备端恢复挂起任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备端恢复挂起任务输出参数»
+
+    POST    /api/dispatch/task/resumeFromPause
+            Web恢复暂停任务
+            参数: [input (必) input]
+            返回: → WebMsg«Web端恢复暂停任务输出参数»
+
+    POST    /api/dispatch/task/resumeFromPauseByDevice
+            设备端恢复暂停任务
+            参数: [input (必) input]
+            返回: → WebMsg«设备端恢复暂停任务输出参数»
+
+    POST    /api/dispatch/task/start
+            启动或从之前任务恢复
+            参数: [input (必) input]
+            返回: → WebMsg«启动或从之前任务恢复输出参数»
+
+    POST    /api/dispatch/task/upload
+            上传调度任务附件
+            参数: [file file(必) file]
+            返回: → WebMsg«上传调度任务附件输出参数»
+
+    GET     /api/dispatch/task/viewById
+            查询调度任务详情
+            参数: [taskId string(必)]
+            返回: → WebMsg«通过ID查看任务详情输出参数»
+
+  ## 调度任务开放Api
+
+    POST    /api/open/dispatch/task/createInventoryCount
+            创建盘点任务
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«开放API-创建盘点任务输出参数»
+
+    POST    /api/open/dispatch/task/createNavigation
+            创建领航任务
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«开放API-创建领航任务输出参数»
+
+    POST    /api/open/dispatch/task/createReview
+            创建复查任务
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«开放API-创建复查任务输出参数»
+
+    GET     /api/open/dispatch/task/track
+            获取任务历史轨迹
+            参数: [accessToken string(必) accessToken]  [taskId string(必) taskId]
+            返回: → WebMsg«开放API-获取任务历史轨迹输出参数»
+
+  ## 调度任务阶段操作Api
+
+    POST    /api/dispatch/task/phase/confirmNext
+            任务确认当前阶段并进入下一阶段
+            参数: [input (必) input]
+            返回: → WebMsg«任务确认当前阶段并进入下一阶段输出参数»
+
+    GET     /api/dispatch/task/phase/current
+            获取当前阶段信息
+            参数: [taskId string(必) 任务ID]
+            返回: → WebMsg«获取当前阶段信息输出参数»
+
+    GET     /api/dispatch/task/phase/list
+            获取任务所有阶段列表
+            参数: [taskId string(必) 任务ID]
+            返回: → WebMsg«获取任务所有阶段列表输出参数»
+
+    GET     /api/dispatch/task/phase/next
+            获取下一阶段信息
+            参数: [taskId string(必) 任务ID]
+            返回: → WebMsg«获取当前阶段信息输出参数»
+
+    GET     /api/dispatch/task/phase/runtimeData
+            获取阶段运行时数据（轮询）
+            参数: [phaseOrder integer(必) 阶段序号]  [taskId string(必) 任务ID]
+            返回: → WebMsg«获取阶段运行时数据输出参数»
+
+    POST    /api/dispatch/task/phase/start
+            任务当前阶段启动
+            参数: [input (必) input]
+            返回: → WebMsg«任务当前阶段启动输出参数»
+
+    POST    /api/dispatch/task/phase/uploadData
+            阶段数据上报
+            参数: [input (必) input]
+            返回: → WebMsg«阶段数据上报输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十八、消息与待办  (13 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 待办任务Api
+
+    POST    /api/todo/todoTask/backfillMissingPickTodos
+            补建缺失的出库拣货待办
+            参数: [input (可) input]
+            返回: → WebMsg«补建缺失拣货待办输出参数»
+
+    GET     /api/todo/todoTask/countByType
+            待办任务分类统计
+            返回: → WebMsg«待办任务分类统计输出参数»
+
+    GET     /api/todo/todoTask/statistics
+            待办任务统计
+            返回: → WebMsg«待办任务统计输出参数»
+
+  ## 消息中心Api
+
+    GET     /api/message/center/countByGroup
+            按分组统计未读数量
+            返回: → WebMsg«按分组统计未读消息数量输出参数»
+
+    GET     /api/message/center/list
+            消息列表
+            参数: [groupType string(可) 消息分组（可选）]  [readStatus string(可) 已读状态（可选，不传查全部）]
+            返回: → WebMsg«消息中心列表查询输出参数»
+
+    POST    /api/message/center/markRead
+            标记单条消息已读
+            参数: [input (必) input]
+            返回: → WebMsg«标记单条消息已读输出参数»
+
+    GET     /api/message/center/view
+            消息详情
+            参数: [messageId string(必) 消息ID]
+            返回: → WebMsg«查看消息详情输出参数»
+
+  ## 消息订阅配置Api
+
+    GET     /api/message/subscription/listAll
+            获取所有消息类型及其配置的角色
+            返回: → WebMsg«获取所有消息类型及其配置的角色输出参数»
+
+    GET     /api/message/subscription/listByType
+            按消息类型获取已配置角色列表
+            参数: [messageType string(必) 消息类型]
+            返回: → WebMsg«按消息类型获取已配置角色列表输出参数»
+
+    POST    /api/message/subscription/saveByType
+            保存消息类型的接收角色配置
+            参数: [input (必) input]
+            返回: → WebMsg«保存消息类型的接收角色配置输出参数»
+
+  ## 消息通知Api
+
+    POST    /api/message/notification/markAllRead
+            标记全部消息已读
+            返回: → WebMsg«标记全部消息已读输出参数»
+
+    GET     /api/message/notification/unreadCount
+            获取未读消息数量
+            返回: → WebMsg«获取未读消息数量输出参数»
+
+    GET     /api/message/notification/unreadList
+            获取未读消息列表
+            参数: [limit integer(可) 限制条数，默认10]
+            返回: → WebMsg«获取未读消息列表输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十六、物料主数据  (39 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## 供应商Api
+
+    POST    /api/material/supplier/create
+            新增供应商
+            参数: [input (必) input]
+            返回: → WebMsg«新增供应商输出参数»
+
+    POST    /api/material/supplier/delete
+            删除供应商
+            参数: [input (必) input]
+            返回: → WebMsg«删除供应商输出参数»
+
+    GET     /api/material/supplier/list
+            查询供应商列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询供应商输出参数»
+
+    POST    /api/material/supplier/update
+            更新供应商
+            参数: [input (必) input]
+            返回: → WebMsg«更新供应商输出参数»
+
+    GET     /api/material/supplier/viewById
+            查询供应商详情
+            参数: [materialSupplierId string(必) materialSupplierId]
+            返回: → WebMsg«通过ID查看供应商输出参数»
+
+  ## 物料Api
+
+    POST    /api/material/material/create
+            新增物料
+            参数: [input (必) input]
+            返回: → WebMsg«新增物料输出参数»
+
+    POST    /api/material/material/delete
+            删除物料
+            参数: [input (必) input]
+            返回: → WebMsg«删除物料输出参数»
+
+    POST    /api/material/material/import/save
+            物料导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«物料导入保存输出参数»
+
+    POST    /api/material/material/import/upload
+            上传导入文件 MM60
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+    GET     /api/material/material/list
+            查询物料列表
+            参数: [keyword string(可)]  [materialGroupCode string(可)]  [oneCodePerItem string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询物料输出参数»
+
+    POST    /api/material/material/update
+            更新物料
+            参数: [input (必) input]
+            返回: → WebMsg«更新物料输出参数»
+
+    GET     /api/material/material/viewByCode
+            通过code查询物料详情
+            参数: [materialCode string(必) materialCode]
+            返回: → WebMsg«通过code查看物料输出参数»
+
+    GET     /api/material/material/viewById
+            通过Id查询物料详情
+            参数: [materialId string(必) materialId]
+            返回: → WebMsg«通过ID查看物料输出参数»
+
+  ## 物料基本计量单位Api
+
+    POST    /api/material/spec/create
+            新增物料基本计量单位
+            参数: [input (必) input]
+            返回: → WebMsg«新增物料基本计量单位输出参数»
+
+    POST    /api/material/spec/delete
+            删除物料基本计量单位
+            参数: [input (必) input]
+            返回: → WebMsg«删除物料基本计量单位输出参数»
+
+    GET     /api/material/spec/list
+            查询物料基本计量单位列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询物料基本计量单位输出参数»
+
+    POST    /api/material/spec/update
+            更新物料基本计量单位
+            参数: [input (必) input]
+            返回: → WebMsg«更新物料基本计量单位输出参数»
+
+    GET     /api/material/spec/viewById
+            查询物料基本计量单位详情
+            参数: [materialSpecId string(必) materialSpecId]
+            返回: → WebMsg«通过ID查看物料基本计量单位输出参数»
+
+  ## 物料组Api
+
+    GET     /api/material/group/all
+            查询所有物料组列表
+            参数: [parentId string(可)]
+            返回: → WebMsg«查询所有物料组输出参数»
+
+    GET     /api/material/group/ancestors
+            查询物料组祖先节点
+            参数: [code string(可)]
+            返回: → WebMsg«查询物料组祖先节点输出参数»
+
+    POST    /api/material/group/create
+            新增物料组
+            参数: [input (必) input]
+            返回: → WebMsg«新增物料组输出参数»
+
+    POST    /api/material/group/delete
+            删除物料组
+            参数: [input (必) input]
+            返回: → WebMsg«删除物料组输出参数»
+
+    POST    /api/material/group/import/preview
+            物料组导入预览
+            参数: [input (必) input]
+            返回: → WebMsg«物料组导入预览输出参数»
+
+    POST    /api/material/group/import/save
+            物料组导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«物料组导入保存输出参数»
+
+    POST    /api/material/group/import/upload
+            上传导入文件
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+    GET     /api/material/group/list
+            查询物料组列表
+            参数: [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [parentId string(可)]
+            返回: → WebMsg«查询物料组输出参数»
+
+    GET     /api/material/group/tree
+            查询物料组树形结构
+            返回: → WebMsg«查询物料组树输出参数»
+
+    POST    /api/material/group/update
+            更新物料组
+            参数: [input (必) input]
+            返回: → WebMsg«更新物料组输出参数»
+
+    GET     /api/material/group/viewByCode
+            通过Code查询物料组详情
+            参数: [materialGroupCode string(必) materialGroupCode]
+            返回: → WebMsg«通过Code查看物料组输出参数»
+
+    GET     /api/material/group/viewById
+            通过Id查询物料组详情
+            参数: [materialGroupId string(必) materialGroupId]
+            返回: → WebMsg«通过ID查看物料组输出参数»
+
+  ## 物资作业规范Api
+
+    POST    /api/material/materialOperationGuide/create
+            新增物资作业规范
+            参数: [input (必) input]
+            返回: → WebMsg«新增物资作业规范输出参数»
+
+    POST    /api/material/materialOperationGuide/delete
+            删除物资作业规范
+            参数: [input (必) input]
+            返回: → WebMsg«删除物资作业规范输出参数»
+
+    GET     /api/material/materialOperationGuide/list
+            查询物资作业规范列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询物资作业规范输出参数»
+
+    POST    /api/material/materialOperationGuide/update
+            更新物资作业规范
+            参数: [input (必) input]
+            返回: → WebMsg«更新物资作业规范输出参数»
+
+    GET     /api/material/materialOperationGuide/viewById
+            查询物资作业规范详情
+            参数: [materialOperationGuideId string(必) materialOperationGuideId]
+            返回: → WebMsg«通过ID查看物资作业规范输出参数»
+
+    GET     /api/material/materialOperationGuide/viewByMaterialCode
+            根据物资编码查询物资作业规范
+            参数: [materialCode string(必) materialCode]
+            返回: → WebMsg«根据物资编码查询物资作业规范输出参数»
+
+  ## 物资保养管理Api
+
+    GET     /api/inventory/maintenance/history
+            保养历史
+            参数: [inventoryId string(必) 库存ID]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]
+            返回: → WebMsg«保养历史查询输出参数»
+
+    GET     /api/inventory/maintenance/list
+            保养管理列表
+            参数: [keyword string(可) 关键字（物资编码/物资名称/批次码/库存条码）]  [maintenanceStatus string(可) 保养状态（PENDING/URGENT/OVERDUE）]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]
+            返回: → WebMsg«保养管理列表输出参数»
+
+    POST    /api/inventory/maintenance/register
+            保养登记
+            参数: [input (必) input]
+            返回: → WebMsg«保养登记输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+十四、仓储设施管理  (106 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## ERP仓储类型Api
+
+    GET     /api/material/materialStorageType/all
+            查询所有ERP仓储类型
+            参数: [warehouseCode string(可) 仓库编码，默认智慧仓库（A00）]
+            返回: → WebMsg«查询所有物料存储类型输出参数»
+
+    POST    /api/material/materialStorageType/create
+            新增ERP仓储类型
+            参数: [input (必) input]
+            返回: → WebMsg«新增物料存储类型输出参数»
+
+    POST    /api/material/materialStorageType/delete
+            删除ERP仓储类型
+            参数: [input (必) input]
+            返回: → WebMsg«删除物料存储类型输出参数»
+
+    GET     /api/material/materialStorageType/getKeeperByMaterialCode
+            通过物资编码查询库管员ID
+            参数: [materialCode string(必) materialCode]
+            返回: → WebMsg«通过物资编码查询库管员ID输出参数»
+
+    GET     /api/material/materialStorageType/list
+            查询ERP仓储类型列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [warehouseCode string(可) 仓库编码，默认智慧仓库（A00）]
+            返回: → WebMsg«查询物料存储类型输出参数»
+
+    POST    /api/material/materialStorageType/update
+            更新ERP仓储类型
+            参数: [input (必) input]
+            返回: → WebMsg«更新物料存储类型输出参数»
+
+    GET     /api/material/materialStorageType/viewById
+            查询ERP仓储类型详情
+            参数: [materialStorageTypeId string(必) materialStorageTypeId]
+            返回: → WebMsg«通过ID查看物料存储类型输出参数»
+
+  ## ERP存储区Api
+
+    GET     /api/material/materialStorageArea/all
+            按仓储类型查询全部存储区
+            参数: [storageTypeCode string(可) 仓储类型编码]  [warehouseCode string(可) 仓库编码，默认智慧仓库（A00）]
+            返回: → WebMsg«按仓储类型查询全部存储区输出参数»
+
+    POST    /api/material/materialStorageArea/create
+            新增ERP存储区
+            参数: [input (必) input]
+            返回: → WebMsg«新增物料存储区输出参数»
+
+    POST    /api/material/materialStorageArea/delete
+            删除ERP存储区
+            参数: [input (必) input]
+            返回: → WebMsg«删除物料存储区输出参数»
+
+    GET     /api/material/materialStorageArea/list
+            查询ERP存储区列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [storageTypeCode string(可) 仓储类型编码]  [warehouseCode string(可) 仓库编码]
+            返回: → WebMsg«查询物料存储区列表输出参数»
+
+    POST    /api/material/materialStorageArea/update
+            更新ERP存储区
+            参数: [input (必) input]
+            返回: → WebMsg«更新物料存储区输出参数»
+
+    GET     /api/material/materialStorageArea/viewById
+            查询ERP存储区详情
+            参数: [materialStorageAreaId string(必) materialStorageAreaId]
+            返回: → WebMsg«通过ID查看物料存储区输出参数»
+
+    GET     /api/material/materialStorageArea/wmsCodes
+            WMS 储存区码列表（货位/货架下拉）
+            参数: [storageTypeCode string(可) 仓储类型 Txx，可选]  [warehouseCode string(可) 仓库编码，默认智慧仓库 A00]
+            返回: → WebMsg«WMS 储存区码列表输出参数»
+
+  ## ERP库存地点Api
+
+    GET     /api/material/materialStorageLocation/all
+            查询所有ERP库存地点
+            参数: [factoryCode string(可) 工厂编码；未传时从 warehouseCode 或默认 ERP 智能仓 factory 解析，无法解析则不按工厂过滤]  [warehouseCode string(可) 仓库编码，默认智慧仓库（A00）]
+            返回: → WebMsg«查询所有物料库存地点输出参数»
+
+    POST    /api/material/materialStorageLocation/create
+            新增ERP库存地点
+            参数: [input (必) input]
+            返回: → WebMsg«新增物料库存地点输出参数»
+
+    POST    /api/material/materialStorageLocation/delete
+            删除ERP库存地点
+            参数: [input (必) input]
+            返回: → WebMsg«删除物料库存地点输出参数»
+
+    GET     /api/material/materialStorageLocation/list
+            查询ERP库存地点列表
+            参数: [factoryCode string(可) 工厂编码；未传时从 warehouseCode 或默认 ERP 智能仓 factory 解析，无法解析则不按工厂过滤]  [keyword string(可) 编码/名称模糊]  [pageNo integer(可)]  [pageSize integer(可)]  [warehouseCode string(可) 仓库编码，默认智慧仓库（A00）]
+            返回: → WebMsg«查询物料库存地点列表输出参数»
+
+    POST    /api/material/materialStorageLocation/update
+            更新ERP库存地点
+            参数: [input (必) input]
+            返回: → WebMsg«更新物料库存地点输出参数»
+
+    GET     /api/material/materialStorageLocation/viewById
+            查询ERP库存地点详情
+            参数: [materialStorageLocationId string(必) materialStorageLocationId]
+            返回: → WebMsg«查询物料库存地点详情输出参数»
+
+  ## ERP映射配置Api
+
+    GET     /api/inventory/storage/area/erp/mapping/all
+            查询所有ERP映射
+            参数: [siteCode string(可)]  [zoneCode string(可)]
+            返回: → WebMsg«查询所有ERP映射»
+
+    POST    /api/inventory/storage/area/erp/mapping/create
+            新增ERP映射
+            参数: [input (必) input]
+            返回: → WebMsg«新增ERP映射输出参数»
+
+    POST    /api/inventory/storage/area/erp/mapping/delete
+            删除ERP映射
+            参数: [input (必) input]
+            返回: → WebMsg«删除ERP映射输出参数»
+
+    GET     /api/inventory/storage/area/erp/mapping/list
+            查询ERP映射列表
+            参数: [areaCode string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [siteCode string(可)]  [zoneCode string(可)]
+            返回: → WebMsg«查询ERP映射列表输出参数»
+
+    POST    /api/inventory/storage/area/erp/mapping/update
+            更新ERP映射
+            参数: [input (必) input]
+            返回: → WebMsg«更新ERP映射输出参数»
+
+    GET     /api/inventory/storage/area/erp/mapping/viewById
+            查询ERP映射详情
+            参数: [mappingId string(必) mappingId]
+            返回: → WebMsg«通过ID查看ERP映射输出参数»
+
+  ## 仓储存储区Api
+
+    GET     /api/warehouse/storage/area/all
+            查询所有存储区
+            参数: [zoneCode string(可)]
+            返回: → WebMsg«查询所有存储区»
+
+    POST    /api/warehouse/storage/area/create
+            新增存储区
+            参数: [input (必) input]
+            返回: → WebMsg«新增存储区输出参数»
+
+    POST    /api/warehouse/storage/area/delete
+            删除存储区
+            参数: [input (必) input]
+            返回: → WebMsg«删除存储区输出参数»
+
+    GET     /api/warehouse/storage/area/list
+            查询存储区列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [zoneCode string(可)]
+            返回: → WebMsg«查询存储区列表输出参数»
+
+    POST    /api/warehouse/storage/area/update
+            更新存储区
+            参数: [input (必) input]
+            返回: → WebMsg«更新存储区输出参数»
+
+    GET     /api/warehouse/storage/area/viewById
+            查询存储区详情
+            参数: [areaId string(必) areaId]
+            返回: → WebMsg«通过ID查看存储区输出参数»
+
+    GET     /api/warehouse/storage/area/zoneAreaGroup/all
+            查询库区-存储区分组（按站点）
+            参数: [siteCode string(可) 站点编码（必填）]  [storageAreaType integer(可) 存储区类型（可选过滤：10=P排架 20=D地堆 30=C堆场 60=X其他）]
+            返回: → WebMsg«库区-存储区分组结果»
+
+  ## 仓储库区Api
+
+    GET     /api/warehouse/storage/zone/all
+            查询所有库区
+            参数: [siteCode string(可)]
+            返回: → WebMsg«查询所有库区»
+
+    POST    /api/warehouse/storage/zone/create
+            新增库区
+            参数: [input (必) input]
+            返回: → WebMsg«新增库区输出参数»
+
+    POST    /api/warehouse/storage/zone/delete
+            删除库区
+            参数: [input (必) input]
+            返回: → WebMsg«删除库区输出参数»
+
+    GET     /api/warehouse/storage/zone/list
+            查询库区列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]  [siteCode string(可)]
+            返回: → WebMsg«查询库区列表输出参数»
+
+    POST    /api/warehouse/storage/zone/update
+            更新库区
+            参数: [input (必) input]
+            返回: → WebMsg«更新库区输出参数»
+
+    GET     /api/warehouse/storage/zone/viewById
+            查询库区详情
+            参数: [zoneId string(必) zoneId]
+            返回: → WebMsg«通过ID查看库区输出参数»
+
+  ## 仓储站点Api
+
+    GET     /api/warehouse/storage/site/all
+            查询所有站点
+            返回: → WebMsg«查询所有站点»
+
+    POST    /api/warehouse/storage/site/create
+            新增站点
+            参数: [input (必) input]
+            返回: → WebMsg«新增站点输出参数»
+
+    POST    /api/warehouse/storage/site/delete
+            删除站点
+            参数: [input (必) input]
+            返回: → WebMsg«删除站点输出参数»
+
+    GET     /api/warehouse/storage/site/list
+            查询站点列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询站点列表输出参数»
+
+    POST    /api/warehouse/storage/site/update
+            更新站点
+            参数: [input (必) input]
+            返回: → WebMsg«更新站点输出参数»
+
+    GET     /api/warehouse/storage/site/viewById
+            查询站点详情
+            参数: [siteId string(必) siteId]
+            返回: → WebMsg«通过ID查看站点输出参数»
+
+  ## 仓库Api
+
+    GET     /api/warehouse/warehouse/all
+            查询所有仓库
+            参数: [code string(可) 仓库编码模糊匹配]  [factoryCode string(可) 工厂编码，省略时返回当前租户下全部仓库]
+            返回: → WebMsg«查询所有仓库输出参数»
+
+    POST    /api/warehouse/warehouse/create
+            新增仓库
+            参数: [input (必) input]
+            返回: → WebMsg«新增仓库输出参数»
+
+    GET     /api/warehouse/warehouse/defaultErp
+            获取默认ERP仓库
+            返回: → WebMsg«获取默认ERP仓库输出参数»
+
+    POST    /api/warehouse/warehouse/delete
+            删除仓库
+            参数: [input (必) input]
+            返回: → WebMsg«删除仓库输出参数»
+
+    GET     /api/warehouse/warehouse/list
+            查询仓库列表
+            参数: [code string(可)]  [factoryCode string(可) 工厂编码，省略时返回当前租户下全部仓库]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询仓库输出参数»
+
+    POST    /api/warehouse/warehouse/update
+            更新仓库
+            参数: [input (必) input]
+            返回: → WebMsg«更新仓库输出参数»
+
+    GET     /api/warehouse/warehouse/viewById
+            查询仓库详情
+            参数: [warehouseId string(必) warehouseId]
+            返回: → WebMsg«通过ID查看仓库输出参数»
+
+  ## 室外堆场Api
+
+    GET     /api/warehouse/outdoorYard/detail
+            查询室外堆场货位详情
+            参数: [deviceId string(必) 设备ID]  [locationId string(必) 货位ID]
+            返回: → WebMsg«查询室外堆场货位详情-出参»
+
+    GET     /api/warehouse/outdoorYard/list
+            查询室外堆场列表
+            参数: [status string(可) 状态筛选]
+            返回: → WebMsg«室外堆场列表输出参数»
+
+  ## 工厂Api
+
+    GET     /api/warehouse/factory/all
+            查询所有工厂
+            返回: → WebMsg«查询所有工厂»
+
+    POST    /api/warehouse/factory/create
+            新增工厂
+            参数: [input (必) input]
+            返回: → WebMsg«新增工厂输出参数»
+
+    POST    /api/warehouse/factory/delete
+            删除工厂
+            参数: [input (必) input]
+            返回: → WebMsg«删除工厂输出参数»
+
+    GET     /api/warehouse/factory/list
+            查询工厂列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询工厂输出参数»
+
+    POST    /api/warehouse/factory/update
+            更新工厂
+            参数: [input (必) input]
+            返回: → WebMsg«更新工厂输出参数»
+
+    GET     /api/warehouse/factory/viewById
+            查询工厂详情
+            参数: [factoryId string(必) factoryId]
+            返回: → WebMsg«通过ID查看工厂输出参数»
+
+  ## 库管员分配规则Api
+
+    GET     /api/warehouse/keeperAssignmentRule/all
+            查询所有库管员分配规则
+            参数: [ruleDomain string(可)]  [warehouseCode string(可)]
+            返回: → WebMsg«查询所有库管员分配规则输出参数»
+
+    POST    /api/warehouse/keeperAssignmentRule/create
+            新增库管员分配规则
+            参数: [input (必) input]
+            返回: → WebMsg«新增库管员分配规则输出参数»
+
+    POST    /api/warehouse/keeperAssignmentRule/delete
+            删除库管员分配规则
+            参数: [input (必) input]
+            返回: → WebMsg«删除库管员分配规则输出参数»
+
+    GET     /api/warehouse/keeperAssignmentRule/list
+            查询库管员分配规则列表
+            参数: [enabled integer(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [ruleDomain string(可)]  [warehouseCode string(可)]
+            返回: → WebMsg«查询库管员分配规则列表输出参数»
+
+    POST    /api/warehouse/keeperAssignmentRule/preview
+            库管员分配试算
+            参数: [input (必) input]
+            返回: → WebMsg«库管员分配规则试算输出参数»
+
+    POST    /api/warehouse/keeperAssignmentRule/update
+            更新库管员分配规则
+            参数: [input (必) input]
+            返回: → WebMsg«更新库管员分配规则输出参数»
+
+    GET     /api/warehouse/keeperAssignmentRule/viewById
+            查看库管员分配规则详情
+            参数: [warehouseKeeperAssignmentRuleId string(必) warehouseKeeperAssignmentRuleId]
+            返回: → WebMsg«查看库管员分配规则详情输出参数»
+
+  ## 货位Api
+
+    POST    /api/warehouse/location/batchCreate
+            按排/位/层/货位位范围批量创建货位（货架不存在或已存在则跳过）
+            参数: [input (必) input]
+            返回: → WebMsg«批量创建货位输出参数»
+
+    POST    /api/warehouse/location/batchDisable
+            批量禁用货位
+            参数: [input (必) input]
+            返回: → WebMsg«批量禁用货位输出参数»
+
+    POST    /api/warehouse/location/batchEnable
+            批量启用货位
+            参数: [input (必) input]
+            返回: → WebMsg«批量启用货位输出参数»
+
+    POST    /api/warehouse/location/batchRename
+            按库区与储存区批量重命名货位
+            参数: [input (必) input]
+            返回: → WebMsg«按库区与储存区批量重命名货位输出参数»
+
+    POST    /api/warehouse/location/bindTag
+            绑定RFID标签
+            参数: [input (必) input]
+            返回: → WebMsg«库位绑定RFID标签输出参数»
+
+    POST    /api/warehouse/location/create
+            新增货位
+            参数: [input (必) input]
+            返回: → WebMsg«新增货位输出参数»
+
+    POST    /api/warehouse/location/delete
+            删除货位
+            参数: [input (必) input]
+            返回: → WebMsg«删除货位输出参数»
+
+    POST    /api/warehouse/location/disable
+            禁用货位
+            参数: [input (必) input]
+            返回: → WebMsg«禁用货位输出参数»
+
+    POST    /api/warehouse/location/enable
+            启用货位
+            参数: [input (必) input]
+            返回: → WebMsg«启用货位输出参数»
+
+    GET     /api/warehouse/location/findByBarcode
+            通过库位条码查询库位信息
+            参数: [barcode string(必) barcode]
+            返回: → WebMsg«通过库位条码查询库位输出参数»
+
+    GET     /api/warehouse/location/findByTag
+            通过RFID标签查询库位
+            参数: [tagCode string(必) tagCode]
+            返回: → WebMsg«通过RFID标签查询库位输出参数»
+
+    GET     /api/warehouse/location/list
+            查询货位列表
+            参数: [areaCode string(可) 存储区编码（新体系，等同 storageArea）]  [barcode string(可) 货位条码，支持模糊查询]  [code string(可) 货位编码，支持模糊查询]  [keyword string(可) 关键字，支持备注、货位编码、货位条码模糊查询]  [locationFunction string(可) 货位功能]  [locationLevel integer(可) 货位所属层]  [locationType string(可) 货位类型]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页数量]  [shelfRow string(可) 货架所属排，字典Key：ROW]  [siteCode string(可) 仓储场地编码（物理空间）]  [status string(可) 启用状态]  [storageArea string(可) 存储区（物理；对应 wms_storage_area.code，等同 areaCode）]  [storageAreaType string(可) 存储区类型]  [storageCode string(可) 存储类型]  [warehouseShelfCode string(可) 所属货架编码]  [zoneCode string(可) 库区编码（六段码第一段）]
+            返回: → WebMsg«查询货位输出参数»
+
+    GET     /api/warehouse/location/listToBeInspected
+            查询库区待验收区货位
+            参数: [zoneCode string(必) zoneCode]
+            返回: → WebMsg«查询库区待验收区货位输出参数»
+
+    GET     /api/warehouse/location/listToBeOutbound
+            查询库区待出库区货位
+            参数: [zoneCode string(必) zoneCode]
+            返回: → WebMsg«查询库区待出库区货位输出参数»
+
+    GET     /api/warehouse/location/listUnqualified
+            查询库区不合格区货位
+            参数: [zoneCode string(必) zoneCode]
+            返回: → WebMsg«查询库区不合格区货位输出参数»
+
+    POST    /api/warehouse/location/redistributeProperties
+            重新分配智能仓库货架区货位属性
+            返回: → WebMsg«重新分配货位属性输出参数»
+
+    POST    /api/warehouse/location/unbindTag
+            解绑RFID标签
+            参数: [input (必) input]
+            返回: → WebMsg«解绑库位RFID标签输出参数»
+
+    POST    /api/warehouse/location/update
+            更新货位
+            参数: [input (必) input]
+            返回: → WebMsg«更新货位输出参数»
+
+    GET     /api/warehouse/location/viewById
+            查询货位详情
+            参数: [locationId string(必) locationId]
+            返回: → WebMsg«通过ID查看货位输出参数»
+
+  ## 货位开放Api - 货位实时状态
+
+    POST    /api/open/warehouse/location/instantStatus/refresh
+            强制刷新指定货位的实时状态
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/warehouse/location/instantStatus/removeFlag
+            为指定货位移除实时状态标记
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/warehouse/location/instantStatus/setFlag
+            为指定货位设置实时状态标记
+            参数: [accessToken string(必) accessToken]  [input (必) input]
+            返回: → WebMsg«Output»
+
+    POST    /api/open/warehouse/location/instantStatus/syncAll
+            同步所有货位实时状态
+            参数: [accessToken string(必) accessToken]  [forcePublishEvent boolean(可) forcePublishEvent]
+            返回: → WebMsg«Output»
+
+  ## 货架Api
+
+    GET     /api/warehouse/warehouseShelf/all
+            查询所有货架
+            参数: [code string(可)]  [shelfRow string(可) 货架所属排，字典Key：ROW]  [siteCode string(可) 仓储场地编码（物理）]  [storageArea string(可) 存储区（物理；对应 wms_storage_area.code）]  [zoneCode string(必) 库区编码（物理；必填）]
+            返回: → WebMsg«查询所有货架输出参数»
+
+    GET     /api/warehouse/warehouseShelf/allByDefaultErpWarehouse
+            查询默认ERP仓库所有货架
+            参数: [shelfRow string(可) 货架所属排，字典Key：ROW]  [siteCode string(可) 仓储场地编码（物理空间）]  [storageArea string(可) 存储区（物理；对应 wms_storage_area.code）]  [zoneCode string(可) 库区编码（六段码第一段）]
+            返回: → WebMsg«按物理空间查询货架输出参数»
+
+    POST    /api/warehouse/warehouseShelf/batchCreate
+            按排/位范围批量创建货架（已存在则跳过）
+            参数: [input (必) input]
+            返回: → WebMsg«批量创建货架输出参数»
+
+    POST    /api/warehouse/warehouseShelf/batchRename
+            按库区与储存区批量重命名货架及货位
+            参数: [input (必) input]
+            返回: → WebMsg«按库区与储存区批量重命名货架输出参数»
+
+    POST    /api/warehouse/warehouseShelf/batchUpdateStorageCode
+            批量更新货架存储类型
+            参数: [input (必) input]
+            返回: → WebMsg«批量更新货架存储类型输出参数»
+
+    POST    /api/warehouse/warehouseShelf/batchUpdateStorageCodeByShelfRow
+            通过仓库和排批量更新货架存储类型
+            参数: [input (必) input]
+            返回: → WebMsg«按库区与排批量更新货架存储类型输出参数»
+
+    POST    /api/warehouse/warehouseShelf/bindSpaceLocations
+            货架关联空间点位
+            参数: [input (必) input]
+            返回: → WebMsg«货架关联空间点位输出参数»
+
+    POST    /api/warehouse/warehouseShelf/create
+            新增货架
+            参数: [input (必) input]
+            返回: → WebMsg«新增货架输出参数»
+
+    POST    /api/warehouse/warehouseShelf/delete
+            删除货架
+            参数: [input (必) input]
+            返回: → WebMsg«删除货架输出参数»
+
+    GET     /api/warehouse/warehouseShelf/distinctRows
+            按存储区查询去重货架排号
+            参数: [siteCode string(可) 仓储场地编码（物理空间）]  [storageArea string(可) 存储区（物理；对应 wms_storage_area.code）]  [zoneCode string(必) 库区编码（六段码第一段）]
+            返回: → WebMsg«按存储区查询去重货架排号输出参数»
+
+    GET     /api/warehouse/warehouseShelf/list
+            查询货架列表
+            参数: [code string(可)]  [keyPoint string(可) 重点]  [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [shelfRow string(可) 货架所属排，字典Key：ROW]  [shelfType string(可) 货架类型]  [siteCode string(可) 仓储场地编码（物理空间）]  [storageArea string(可) 存储区（物理；对应 wms_storage_area.code）]  [storageCode string(可) 存储类型]  [zoneCode string(可) 库区编码（物理；六段码第一段）]
+            返回: → WebMsg«查询货架输出参数»
+
+    POST    /api/warehouse/warehouseShelf/quickCreate
+            快速创建货架和货位
+            参数: [input (必) input]
+            返回: → WebMsg«快速创建货架和货位输出参数»
+
+    POST    /api/warehouse/warehouseShelf/update
+            更新货架
+            参数: [input (必) input]
+            返回: → WebMsg«更新货架输出参数»
+
+    GET     /api/warehouse/warehouseShelf/viewByCode
+            通过编码查看货架输入参数
+            参数: [warehouseShelfCode string(必) warehouseShelfCode]
+            返回: → WebMsg«通过编码查看货架输出参数»
+
+    GET     /api/warehouse/warehouseShelf/viewById
+            查询货架详情
+            参数: [warehouseShelfId string(必) warehouseShelfId]
+            返回: → WebMsg«通过ID查看货架输出参数»
+
+  ## 货架开放Api
+
+    GET     /api/open/warehouse/shelf/allByDefaultErpWarehouse
+            查询默认ERP仓库所有货架
+            参数: [accessToken string(必) accessToken]  [shelfRow string(可) 货架所属排，字典Key：ROW]  [siteCode string(可) 仓储场地编码（物理空间）]  [storageArea string(可) 存储区（物理；对应 wms_storage_area.code）]  [zoneCode string(可) 库区编码（六段码第一段）]
+            返回: → WebMsg«按物理空间查询货架输出参数»
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+四、库存管理  (75 个接口)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ## WMS库存对比Api
+
+    GET     /api/inventory/compare/sheets/{sheetKey}
+            获取库存对比Sheet数据
+            参数: [by_batch integer(可) 是否按批次对比（0=物资级，1=批次级）]  [sheetKey string(可) Sheet key，标识对比视图类型]
+            返回: → WebMsg«WMS库存对比输出参数»
+
+  ## 库存Api
+
+    GET     /api/inventory/inventory/aggregateSearch
+            聚合查询可用库存
+            参数: [keyword string(可) 搜索关键字（支持物资名称、物资编码、库存条码、库位条码）]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]
+            返回: → WebMsg«聚合查询可用库存输出参数»
+
+    GET     /api/inventory/inventory/exportInventory
+            导出在库库存
+            参数: [locationBarcode string(可) locationBarcode]  [locationType string(可) locationType]  [shelfCode string(可) shelfCode]  [warehouseCode string(可) warehouseCode]
+
+    POST    /api/inventory/inventory/import/save
+            执行ERP库存导入 ZWMRP004
+            参数: [input (必) input]
+            返回: → WebMsg«ERP库存导入保存输出参数»
+
+    POST    /api/inventory/inventory/import/upload
+            上传ERP库存导入文件 ZWMRP004
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+    GET     /api/inventory/inventory/list
+            查询库存列表
+            参数: [batchCode string(可)]  [batchCodeMissing boolean(可)]  [businessId string(可)]  [businessItemId string(可)]  [inventoryCode string(可)]  [inventoryId string(可)]  [keyword string(可)]  [oneCodePerItem string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [type string(可)]
+            返回: → WebMsg«查询库存输出参数»
+
+    GET     /api/inventory/inventory/list/byInventoryBarcode
+            根据库存条码查询库存列表
+            参数: [barcode string(必) 库存条码]
+            返回: → WebMsg«根据库存条码查询库存列表输出参数»
+
+    GET     /api/inventory/inventory/list/byLocationBarcode
+            根据库位条码查询库存列表
+            参数: [barcode string(必) 库位条码]  [oneCodePerItem string(可) 一物一码]
+            返回: → WebMsg«根据库位条码查询库存列表输出参数»
+
+    GET     /api/inventory/inventory/list/byLocationBarcodes
+            根据库位条码列表查询库存列表（盘点用）
+            参数: [locationBarcodes array(必) 库位条码列表]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页数量]
+            返回: → WebMsg«根据库位条码列表查询库存列表输出参数»
+
+    GET     /api/inventory/inventory/list/byMaterialBatch
+            根据物资编码和批次码查询库存列表
+            参数: [batchCode string(可) 批次码]  [materialCode string(必) 物资编码]
+            返回: → WebMsg«根据物资编码和批次码查询库存列表输出参数»
+
+    GET     /api/inventory/inventory/list/byMaterialKeyword
+            根据物资关键字查询库存列表（盘点用）
+            参数: [keyword string(必) 关键字（物资编码或物资名称）]  [pageNo integer(可) 页码]  [pageSize integer(可) 每页数量]  [warehouseCodes array(可) 逻辑仓编码列表（可选）。不传则默认智能仓库+零价值库；多选可重复传参或逗号分隔]
+            返回: → WebMsg«根据物资关键字查询库存列表输出参数»
+
+    GET     /api/inventory/inventory/list/byMaterialLocation
+            按物资+库位维度查询库存列表
+            参数: [includeBatchDetails boolean(可) 是否包含批次明细]  [keyword string(可) 关键字（物料编码或名称）]  [locationCode string(可) 库位编码]  [materialGroupCode string(可) 物资组编码]  [oneCodePerItem string(可) 是否一物一码]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]  [type string(可) 物资库存类型]  [warehouseCode string(可) 仓库编码]
+            返回: → WebMsg«按物资+库位维度查询库存输出参数»
+
+    GET     /api/inventory/inventory/list/byShelfCode
+            根据货架编码查询库存列表
+            参数: [shelfCode string(必) 货架编码]
+            返回: → WebMsg«根据货架编码查询库存列表输出参数»
+
+    GET     /api/inventory/inventory/list/erp
+            查询ERP库存列表
+            参数: [batchCodeMissing boolean(可) 批次号回填状态：true=仅待回填，false=仅已回填，null=不过滤]  [keyword string(可) 关键字（物料编码/名称/库存编码/库存条码/批次号）]  [locationCode string(可) 货位条码]  [materialGroupCode string(可) 物资组编码]  [oneCodePerItem string(可) 是否一物一码]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]
+            返回: → WebMsg«查询ERP库存列表输出参数»
+
+    GET     /api/inventory/inventory/list/new
+            查询新品库存列表
+            参数: [batchCode string(可)]  [businessId string(可)]  [businessItemId string(可)]  [inventoryCode string(可)]  [inventoryId string(可)]  [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询新品库存输出参数»
+
+    GET     /api/inventory/inventory/list/pending-repair
+            查询待修库存列表
+            参数: [batchCode string(可)]  [businessId string(可)]  [businessItemId string(可)]  [inventoryCode string(可)]  [inventoryId string(可)]  [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询待修库存输出参数»
+
+    GET     /api/inventory/inventory/list/repaired
+            查询良品库存列表
+            参数: [batchCode string(可)]  [businessId string(可)]  [businessItemId string(可)]  [inventoryCode string(可)]  [inventoryId string(可)]  [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询良品库存输出参数»
+
+    GET     /api/inventory/inventory/list/scrap
+            查询报废库存列表
+            参数: [batchCode string(可)]  [businessId string(可)]  [businessItemId string(可)]  [inventoryCode string(可)]  [inventoryId string(可)]  [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询报废库存输出参数»
+
+    GET     /api/inventory/inventory/list/secondary-new
+            查询次新品库存列表
+            参数: [batchCode string(可)]  [businessId string(可)]  [businessItemId string(可)]  [inventoryCode string(可)]  [inventoryId string(可)]  [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询次新品库存输出参数»
+
+    GET     /api/inventory/inventory/list/zero-value
+            查询零价值库存列表
+            参数: [batchCode string(可)]  [businessId string(可)]  [businessItemId string(可)]  [inventoryCode string(可)]  [inventoryId string(可)]  [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询零价值库存输出参数»
+
+    GET     /api/inventory/inventory/listByZero
+            查询ERP零价值库存列表
+            参数: [keyword string(可) 关键字（物料编码/名称/库存编码/库存条码/批次号）]  [locationCode string(可) 货位条码]  [materialGroupCode string(可) 物资组编码]  [oneCodePerItem string(可) 是否一物一码]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]
+            返回: → WebMsg«查询ERP库存列表输出参数»
+
+    GET     /api/inventory/inventory/listForTransfer
+            查询可用于移库的库存
+            参数: [keyword string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [type string(可)]
+            返回: → WebMsg«查询可用于移库的库存输出参数»
+
+    GET     /api/inventory/inventory/location/viewByKeys
+            按物料+批次+货位条码查询库存详情（列表行级详情弹窗专用）
+            参数: [inventoryId string(必) 库存ID]  [inventoryLocationId string(可) 库存库位记录 ID（同 inventory + 同货位多行时必传）]  [locationBarcode string(必) 货位条码]
+            返回: → WebMsg«查询库存-库位详情输出参数»
+
+    GET     /api/inventory/inventory/lockLog/list
+            查询锁库记录列表
+            参数: [inventoryId string(必) 库存Id]  [locationBarcode string(可) 库位条码]
+            返回: → WebMsg«查询锁库记录列表输出参数»
+
+    POST    /api/inventory/inventory/merge
+            执行库存合并
+            参数: [input (必) input]
+            返回: → WebMsg«库存合并输出参数»
+
+    GET     /api/inventory/inventory/mergeableGroups
+            查询可合并库存候选列表（按物料+批次分组）
+            参数: [keyword string(可) 关键字（物料编码/名称/库存编码/库存条码/批次号）]  [materialGroupCode string(可) 物资组编码]
+            返回: → WebMsg«查询可合并库存候选输出参数»
+
+    GET     /api/inventory/inventory/projectInventory
+            根据库存ID查询项目库存台账
+            参数: [inventoryId string(可) 库存ID]
+            返回: → WebMsg«根据库存ID查询项目库存输出参数»
+
+    GET     /api/inventory/inventory/projectInventory/list
+            查询项目库存台账列表
+            参数: [batchCode string(可) 批次号]  [materialCode string(可) 物资编码]  [onlyNoProject boolean(可) 是否仅展示无项目物资：true=仅无项目，null/false=不过滤]  [ownerProjectCode string(可) 项目编码]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]
+            返回: → WebMsg«ERP项目库存列表输出参数»
+
+    POST    /api/inventory/inventory/rfid/batchValidate
+            批量验证RFID标签库存状态
+            参数: [input (必) input]
+            返回: → WebMsg«批量验证RFID标签库存状态输出参数»
+
+    GET     /api/inventory/inventory/rfid/list
+            查询库存RFID列表
+            参数: [inventoryId string(必) 库存ID]  [locationBarcode string(可) 库位条码]
+            返回: → WebMsg«查询库存RFID列表输出参数»
+
+    GET     /api/inventory/inventory/viewByBarcode
+            通过库存条码查询库存详情
+            参数: [barcode string(必) barcode]
+            返回: → WebMsg«通过库存条码查看库存输出参数»
+
+    GET     /api/inventory/inventory/viewById
+            查询库存详情
+            参数: [inventoryId string(必) inventoryId]
+            返回: → WebMsg«通过ID查看库存输出参数»
+
+    GET     /api/inventory/inventory/viewByRfid
+            通过RFID标签查询库存详情
+            参数: [rfidTag string(必) rfidTag]
+            返回: → WebMsg«通过RFID标签查看库存输出参数»
+
+  ## 库存RFID补换签Api
+
+    POST    /api/inventory/rfid/adjustQuantity
+            RFID关联库存数量调整
+            参数: [input (必) input]
+            返回: → WebMsg«RFID数量调整输出参数»
+
+    POST    /api/inventory/rfid/appendMulti
+            追加多签
+            参数: [input (必) input]
+            返回: → WebMsg«追加多签输出参数»
+
+    POST    /api/inventory/rfid/batchInvalidRepair
+            批量标签失效查补
+            参数: [input (必) input]
+            返回: → WebMsg«批量标签失效查补输出参数»
+
+    POST    /api/inventory/rfid/invalidRepair
+            标签失效查补
+            参数: [input (必) input]
+            返回: → WebMsg«标签失效查补输出参数»
+
+    GET     /api/inventory/rfid/listForSupplement
+            查询补签前置数据（推荐 inventoryLocationId；或 inventoryId+locationId）
+            参数: [inventoryId string(可) 批次库存 ID（与 locationId 同时传入；多条有效库位记录时需改传 inventoryLocationId）]  [inventoryLocationId string(可) 库存库位记录 ID（推荐，与货位列表 inventoryLocation.id 一致）]  [locationId string(可) 库位 ID]
+            返回: → WebMsg«查询补签前置数据输出参数»
+
+    POST    /api/inventory/rfid/replace
+            标签换签
+            参数: [input (必) input]
+            返回: → WebMsg«标签换签输出参数»
+
+    POST    /api/inventory/rfid/supplement
+            在库物资补签
+            参数: [input (必) input]
+            返回: → WebMsg«在库物资补签输出参数»
+
+    POST    /api/inventory/rfid/unbind
+            RFID解绑
+            参数: [input (必) input]
+            返回: → WebMsg«RFID解绑输出参数»
+
+    GET     /api/inventory/rfid/usageDetail
+            标签使用详情
+            参数: [inventoryId string(必) 库存ID]  [sequenceNo integer(可) 库存内序号]
+            返回: → WebMsg«标签使用详情查询输出参数»
+
+    GET     /api/inventory/rfid/usageList
+            标签使用查询列表
+            参数: [keyword string(可) 关键字（物资编码/物资名称/批次码/库存条码）]  [pageNo integer(可) 分页页码]  [pageSize integer(可) 分页大小]  [rfidTag string(可) RFID标签编码]
+            返回: → WebMsg«标签使用查询列表输出参数»
+
+  ## 库存开放Api
+
+    GET     /api/open/inventory/list/byLocationBarcode
+            根据库位条码查询库存列表
+            参数: [accessToken string(必) accessToken]  [barcode string(必) 库位条码]  [oneCodePerItem string(可) 一物一码]
+            返回: → WebMsg«根据库位条码查询库存列表输出参数»
+
+    GET     /api/open/inventory/list/byMaterialCode
+            根据物料编码查询库存列表
+            参数: [accessToken string(必) accessToken]  [batchCode string(可) 批次码]  [materialCode string(必) 物资编码]
+            返回: → WebMsg«根据物资编码和批次码查询库存列表输出参数»
+
+    GET     /api/open/inventory/list/byShelfCode
+            根据货架编码查询库存列表
+            参数: [accessToken string(必) accessToken]  [shelfCode string(必) 货架编码]
+            返回: → WebMsg«根据货架编码查询库存列表输出参数»
+
+    GET     /api/open/inventory/structureAnalysis
+            库存结构分析
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«库存结构分析输出参数»
+
+    GET     /api/open/inventory/summary
+            库存汇总信息
+            参数: [accessToken string(必) accessToken]
+            返回: → WebMsg«库存汇总信息输出参数»
+
+  ## 库存数据004Api
+
+    POST    /api/erp/inventory/004/import/map
+            库存数据004 Map导入
+            参数: [input (必) input]
+            返回: → WebMsg«库存数据004 Map导入输出参数»
+
+    POST    /api/erp/inventory/004/import/save
+            库存数据004导入保存
+            参数: [input (必) input]
+            返回: → WebMsg«库存数据004导入保存输出参数»
+
+    POST    /api/erp/inventory/004/import/upload
+            上传导入文件 ZWMRP004
+            参数: [file file(必) file]
+            返回: → WebMsg«Output»
+
+    GET     /api/erp/inventory/004/queryByDate
+            根据导入日期查询库存数据004
+            参数: [importDate string(必) importDate]
+            返回: → WebMsg«库存数据004按导入日期查询输出参数»
+
+  ## 库存汇总Api
+
+    GET     /api/inventory/summary
+            库存汇总信息
+            返回: → WebMsg«库存汇总信息输出参数»
+
+  ## 库存物资流转记录Api
+
+    POST    /api/inventory/movement/adjust
+            执行流转记录项目变更
+            参数: [input (必) input]
+            返回: → WebMsg«流转记录项目变更输出参数»
+
+    POST    /api/inventory/movement/goods-receipt-reversal-outbound
+            根据收货冲销(102)流转记录生成收货冲销出库单
+            参数: [input (必) input]
+            返回: → WebMsg«Output»
+
+    GET     /api/inventory/movement/list
+            查询库存物资流转记录列表
+            参数: [keyword string(可)]  [movementType string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [status string(可)]
+            返回: → WebMsg«库存物资流转记录查询输出参数»
+
+    POST    /api/inventory/movement/requisition-reversal-inbound
+            根据领料冲销(Z62)流转记录生成领料冲销入库单
+            参数: [input (必) input]
+            返回: → WebMsg«冲销入库单生成输出参数»
+
+    GET     /api/inventory/movement/view
+            查看库存物资流转记录详情
+            参数: [id string(必) id]
+            返回: → WebMsg«查看库存物资流转记录输出参数»
+
+  ## 库存调整单Api
+
+    GET     /api/order/adjustment/inventoryAdjustmentOrder/approvalList
+            查询当前用户待审批的库存调整单列表（初审/二审）
+            参数: [code string(可) 调整单编码（模糊匹配）]  [pageNo integer(可)]  [pageSize integer(可)]  [reviewLevel integer(可) 审核级别：1=初审，2=二审；不传返回两类都汇总]
+            返回: → WebMsg«查询调整单审批列表输出参数»
+
+    POST    /api/order/adjustment/inventoryAdjustmentOrder/cancel
+            取消库存调整单
+            参数: [input (必) input]
+            返回: → WebMsg«取消库存调整单输出参数»
+
+    POST    /api/order/adjustment/inventoryAdjustmentOrder/execute
+            执行库存调整单
+            参数: [input (必) input]
+            返回: → WebMsg«执行库存调整单输出参数»
+
+    POST    /api/order/adjustment/inventoryAdjustmentOrder/firstReview
+            调整单初审（主任）
+            参数: [input (必) input]
+            返回: → WebMsg«调整单初审输出参数»
+
+    GET     /api/order/adjustment/inventoryAdjustmentOrder/list
+            查询库存调整单列表
+            参数: [code string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [sourceCode string(可)]  [sourceType string(可) 来源单据类型，字典Key：BUSINESS_TYPE]  [status string(可)]
+            返回: → WebMsg«查询库存调整单输出参数»
+
+    GET     /api/order/adjustment/inventoryAdjustmentOrder/pendingList
+            查询当前用户待执行的库存调整单列表
+            参数: [pageNo integer(可)]  [pageSize integer(可)]
+            返回: → WebMsg«查询当前用户待执行的库存调整单列表输出参数»
+
+    POST    /api/order/adjustment/inventoryAdjustmentOrder/reassignExecutor
+            重新指派库存调整单执行人
+            参数: [input (必) input]
+            返回: → WebMsg«重新指派库存调整单执行人输出参数»
+
+    POST    /api/order/adjustment/inventoryAdjustmentOrder/secondReview
+            调整单二审（厂矿领导）
+            参数: [input (必) input]
+            返回: → WebMsg«调整单二审输出参数»
+
+    GET     /api/order/adjustment/inventoryAdjustmentOrder/viewById
+            查询库存调整单详情
+            参数: [inventoryAdjustmentOrderId string(必)]
+            返回: → WebMsg«通过ID查看库存调整单输出参数»
+
+  ## 库存锁定状态查询
+
+    GET     /api/inventory/inventoryLockLog/listByLockedId
+            L4 锁定流水
+            参数: [inventoryLockedId string(可)]
+            返回: → WebMsg«Output»
+
+    GET     /api/inventory/inventoryLocked/list
+            L4 物理库位锁分页
+            参数: [batchCode string(可)]  [businessCode string(可)]  [locationBarcode string(可)]  [lockType string(可)]  [lockedStatus string(可)]  [lockedTimeFrom string(可)]  [lockedTimeTo string(可)]  [materialCode string(可)]  [ownerProjectCode string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [warehouseCode string(可)]
+            返回: → WebMsg«Output»
+
+    GET     /api/inventory/inventoryRfidLocked/list
+            L5 RFID件码锁分页
+            参数: [businessCode string(可)]  [lockedStatus string(可)]  [lockedTimeFrom string(可)]  [lockedTimeTo string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [rfidTag string(可)]
+            返回: → WebMsg«Output»
+
+    GET     /api/inventory/inventoryRfidLockedLog/listByLockedId
+            L5 锁定流水
+            参数: [inventoryRfidLockedId string(可)]
+            返回: → WebMsg«Output»
+
+    GET     /api/inventory/lock/summary
+            锁定状态汇总
+            参数: [warehouseCode string(可)]
+            返回: → WebMsg«锁定状态汇总»
+
+    GET     /api/inventory/projectInventoryLocked/list
+            L3 项目锁分页
+            参数: [batchCode string(可)]  [businessCode string(可)]  [lockType string(可)]  [lockedStatus string(可)]  [lockedTimeFrom string(可)]  [lockedTimeTo string(可)]  [materialCode string(可)]  [ownerProjectCode string(可)]  [pageNo integer(可)]  [pageSize integer(可)]  [warehouseCode string(可)]
+            返回: → WebMsg«Output»
+
+    GET     /api/inventory/projectInventoryLockedLog/listByLockedId
+            L3 锁定流水
+            参数: [projectInventoryLockedId string(可)]
+            返回: → WebMsg«Output»
+
+  ## 项目库存台账对账Api
+
+    POST    /api/inventory/project/reconcile
+            立即执行项目库存台账对账
+            参数: [tenantId string(可) tenantId]
+            返回: → WebMsg«项目库存对账输出参数»
+
+
+# ============================================================
+# MCP 封装建议 (按角色分包)
+# ============================================================
+
+# 🔵 库管员 (storekeeper-mcp) — 入库收货上架赋码、出库拣货复核、移库执行、库存查询、RFID补换签
+# 🟢 质检员 (inspector-mcp) — 采购入库质检（需求部门/主管部门）
+# 🟡 审核人 (approver-mcp) — 库存调整单初审/二审、采购退货审核
+# 🟣 计划员 (planner-mcp) — 盘点计划/策略/任务/结果、移库管理、采购订单、领料单
+# 🟠 设备管理员 (device-admin-mcp) — 设备管理、RFID标签、机器人、智能货柜、传感器、称重
+# ⚪ 仓库管理员 (warehouse-admin-mcp) — 仓库/工厂/站点/库区/货架/货位、库管员分配规则
+# 🔴 系统管理员 (system-admin-mcp) — 用户/角色/权限/菜单、KV配置、数据字典、S3、App版本
+# 🟤 ERP集成 (erp-integration-mcp) — 所有ERP导入、ERP协作任务、ERP库存快照差异、ERP物料凭证
+# ⚫ 报表与分析 (analytics-mcp) — 报表中心、大屏数据、追溯查询、数字孪生
+# ⬜ 开放API (open-api-mcp) — 所有 /api/open/** 接口，供外部系统调用

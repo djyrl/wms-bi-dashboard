@@ -26,8 +26,8 @@ def _get_password(env_key: str, env_key_b64: str, default: str) -> str:
 
 # 业务数据库（本地开发默认值，可通过环境变量覆盖）
 DB_CONFIG_CCCK = {
-    "host": os.getenv("DB_HOST", "192.168.92.240"),
-    "port": int(os.getenv("DB_PORT", "54324")),
+    "host": os.getenv("DB_HOST", "122.51.39.235"),
+    "port": int(os.getenv("DB_PORT", "54321")),
     "dbname": os.getenv("DB_NAME", "garden_wms"),
     "user": os.getenv("DB_USER", "garden_wms"),
     "password": _get_password("DB_PASSWORD", "DB_PASSWORD_BASE64", "garden_wms@2025"),

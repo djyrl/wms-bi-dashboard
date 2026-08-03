@@ -101,6 +101,8 @@ export interface AgeGaugeItem {
   projectName?: string
   avgAgeDays: number
   over90Rate: number
+  /** 未消耗库存金额（元） */
+  unclaimedAmount?: number
 }
 
 // ---- 主题四：TOP指标 & 行动计划 ----

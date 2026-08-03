@@ -28,6 +28,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/kpi-checklist-range',
+    name: 'KpiChecklistRange',
+    component: () => import('@/views/KpiChecklistRange/index.vue'),
+    meta: {
+      title: 'KPI考核(时间区间)',
+      icon: 'Timer',
+    },
+  },
+  {
     path: '/theme1',
     name: 'Theme1',
     component: () => import('@/views/Theme1/index.vue'),

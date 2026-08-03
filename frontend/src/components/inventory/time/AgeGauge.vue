@@ -2,15 +2,16 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useECharts } from '@/composables/useECharts'
 import DataDetail from '@/components/inventory/DataDetail.vue'
+import { formatDays } from '@/utils/format'
 import type { AgeGaugeItem } from '@/types/inventory'
 
 const props = defineProps<{ data: AgeGaugeItem[] }>()
 const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
-const detailHeaders = ['项目编码', '项目名称', '平均库龄(天)', '≥90天占比(%)']
+const detailHeaders = ['项目编码', '项目名称', '平均库龄', '≥90天占比(%)']
 const detailRows = computed(() =>
-  props.data.map(d => [d.project, d.projectName, d.avgAgeDays, d.over90Rate] as (string | number)[]),
+  props.data.map(d => [d.project, d.projectName, formatDays(d.avgAgeDays), d.over90Rate.toFixed(1) + '%'] as (string | number)[]),
 )
 
 function shortName(name: string, code: string): string {
@@ -37,7 +38,9 @@ function render() {
     tooltip: {
       formatter: (p: { name: string; dataIndex: number }) => {
         const idx = p.dataIndex
-        return `${fullNames[idx]}<br/>平均库龄: <b>${ages[idx]} 天</b><br/>≥90天占比: <b>${rates[idx]}%</b>`
+        const amt = props.data[idx]?.unclaimedAmount
+        const amtStr = amt != null ? `¥${(amt / 10000).toFixed(2)}万` : '--'
+        return `${fullNames[idx]}<br/>平均库龄: <b>${formatDays(ages[idx])}</b><br/>库存金额: <b>${amtStr}</b>`
       },
     },
     grid: { top: 15, right: 55, bottom: 20, left: 70 },
@@ -50,10 +53,10 @@ function render() {
         itemStyle: { color: barColors[i], borderRadius: [0, 6, 6, 0] },
       })),
       barWidth: 16,
-      label: { show: true, position: 'right', color: '#94a3b8', fontSize: 10, formatter: '{c}天' },
+      label: { show: true, position: 'right', color: '#94a3b8', fontSize: 10, formatter: (p: { value: number }) => formatDays(p.value) },
       markLine: { silent: true, symbol: 'none', data: [
-        { xAxis: 45, label: { formatter: '警戒 45天', color: '#f59e0b' }, lineStyle: { color: '#f59e0b', type: 'dashed' } },
-        { xAxis: 90, label: { formatter: '危险 90天', color: '#f43f5e' }, lineStyle: { color: '#f43f5e', type: 'dashed' } },
+        { xAxis: 365, label: { formatter: '警戒 365天', color: '#f59e0b' }, lineStyle: { color: '#f59e0b', type: 'dashed' } },
+        { xAxis: 730, label: { formatter: '危险 730', color: '#f43f5e' }, lineStyle: { color: '#f43f5e', type: 'dashed' } },
       ] },
     }],
   })

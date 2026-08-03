@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 .DS_Store
 temp/
-frontend/dist/
+# frontend/dist/ — 本地构建时取消注释以跳过本地dist，Docker内用多阶段构建时注释此行
 olddashboard.html
 olddashboard_files/
 schema_ddl.sql

@@ -5,7 +5,7 @@ import { ApiError } from '@/types/api'
 /** 创建 Axios 实例 */
 const instance: AxiosInstance = axios.create({
   baseURL: '/api',
-  timeout: 30000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json',
   },

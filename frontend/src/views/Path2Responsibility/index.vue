@@ -39,8 +39,9 @@ const kpiCards = computed<KpiCardData[]>(() => {
     },
     {
       icon: '🏗️', label: '库存最高项目',
-      value: validRatios[0] ? (validRatios[0].inventory_amount / 10000).toFixed(2) : 0, unit: '万',
-      change: validRatios[0]?.project_name || validRatios[0]?.project_code || '--', changeType: 'down', color: '#f59e0b',
+      value: validRatios[0] ? validRatios[0].inventory_amount / 10000 : 0, unit: '万',
+      change: (validRatios[0]?.project_name && validRatios[0].project_name !== validRatios[0].project_code)
+        ? validRatios[0].project_name : validRatios[0]?.project_code || '--', changeType: 'down', color: '#f59e0b',
     },
     {
       icon: '📊', label: '项目平均库存金额',

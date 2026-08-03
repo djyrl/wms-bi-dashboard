@@ -2,6 +2,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { getInventoryReport } from '@/api/modules/inventoryReport'
 import type { InventoryReportRow, InventoryReportSummary } from '@/api/modules/inventoryReport'
+import { formatDays } from '@/utils/format'
 
 // ---- 状态 ----
 const loading = ref(false)
@@ -163,7 +164,7 @@ onMounted(loadData)
       </el-table-column>
       <el-table-column prop="age_days" label="库龄(天)" width="110" sortable="custom">
         <template #default="{ row }">
-          <span :class="ageClass(row.age_days)">{{ row.age_days }}</span>
+          <span :class="ageClass(row.age_days)">{{ formatDays(row.age_days) }}</span>
         </template>
       </el-table-column>
     </el-table>

@@ -5,6 +5,10 @@ ERP ZMMRP226 Data Import Program
 导入到 wbs_zmmrp226_parsed。
 
 设计：表存在则 TRUNCATE（保留依赖视图），不存在则 CREATE。
+
+也可以单独调用：refresh_dim_caches() 函数
+python3 -c "from import_erp_zmmrp226 import refresh_dim_caches; refresh_dim_caches()"
+
 """
 
 import sys
@@ -322,6 +326,28 @@ def import_data():
 
 
 # ============================================================
+# Step 4: 刷新维度缓存
+# ============================================================
+
+def refresh_dim_caches():
+    """调用数据库函数 fn_refresh_dim_caches 刷新所有维度缓存表。"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    conn.set_client_encoding("UTF8")
+    conn.autocommit = True
+    cur = conn.cursor()
+
+    print("\n[Step 4] Refreshing dimension caches...")
+    cur.execute("SELECT fn_refresh_dim_caches()")
+    result = cur.fetchone()
+    if result:
+        print("fn_refresh_dim_caches returned: {}".format(result[0]))
+    print("Dimension caches refreshed.")
+
+    cur.close()
+    conn.close()
+
+
+# ============================================================
 # 主流程
 # ============================================================
 
@@ -352,6 +378,9 @@ def main():
     # Step 3: Import data
     print("\n[Step 3] Importing data from erp_catalog_zmmrp226...")
     import_data()
+
+    # Step 4: Refresh dimension caches
+    refresh_dim_caches()
 
     print("\nDone!")
 

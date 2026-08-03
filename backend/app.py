@@ -1,5 +1,7 @@
 """
 采购库存 BI Dashboard — Flask 后端
+
+
 ===================================
 数据源：v_project_inventory_wide 视图（人大金仓 KingbaseES）
 """
@@ -21,6 +23,7 @@ from cross_indicators import (
     get_available_dimensions as db_get_available_dimensions,
 )
 from kpi_checklist import get_kpi_checklist
+from kpi_checklist_date_range import get_kpi_checklist_by_date_range
 from summary import get_summary as db_get_summary
 from claim_indicators import get_claim_indicators as db_get_claim_indicators
 from structure_indicators import (
@@ -637,6 +640,22 @@ def api_wms_kpi_checklist():
         return jsonify({"code": -1, "msg": str(e)})
 
 
+@app.route("/api/wms/indicators/kpi-checklist-range", methods=["GET"])
+def api_wms_kpi_checklist_range():
+    """
+    KPI 考核清单（时间区间版）— 按入库日期区间过滤。
+    参数：?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+    """
+    start_date = request.args.get("start_date", "").strip()
+    end_date = request.args.get("end_date", "").strip()
+    if not start_date or not end_date:
+        return jsonify({"code": -1, "msg": "请提供 start_date 和 end_date 参数（格式：YYYY-MM-DD）"})
+    try:
+        return ok(get_kpi_checklist_by_date_range(start_date, end_date))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
 # ================================================================
 #  调试接口 — 逐个测试各模块，帮助定位线上问题
 # ================================================================
@@ -667,6 +686,7 @@ def api_wms_debug():
         ("top_claimed_quantity", "db_get_top_claimed_quantity"),
         ("claim_monthly", "db_get_claim_monthly"),
         ("claim_yearly", "db_get_claim_yearly"),
+        ("claim_daily", "db_get_claim_daily"),
         ("claim_weekly", "db_get_claim_weekly"),
         ("structure_by_category", "db_get_structure_by_category"),
         ("category_bubble", "db_get_category_bubble"),
@@ -674,6 +694,10 @@ def api_wms_debug():
         ("age_monthly", "db_get_age_monthly"),
         ("age_heatmap", "db_get_age_heatmap"),
         ("optimize_suggest", "db_get_optimize_suggest"),
+        ("inventory_report", "db_get_inventory_report"),
+        ("project_summary", "db_get_project_summary"),
+        ("purchaser_summary", "db_get_purchaser_summary"),
+        ("source_structure", "db_get_source_structure"),
     ]
 
     for key, func_name in indicator_tests:
@@ -727,6 +751,50 @@ def api_wms_debug():
         results["db_connect"] = {"status": "ok", "elapsed": f"{time.time() - t0:.2f}s"}
     except Exception:
         results["db_connect"] = {
+            "status": "error",
+            "elapsed": f"{time.time() - t0:.2f}s",
+            "error": str(traceback.format_exc()),
+        }
+
+    # ---- 视图结构检查 ----
+    t0 = time.time()
+    try:
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'v_project_inventory_wide'
+            ORDER BY ordinal_position
+        """)
+        columns = [{"name": r["column_name"], "type": r["data_type"]} for r in cur.fetchall()]
+        cur.close()
+        conn.close()
+
+        # 检查后端必需的关键列
+        required_cols = [
+            "tenant_id", "material_code", "batch_code", "erp_inventory",
+            "original_quantity", "current_quantity", "pi_current_quantity",
+            "total_price", "unit_price",
+            "project_inventory_id", "owner_project_code",
+            "total_outbound_quantity", "pick_quantity", "repair_quantity",
+            "scrap_quantity", "repaired_quantity",
+            "age_days", "inbound_date", "putaway_date",
+            "material_name", "material_unit", "supplier_code",
+            "project_name", "plan_category", "purchaser_name",
+            "project_submitter", "project_contact",
+        ]
+        col_names = {c["name"] for c in columns}
+        missing = [c for c in required_cols if c not in col_names]
+
+        results["view_check"] = {
+            "status": "ok" if not missing else "error",
+            "total_columns": len(columns),
+            "missing_required_columns": missing,
+            "elapsed": f"{time.time() - t0:.2f}s",
+        }
+    except Exception:
+        results["view_check"] = {
             "status": "error",
             "elapsed": f"{time.time() - t0:.2f}s",
             "error": str(traceback.format_exc()),

@@ -11,6 +11,12 @@
 --   inv_agg                           ←→  dim_outbound_log_cache    (tenant_id, material_code, batch_code, erp_inventory)
 --   inv_agg                           ←→  dim_material_cache        (material_code)
 --   wms_project_inventory             ←→  dim_project_cache          (owner_project_code = project_code)
+/**  
+inv_agg 只消除了同批次多货位的膨胀，但 LEFT JOIN wms_project_inventory 还会导致同批次多项目的膨胀：
+    inv_agg（1行/批次）
+  LEFT JOIN wms_project_inventory（N行/批次）
+  = 视图 N 行/批次
+**/
 -- =====================================================================
 CREATE OR REPLACE VIEW v_project_inventory_wide AS
 WITH
@@ -23,12 +29,12 @@ inv_agg AS (
         erp_inventory,
         SUM(original_quantity)              AS original_quantity,
         SUM(current_quantity)               AS current_quantity,
-        SUM(total_price)                    AS total_price,
+        SUM(current_quantity*unit_price)                    AS v_total_price,
         CASE
             WHEN SUM(current_quantity) > 0
-            THEN SUM(total_price) / SUM(current_quantity)
+            THEN SUM(current_quantity*unit_price) / SUM(current_quantity)
             ELSE MAX(unit_price)
-        END                                 AS unit_price,
+        END                                 AS v_unit_price,
         MIN(inbound_date)                   AS inbound_date,
         MAX(putaway_date)                   AS putaway_date,
         MAX(supplier_code)                  AS supplier_code,
@@ -36,24 +42,24 @@ inv_agg AS (
         MAX(inventory_code)                 AS inventory_code,
         MAX(warehouse_code)                 AS warehouse_code
     FROM wms_inventory
-    WHERE del_flag = '0'
+    WHERE del_flag = '0'  and warehouse_code = 'A00' and status = 1
     GROUP BY tenant_id, material_code, batch_code, erp_inventory
 )
 SELECT
     -- ==================== 物理库存主键（批次级） ====================
     inv.tenant_id,
-    inv.material_code                                                                           AS material_code,  -- 物料编码
-    inv.batch_code                                                                              AS batch_code,      -- 批次编码
-    inv.erp_inventory                                                                           AS erp_inventory,   -- ERP库存标识
+    inv.material_code                  AS material_code,  -- 物料编码
+    inv.batch_code                    AS batch_code,      -- 批次编码
+    inv.erp_inventory                 AS erp_inventory,   -- ERP库存标识
     inv.barcode                                                                                 AS barcode,         -- 条码
     inv.inventory_code                                                                          AS inventory_code,  -- 库存编码
     inv.supplier_code                                                                           AS supplier_code,   -- 供应商编码
 
     -- ==================== 物理库存数量 & 金额（批次聚合后） ====================
-    inv.original_quantity                                                                       AS original_quantity,   -- 原始数量
-    inv.current_quantity                                                                        AS inv_current_quantity, -- 当前库存数量（批次级）
-    inv.total_price                                                                             AS total_price,     -- 总金额
-    inv.unit_price                                                                              AS unit_price,      -- 加权均价
+    inv.original_quantity   AS original_quantity,   -- 原始数量
+    inv.current_quantity    AS inv_current_quantity, -- 当前库存数量（批次级）
+    inv.v_total_price       AS total_price,
+    inv.v_unit_price        AS unit_price,
 
     -- ==================== 物料维度（dim_material_cache PK: material_code）====================
     dm.material_name                                                                            AS material_name,       -- 物料名称

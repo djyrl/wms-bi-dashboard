@@ -6,14 +6,22 @@
 # ── Stage 1: 构建前端 ─────────────────────────────────────
 FROM node:22-alpine AS frontend-build
 
-WORKDIR /build
+# 👇 1. 设置工作目录到 frontend
+WORKDIR /app/frontend
 
-# 安装依赖（利用 Docker 缓存层）
+# 👇 2. 切换 npm 源
+RUN npm config set registry https://registry.npmmirror.com
+
+# 👇 3. 只复制依赖文件，利用缓存
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci --prefer-offline --no-audit
 
-# 复制前端源码并构建（跳过 vue-tsc 严格检查，CI 环境已单独验证）
+# 👇 4. 安装依赖
+RUN npm ci --no-audit --no-fund
+
+# 👇 5. 复制前端源码
 COPY frontend/ ./
+
+# 👇 6. 执行构建
 RUN npx vite build
 
 # ── Stage 2: 生产运行镜像 ─────────────────────────────────
@@ -21,20 +29,22 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# 安装 Python 依赖
+# 👇 7. 为 pip 配置国内源 (你的写法完全正确)
 COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+RUN pip install --no-cache-dir --no-compile -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt \
+    && rm -rf /root/.cache/pip /tmp/*
 
-# 复制后端代码
+# 👇 8. 复制后端代码
 COPY backend/ ./
 
-# 复制前端构建产物到 static 目录（Flask 统管静态文件）
-COPY --from=frontend-build /build/dist ./static
+# 👇 9. 复制前端构建产物
+# 注意路径要和 Stage 1 中的 WORKDIR 对应
+COPY --from=frontend-build /app/frontend/dist ./static
 
-# 清理无用后端文件（保留 import_erp_catalog.py 供定时任务使用）
+# 👇 10. 清理无用文件
 RUN rm -rf __pycache__ data
 
-# 环境变量
+# 👇 11. 环境变量和启动命令
 ENV PYTHONUNBUFFERED=1
 ENV STATIC_FOLDER=/app/static
 

@@ -89,6 +89,7 @@ export interface TopUnclaimedItem {
 export interface TopClaimedAmountItem {
   rank: number
   material_code: string
+  material_name: string
   claimed_amount_wan: number
   inbound_amount_wan: number
   inbound_date: string
@@ -97,6 +98,7 @@ export interface TopClaimedAmountItem {
 export interface TopClaimedQuantityItem {
   rank: number
   material_code: string
+  material_name: string
   claimed_quantity: number
   inbound_quantity: number
   inbound_date: string
@@ -169,3 +171,10 @@ export interface KpiChecklistRes {
 /** 获取 KPI 考核清单完整数据 */
 export const getKpiChecklist = () =>
   request.get<KpiChecklistRes>('/wms/indicators/kpi-checklist')
+
+/** 获取 KPI 考核清单（按入库日期区间过滤，超时 120s） */
+export const getKpiChecklistByDateRange = (start_date: string, end_date: string) =>
+  request.get<KpiChecklistRes>('/wms/indicators/kpi-checklist-range', {
+    params: { start_date, end_date },
+    timeout: 120000,
+  })

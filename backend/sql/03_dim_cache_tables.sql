@@ -60,18 +60,27 @@ CREATE TABLE IF NOT EXISTS dim_location_cache (
 -- 4. 出库日志维度物化表
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS dim_outbound_log_cache (
-    tenant_id               BIGINT,
-    material_code           VARCHAR,
+    id                      BIGSERIAL PRIMARY KEY,
+    tenant_id               BIGINT NOT NULL,
+    material_code           VARCHAR NOT NULL,
     batch_code              VARCHAR,
-    erp_inventory           VARCHAR,
+    erp_inventory           VARCHAR NOT NULL,
     total_outbound_quantity NUMERIC,
     pick_quantity           NUMERIC,
     repair_quantity         NUMERIC,
     scrap_quantity          NUMERIC,
     repaired_quantity       NUMERIC,
-    refreshed_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (tenant_id, material_code, batch_code, erp_inventory)
+    refreshed_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- batch_code 非空时强制四列唯一（允许 NULL 行共存）
+CREATE UNIQUE INDEX IF NOT EXISTS idx_dim_outbound_uniq
+    ON dim_outbound_log_cache (tenant_id, material_code, batch_code, erp_inventory)
+    WHERE batch_code IS NOT NULL;
+
+-- 日常查询索引
+CREATE INDEX IF NOT EXISTS idx_dim_outbound_4cols
+    ON dim_outbound_log_cache (tenant_id, material_code, batch_code, erp_inventory);
 
 -- =====================================================================
 -- 刷新函数：直接查询源表（不经过维度视图），一次性刷新所有缓存表
@@ -206,7 +215,7 @@ BEGIN
     WHERE log.change_type IN (31, 34, 35, 36)
       AND log.del_flag = '0'
       AND inv.del_flag = '0'
-      AND inv.batch_code is NOT NULL    
+      AND inv.batch_code IS NOT NULL
     GROUP BY inv.tenant_id, inv.material_code, inv.batch_code, inv.erp_inventory;
 
     RAISE NOTICE '所有维度缓存表刷新完成: %', CURRENT_TIMESTAMP;

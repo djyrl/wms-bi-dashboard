@@ -2,6 +2,7 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import { getProjectSummary } from '@/api/modules/inventoryReport'
 import type { ProjectSummaryRow } from '@/api/modules/inventoryReport'
+import { formatDays } from '@/utils/format'
 
 // ---- 状态 ----
 const loading = ref(false)
@@ -44,7 +45,7 @@ function onSortChange({ prop, order }: { prop: string | null; order: string | nu
 // ---- 格式化 ----
 function fmtWan(v: number) { return (v / 10000).toFixed(2) + '万' }
 function fmtRate(v: number | null) { return v != null ? v.toFixed(1) + '%' : '-' }
-function fmtDays(v: number) { return v != null ? v.toFixed(0) + '天' : '-' }
+function fmtDays(v: number) { return v != null ? formatDays(v) : '-' }
 function rateColor(rate: number) {
   if (rate >= 80) return 'success'
   if (rate >= 50) return 'warning'

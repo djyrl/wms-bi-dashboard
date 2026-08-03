@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useECharts } from '@/composables/useECharts'
 import DataDetail from '@/components/inventory/DataDetail.vue'
+import { formatDays } from '@/utils/format'
 import type { AgeTrendPoint } from '@/types/inventory'
 
 const props = defineProps<{ data: AgeTrendPoint[]; months: string[] }>()
@@ -9,7 +10,7 @@ const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
 const detailHeaders = ['月份', '平均库龄(天)', '趋势值(天)', '>90天占比(%)']
-const detailRows = computed(() => props.data.map(d => [d.month, d.avgAge, d.trend, d.over90Rate] as (string | number)[]))
+const detailRows = computed(() => props.data.map(d => [d.month, formatDays(d.avgAge), formatDays(d.trend), d.over90Rate.toFixed(1) + '%'] as (string | number)[]))
 
 function render() {
   if (!chartRef.value || !props.data.length) return

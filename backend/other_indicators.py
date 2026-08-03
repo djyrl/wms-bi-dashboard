@@ -7,7 +7,7 @@ from datetime import date as dt_date, timedelta
 from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Set
 
-from utils import query, _f, _get_inventory_rows, _rows_to_float, _PROJECT_RATIO_SQL
+from utils import query, _f, _get_inventory_rows, _rows_to_float, _BATCH_AMOUNTS_SQL, _PROJECT_RATIO_SQL
 
 
 def query_one(sql: str, params: tuple = None) -> Optional[Dict[str, Any]]:
@@ -475,39 +475,47 @@ def get_inventory_report(
 ) -> Dict:
     """
     采购批次库存报表。
-    支持按领用率、库龄、库存金额等字段排序。
+    复用 _BATCH_AMOUNTS_SQL + _PROJECT_RATIO_SQL 模式，
+    与 _get_inventory_rows 保持一致的去重和分配逻辑。
     """
     # 安全校验排序字段，防止 SQL 注入
     sort_col = ALLOWED_SORT_COLUMNS.get(sort_by, "inventory_amount")
     order_dir = "DESC" if sort_order.lower() == "desc" else "ASC"
 
-    # 明细总行数（分页用，保持项目级行数）
-    total_row = query_one("SELECT COUNT(*) AS total FROM v_project_inventory_wide")
-    total = int(total_row["total"]) if total_row else 0
-
-    # 汇总金额（使用批次去重，与其他接口统一）
-    summary_row = query_one("""
-        WITH batch_dedup AS (
-            SELECT DISTINCT ON (tenant_id, material_code, batch_code, erp_inventory)
-                original_quantity * unit_price       AS inbound_amt,
-                total_outbound_quantity * unit_price AS claimed_amt,
-                total_price                         AS inventory_amt
-            FROM v_project_inventory_wide
-        )
+    # 汇总金额（使用 _BATCH_AMOUNTS_SQL 批次去重，与其他接口统一）
+    summary_row = query_one(f"""
+        WITH {_BATCH_AMOUNTS_SQL}
         SELECT
-            COALESCE(SUM(inbound_amt), 0)   AS total_inbound,
-            COALESCE(SUM(claimed_amt), 0)   AS total_claimed,
-            COALESCE(SUM(inventory_amt), 0) AS total_inventory
-        FROM batch_dedup
+            COALESCE(SUM(batch_inbound), 0)   AS total_inbound,
+            COALESCE(SUM(batch_claimed), 0)   AS total_claimed,
+            COALESCE(SUM(batch_inventory), 0) AS total_inventory
+        FROM batch_amounts
     """)
 
-    # 查数据
+    # 查数据（与 _get_inventory_rows 使用相同的 CTE + JOIN 模式）
     sql = f"""
-        WITH wide_with_ratio AS (
+        WITH {_BATCH_AMOUNTS_SQL},
+        wide_with_ratio AS (
             SELECT
                 w.*,
+                ba.batch_inbound,
+                ba.batch_claimed,
+                ba.batch_inventory,
+                ba.batch_orig_qty,
+                ba.batch_outbound_qty,
+                ba.batch_unit_price,
+                ba.batch_age_days,
+                ba.batch_pick,
+                ba.batch_repair,
+                ba.batch_scrap,
+                ba.batch_repaired,
                 {_PROJECT_RATIO_SQL} AS project_ratio
             FROM v_project_inventory_wide w
+            JOIN batch_amounts ba ON
+                ba.tenant_id = w.tenant_id
+                AND ba.material_code = w.material_code
+                AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
+                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
         )
         SELECT
             r.project_inventory_id                  AS id,
@@ -535,31 +543,36 @@ def get_inventory_report(
                    * r.project_ratio)::numeric, 4)  AS scrap_quantity,
             ROUND((r.repaired_quantity
                    * r.project_ratio)::numeric, 4)  AS repaired_quantity,
-            r.unit_price,
+            r.batch_unit_price                      AS unit_price,
             r.material_unit                         AS unit,
             r.supplier_code,
-            ROUND((r.original_quantity * r.unit_price
+            ROUND((r.batch_inbound
                    * r.project_ratio)::numeric, 2)  AS inbound_amount,
-            ROUND((r.total_outbound_quantity * r.unit_price
+            ROUND((r.batch_claimed
                    * r.project_ratio)::numeric, 2)  AS claimed_amount,
-            ROUND((r.total_price
+            ROUND((r.batch_inventory
                    * r.project_ratio)::numeric, 2)  AS inventory_amount,
-            CASE WHEN r.original_quantity > 0
-                 THEN LEAST(ROUND(r.total_outbound_quantity::numeric
-                          / r.original_quantity * 100, 2), 100.00)
+            CASE WHEN r.batch_orig_qty > 0
+                 THEN LEAST(ROUND(r.batch_outbound_qty::numeric
+                          / r.batch_orig_qty * 100, 2), 100.00)
                  ELSE 0
             END                                     AS claim_rate,
-            CASE WHEN r.original_quantity > 0
-                 THEN LEAST(ROUND(r.total_outbound_quantity::numeric
-                          / r.original_quantity * 100, 2), 100.00)
+            CASE WHEN r.batch_orig_qty > 0
+                 THEN LEAST(ROUND(r.batch_outbound_qty::numeric
+                          / r.batch_orig_qty * 100, 2), 100.00)
                  ELSE 0
             END                                     AS claim_rate_on_inbound,
-            r.age_days
+            r.batch_age_days                        AS age_days
         FROM wide_with_ratio r
         ORDER BY {sort_col} {order_dir} NULLS LAST
         LIMIT %s OFFSET %s
     """
     rows = query(sql, (limit, offset))
+
+    # 获取总行数
+    total_row = query_one("SELECT COUNT(*) AS total FROM v_project_inventory_wide")
+    total = int(total_row["total"]) if total_row else 0
+
     rows = _rows_to_float(rows,
         "inbound_amount", "claimed_amount", "inventory_amount", "claim_rate",
         "original_quantity", "current_quantity", "used_quantity",
@@ -602,7 +615,7 @@ def get_inventory_report(
                 "claimed_amount": round(_f(r["claimed_amount"]), 2),
                 "inventory_amount": round(_f(r["inventory_amount"]), 2),
                 "claim_rate": round(_f(r["claim_rate"]), 2),
-                "age_days": int(r["age_days"]) if r["age_days"] is not None else 0,
+                "age_days": r["age_days"] or 0,
             }
             for r in rows
         ],
