@@ -444,15 +444,27 @@ def _query_erp_claim_aggregates(current_year: int) -> dict:
     """
     sql = f"""
         SELECT
-            -- 全部历史
+            -- 全部历史：入库(101毛收货)
+            COALESCE(SUM(CASE WHEN bwart = '101'
+                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS gross_inbound_all,
+            COALESCE(SUM(CASE WHEN bwart = '102'
+                THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS reversal_all,
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
-                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS inbound_all,
+                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS net_inbound_all,
+            -- 全部历史：出库
             COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_all,
-            -- 当年
+            -- 当年：入库(101毛收货)
+            COALESCE(SUM(CASE WHEN bwart = '101'
+                    AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
+                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS gross_inbound_year,
+            COALESCE(SUM(CASE WHEN bwart = '102'
+                    AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
+                THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS reversal_year,
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
-                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS inbound_year,
+                THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS net_inbound_year,
+            -- 当年：出库
             COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_year,
@@ -476,19 +488,29 @@ def _query_erp_claim_aggregates(current_year: int) -> dict:
     return _rows_to_float(rows, *rows[0].keys())[0] if rows else {}
 
 
-def _build_erp_claim_metrics(inbound: float, outbound: float,
+def _build_erp_claim_metrics(gross_inbound: float, reversal: float,
+                              net_inbound: float, outbound: float,
                               inbound_qty: float, outbound_qty: float) -> dict:
-    """基于出入库金额计算领用率指标。"""
-    unclaimed = inbound - outbound
+    """
+    基于出入库金额计算领用率指标。
+
+    Args:
+        gross_inbound: 101 毛收货金额（不含冲销）
+        reversal:      102 冲销金额（绝对值，正数）
+        net_inbound:   101+102 净入库（用于领用率计算）
+    """
+    unclaimed = net_inbound - outbound
     return {
-        "total_inbound_amount": round(inbound / 10000, 2),
+        "total_inbound_amount": round(gross_inbound / 10000, 2),       # 101毛收货
+        "reversal_amount": round(reversal / 10000, 2),                  # 冲销金额
+        "net_inbound_amount": round(net_inbound / 10000, 2),            # 净入库
         "total_outbound_amount": round(outbound / 10000, 2),
         "total_inbound_quantity": round(inbound_qty, 2),
         "total_outbound_quantity": round(outbound_qty, 2),
-        "claim_rate_amount": round(outbound / inbound * 100, 2) if inbound > 0 else 0.0,
+        "claim_rate_amount": round(outbound / net_inbound * 100, 2) if net_inbound > 0 else 0.0,
         "claim_rate_quantity": round(outbound_qty / inbound_qty * 100, 2) if inbound_qty > 0 else 0.0,
         "unclaimed_amount": round(unclaimed / 10000, 2),
-        "unclaimed_amount_ratio": round(unclaimed / inbound * 100, 2) if inbound > 0 else 0.0,
+        "unclaimed_amount_ratio": round(unclaimed / net_inbound * 100, 2) if net_inbound > 0 else 0.0,
     }
 
 
@@ -510,19 +532,29 @@ def get_erp_claim_indicators() -> Dict:
     current_year = date.today().year
     agg = _query_erp_claim_aggregates(current_year)
 
+    # ERP 当前库存（从批次生命周期视图）
+    inv_rows = query("""
+        SELECT COALESCE(SUM(best_inventory_amt), 0) AS total
+        FROM v_batch_lifecycle
+    """)
+    erp_inventory = round(_f(inv_rows[0]["total"]) / 10000, 2) if inv_rows else 0
+
     return {
         "current_year": current_year,
         "year_start": f"{current_year}-01-01",
         "year_end": f"{current_year}-12-31",
         "all": _build_erp_claim_metrics(
-            agg.get("inbound_all", 0), agg.get("outbound_all", 0),
+            agg.get("gross_inbound_all", 0), agg.get("reversal_all", 0),
+            agg.get("net_inbound_all", 0), agg.get("outbound_all", 0),
             agg.get("inbound_qty_all", 0), agg.get("outbound_qty_all", 0),
         ),
         "year": _build_erp_claim_metrics(
-            agg.get("inbound_year", 0), agg.get("outbound_year", 0),
+            agg.get("gross_inbound_year", 0), agg.get("reversal_year", 0),
+            agg.get("net_inbound_year", 0), agg.get("outbound_year", 0),
             agg.get("inbound_qty_year", 0), agg.get("outbound_qty_year", 0),
         ),
-        "note": "ERP数据(erp_catalog_mb51)，移动类型101+102=入库, 201+221+222+Z61+Z62=出库",
+        "erp_inventory": erp_inventory,
+        "note": "ERP数据(erp_catalog_mb51)，入库=101毛收货，出库=201+221+222+Z61+Z62",
     }
 
 

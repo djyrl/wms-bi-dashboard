@@ -140,7 +140,9 @@ export const getWmsClaim = () =>
 // ---- ERP 领用率（erp_catalog_mb51）----
 
 export interface ErpClaimRange {
-  total_inbound_amount: number
+  total_inbound_amount: number      // 101毛收货
+  reversal_amount: number           // 102冲销(正数)
+  net_inbound_amount: number        // 101+102净入库
   total_outbound_amount: number
   total_inbound_quantity: number
   total_outbound_quantity: number
@@ -156,6 +158,7 @@ export interface ErpClaimSplit {
   year_end: string
   all: ErpClaimRange
   year: ErpClaimRange
+  erp_inventory: number             // ERP当前库存(万元)
   note: string
 }
 

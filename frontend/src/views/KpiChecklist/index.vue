@@ -63,10 +63,12 @@ const coreKpiList = computed(() => {
       return {
         ...kpi,
         value: ec.claim_rate_amount,
-        formula: `出库金额 / 入库金额 × 100%（${ec.total_outbound_amount?.toFixed(0) ?? 0}万 / ${ec.total_inbound_amount?.toFixed(0) ?? 0}万）`,
+        formula: `出库金额 / 净入库 × 100%（${ec.total_outbound_amount?.toFixed(0) ?? 0}万 / ${ec.net_inbound_amount?.toFixed(0) ?? 0}万）`,
         detail: {
           ...kpi.detail,
-          inbound_amount_wan: ec.total_inbound_amount,
+          inbound_amount_wan: ec.total_inbound_amount,         // 101毛收货
+          net_inbound_amount_wan: ec.net_inbound_amount,       // 净入库
+          reversal_amount_wan: ec.reversal_amount,             // 冲销
           claimed_amount_wan: ec.total_outbound_amount,
           unclaimed_amount_wan: ec.unclaimed_amount,
         },
@@ -104,7 +106,7 @@ const overviewCards = computed(() => {
   if (!summary.value) return []
   const ec = erpClaim.value
   return [
-     { icon: '📦', label: '当前库存', value: summary.value.current_inventory_wan, unit: '万元', color: '#f59e0b' },
+     { icon: '📦', label: '当前库存', value: ec?.erp_inventory ?? 0, unit: '万元', color: '#f59e0b' },
     { icon: '📤', label: '出库总额', value: ec?.year?.total_outbound_amount ?? 0, unit: '万元', color: '#10b981' },
     { icon: '📥', label: '入库总额', value: ec?.year?.total_inbound_amount ?? 0, unit: '万元', color: '#3b82f6' },
    { icon: '📈', label: '综合领用率', value: ec?.year?.claim_rate_amount ?? 0, unit: '%', color: '#8b5cf6' },
@@ -218,16 +220,16 @@ onMounted(() => {
               </div>
               <div class="kpi-card__detail" v-if="kpi.key === 'K1' && kpi.detail">
                 <div class="detail-row">
-                  <span>入库金额 (ERP)</span><span>{{ kpi.detail.inbound_amount_wan?.toLocaleString() }} 万元</span>
+                  <span>101毛收货</span><span>{{ kpi.detail.inbound_amount_wan?.toLocaleString() }} 万元</span>
                 </div>
                 <div class="detail-row">
-                  <span>出库金额 (ERP)</span><span>{{ kpi.detail.claimed_amount_wan?.toLocaleString() }} 万元</span>
+                  <span>102冲销</span><span>{{ kpi.detail.reversal_amount_wan?.toLocaleString() }} 万元</span>
+                </div>
+                <div class="detail-row">
+                  <span>出库金额</span><span>{{ kpi.detail.claimed_amount_wan?.toLocaleString() }} 万元</span>
                 </div>
                 <div class="detail-row">
                   <span>未领用金额</span><span>{{ kpi.detail.unclaimed_amount_wan?.toLocaleString() }} 万元</span>
-                </div>
-                <div class="detail-row">
-                  <span>数量领用率</span><span>{{ erpClaim?.year?.claim_rate_quantity?.toLocaleString() }}%</span>
                 </div>
               </div>
               <div v-if="kpi.key === 'K3' && kpi.detail?.age_structure" class="kpi-card__detail">

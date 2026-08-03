@@ -121,23 +121,18 @@ const paths = [
 
       <!-- 核心KPI -->
       <div class="kpi-row">
-        <el-tooltip content="SUM(original_quantity × unit_price) 全部入库金额" placement="top">
-          <!-- <div class="kpi-box" style="border-left-color:#3b82f6">
-            <div class="kpi-label">入库总额</div>
-            <div class="kpi-num">{{ summary?.total_inbound_amount?.toFixed(2) }} 万</div>
-            <div class="kpi-sub">累计采购入库金额</div>
-          </div> -->
+        <el-tooltip content="ERP+WMS联合库存：最佳估计 = WMS实物 + ERP-only批次" placement="top">
           <div class="kpi-box" style="border-left-color:#f59e0b">
             <div class="kpi-label">当前库存总额</div>
-            <div class="kpi-num">{{ structure?.current_inventory_amount?.toFixed(2) }} 万</div>
-            <div class="kpi-sub">{{ structure?.current_inventory_quantity?.toLocaleString() }} 项库存</div>
+            <div class="kpi-num">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万</div>
+            <div class="kpi-sub">ERP+WMS联合库存</div>
           </div>
         </el-tooltip>
         <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%" placement="top">
           <div class="kpi-box" style="border-left-color:#10b981">
             <div class="kpi-label">采购领用率（金额）</div>
             <div class="kpi-num">{{ erpClaim?.year?.claim_rate_amount?.toFixed(2) }}%</div>
-            <div class="kpi-sub">= {{ erpClaim?.year?.total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaim?.year?.total_inbound_amount?.toFixed(0) || 0 }}万</div>
+            <div class="kpi-sub">= {{ erpClaim?.year?.total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaim?.year?.net_inbound_amount?.toFixed(0) || 0 }}万</div>
           </div>
         </el-tooltip>
         <el-tooltip content="ERP数据：SUM(DMBTR) 101 移动类型" placement="top">
