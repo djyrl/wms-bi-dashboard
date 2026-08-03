@@ -165,7 +165,7 @@ onMounted(loadAll)
         <h3>（二）库存结构指标</h3>
         <div class="kpi-cards">
           <div class="kpi-card"><div class="kpi-label">4a. 当年库存金额</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
-          <div class="kpi-card"><div class="kpi-label">4b. 所有库存金额</div><div class="kpi-value">{{ structure?.current_inventory_amount?.toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">4b. 所有库存金额</div><div class="kpi-value">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万元</div></div>
           <!-- <div class="kpi-card"><div class="kpi-label">6. 当前库存数量</div><div class="kpi-value">{{ fmtNum(structure?.current_inventory_quantity) }}</div></div> -->
         </div>
         <h4>5. 项目库存占比 TOP 10</h4>

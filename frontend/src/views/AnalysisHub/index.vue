@@ -121,11 +121,11 @@ const paths = [
 
       <!-- 核心KPI -->
       <div class="kpi-row">
-        <el-tooltip content="ERP+WMS联合库存：最佳估计 = WMS实物 + ERP-only批次" placement="top">
+        <el-tooltip content="WMS实物在库 + ERP有余额未入WMS的批次" placement="top">
           <div class="kpi-box" style="border-left-color:#f59e0b">
             <div class="kpi-label">当前库存总额</div>
             <div class="kpi-num">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万</div>
-            <div class="kpi-sub">ERP+WMS联合库存</div>
+            <div class="kpi-sub">WMS在库 + ERP批次补充</div>
           </div>
         </el-tooltip>
         <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%" placement="top">
