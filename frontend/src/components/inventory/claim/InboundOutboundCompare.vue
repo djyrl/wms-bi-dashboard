@@ -12,10 +12,6 @@ function toWan(v: number) { return +(v / 10000).toFixed(2) }
 
 const timeLabel = computed(() => props.granularity || '周')
 
-const chartYear = computed(() => {
-  const m = props.months[0]
-  return m ? m.slice(0, 4) : ''
-})
 const shortLabels = computed(() => props.months.map(m => {
   // "2026-05-11 ~ 2026-05-17" → "05-11~05-17"
   if (m.includes(' ~ ')) return m.replace(/\d{4}-(\d{2}-\d{2}) ~ \d{4}-(\d{2}-\d{2})/, '$1~$2')
@@ -40,7 +36,7 @@ function render() {
     legend: { top: 0, textStyle: { color: '#94a3b8' }, data: ['入库金额', '领用金额', '净增库存'] },
     grid: { top: 40, right: 20, bottom: 40, left: 55 },
     xAxis: { type: 'category', data: shortLabels.value, axisLabel: { color: '#94a3b8', fontSize: 10, rotate: 45, interval: (props.months.length > 12 ? 'auto' : 0) } },
-    yAxis: { type: 'value', name: chartYear.value + ' 万元', nameLocation: 'end', nameTextStyle: { color: '#64748b', fontSize: 18, fontWeight: 'bold' }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+    yAxis: { type: 'value', name: '万元', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
     series: [
       { name: '入库金额', type: 'bar', data: inbound, itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: 'rgba(59,130,246,0.2)' }] } }, barWidth: 16, barGap: '30%' },
       { name: '领用金额', type: 'bar', data: outbound, itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#06b6d4' }, { offset: 1, color: 'rgba(6,182,212,0.2)' }] } }, barWidth: 16 },
