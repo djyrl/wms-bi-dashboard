@@ -17,6 +17,8 @@ const chartYear = computed(() => {
   return m ? m.slice(0, 4) : ''
 })
 const shortLabels = computed(() => props.months.map(m => {
+  // "2026-05-11 ~ 2026-05-17" → "05-11~05-17"
+  if (m.includes(' ~ ')) return m.replace(/\d{4}-(\d{2}-\d{2}) ~ \d{4}-(\d{2}-\d{2})/, '$1~$2')
   if (m.length === 10) return m.slice(5)
   if (m.includes('W') || m.includes('w')) return m.replace(/^\d{4}-?/, '')
   if (m.length === 7) return m.slice(5) + '月'
