@@ -15,11 +15,7 @@ const chart = useECharts()
 
 const timeLabel = computed(() => props.granularity || '周')
 
-// 提取年份 & 格式化短标签
-const chartYear = computed(() => {
-  const m = props.months[0]
-  return m ? m.slice(0, 4) : ''
-})
+// 格式化短标签（去掉年份，只显示月日）
 const shortLabels = computed(() => props.months.map(m => {
   // "2026-05-11 ~ 2026-05-17" → "05-11~05-17"
   if (m.includes(' ~ ')) return m.replace(/\d{4}-(\d{2}-\d{2}) ~ \d{4}-(\d{2}-\d{2})/, '$1~$2')
@@ -47,7 +43,7 @@ function render() {
     legend: { top: 0, textStyle: { color: '#94a3b8', fontSize: 10 }, data: ['领用率', '趋势线', '目标线(20%)'] },
     grid: { top: 45, right: 55, bottom: 40, left: 55 },
     xAxis: { type: 'category', data: shortLabels.value, axisLabel: { color: '#cbd5e1', fontSize: 10, rotate: 45, interval: (props.months.length > 12 ? 'auto' : 0) }, axisLine: { lineStyle: { color: '#475569' } } },
-    yAxis: { type: 'value', name: chartYear.value, nameLocation: 'end', nameTextStyle: { color: '#64748b', fontSize: 20, fontWeight: 'bold' }, min: 0, max: 100, axisLabel: { color: '#94a3b8', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#94a3b8', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
     series: [
       {
         name: '领用率', type: 'line', data: rates, smooth: true,
