@@ -191,7 +191,7 @@ onMounted(loadAll)
         </div>
         <h4>12. 库龄结构占比</h4>
         <div class="age-bars" v-if="timeIndicators?.age_structure">
-          <div v-for="seg in timeIndicators.age_structure" :key="seg.range" class="age-bar">
+          <div v-for="seg in timeIndicators.age_structure.filter((s: any) => s.range !== '≥5年')" :key="seg.range" class="age-bar">
             <span class="age-range">{{ seg.range }}</span><div class="age-track"><div class="age-fill" :style="{ width: Math.max(seg.ratio*100,1)+'%' }"></div></div>
             <span class="age-pct">{{ (seg.ratio*100).toFixed(2) }}%</span><span class="age-count">{{ seg.count }}笔</span>
           </div>
@@ -237,7 +237,7 @@ onMounted(loadAll)
 
       <!-- (五) 采购人维度指标 -->
       <section>
-        <h3>（五）采购人维度指标 <span class="sort-hint">按未消耗金额降序</span></h3>
+        <h3>（五）项目负责人维度指标 <span class="sort-hint">按未消耗金额降序</span></h3>
         <table class="data-table" v-if="purchaserIndicators.length">
           <thead><tr>
             <th class="sortable" @click="togglePurchaserSort('purchaser_name')">采购人<span class="sort-arrow" v-if="purchaserSortKey === 'purchaser_name'">{{ purchaserSortDir === 'asc' ? ' ▲' : ' ▼' }}</span></th>
