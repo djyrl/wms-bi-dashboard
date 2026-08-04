@@ -382,7 +382,7 @@ onMounted(() => {
           <!-- 库龄结构分段 -->
           <div class="age-bar-wrap" v-if="structureKpis?.K7?.age_structure">
             <div
-              v-for="seg in structureKpis.K7.age_structure"
+              v-for="seg in structureKpis.K7.age_structure.filter((s: any) => s.range !== '≥5年')"
               :key="seg.range"
               class="age-bar"
             >
