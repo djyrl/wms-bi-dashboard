@@ -125,7 +125,7 @@ const paths = [
           <div class="kpi-box" style="border-left-color:#f59e0b">
             <div class="kpi-label">当前库存总额</div>
             <div class="kpi-num">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万</div>
-            <div class="kpi-sub">WMS在库 + ERP批次补充</div>
+            <div class="kpi-sub">期末在库物资总金额</div>
           </div>
         </el-tooltip>
         <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%" placement="top">
