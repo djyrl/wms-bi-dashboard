@@ -14,6 +14,20 @@ const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
 const timeLabel = computed(() => props.granularity || '周')
+
+// 提取年份 & 格式化短标签
+const chartYear = computed(() => {
+  const m = props.months[0]
+  return m ? m.slice(0, 4) : ''
+})
+const shortLabels = computed(() => props.months.map(m => {
+  // "2026-01-15" → "01-15", "2026-W01" → "W01", "2026-01" → "01月"
+  if (m.length === 10) return m.slice(5)
+  if (m.includes('W') || m.includes('w')) return m.replace(/^\d{4}-?/, '')
+  if (m.length === 7) return m.slice(5) + '月'
+  return m
+}))
+
 const detailHeaders = computed(() => [timeLabel.value, '领用率(%)', '目标(%)', '趋势值(%)'])
 const detailRows = computed(() => props.data.map(d => [d.month, d.rate, d.target, d.trend] as (string | number)[]))
 
@@ -28,9 +42,9 @@ function render() {
   chart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { top: 0, textStyle: { color: '#94a3b8', fontSize: 10 }, data: ['领用率', '趋势线', '目标线(20%)'] },
-    grid: { top: 45, right: 55, bottom: 30, left: 55 },
-    xAxis: { type: 'category', data: props.months, axisLabel: { color: '#cbd5e1', fontSize: 10, rotate: 45, interval: (props.months.length > 12 ? 'auto' : 0) }, axisLine: { lineStyle: { color: '#475569' } } },
-    yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#94a3b8', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+    grid: { top: 45, right: 55, bottom: 40, left: 55 },
+    xAxis: { type: 'category', data: shortLabels.value, axisLabel: { color: '#cbd5e1', fontSize: 10, rotate: 45, interval: (props.months.length > 12 ? 'auto' : 0) }, axisLine: { lineStyle: { color: '#475569' } } },
+    yAxis: { type: 'value', name: chartYear.value, nameLocation: 'end', nameTextStyle: { color: '#64748b', fontSize: 20, fontWeight: 'bold' }, min: 0, max: 100, axisLabel: { color: '#94a3b8', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
     series: [
       {
         name: '领用率', type: 'line', data: rates, smooth: true,
