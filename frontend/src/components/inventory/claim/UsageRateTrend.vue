@@ -29,7 +29,7 @@ function render() {
     tooltip: { trigger: 'axis' },
     legend: { top: 0, textStyle: { color: '#94a3b8', fontSize: 10 }, data: ['领用率', '趋势线', '目标线(20%)'] },
     grid: { top: 45, right: 55, bottom: 30, left: 55 },
-    xAxis: { type: 'category', data: props.months, axisLabel: { color: '#cbd5e1', fontSize: 11, interval: 0 }, axisLine: { lineStyle: { color: '#475569' } } },
+    xAxis: { type: 'category', data: props.months, axisLabel: { color: '#cbd5e1', fontSize: 10, rotate: 45, interval: (props.months.length > 12 ? 'auto' : 0) }, axisLine: { lineStyle: { color: '#475569' } } },
     yAxis: { type: 'value', min: 0, max: 100, axisLabel: { color: '#94a3b8', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
     series: [
       {
