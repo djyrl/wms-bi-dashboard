@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { echarts } from '@/utils/echarts'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
@@ -15,6 +15,19 @@ import { formatDays } from '@/utils/format'
 import { filterExcluded } from '@/utils/excludeMaterials'
 
 const router = useRouter()
+const route = useRoute()
+const isFullscreen = ref(false)
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().then(() => { isFullscreen.value = true })
+  } else {
+    document.exitFullscreen().then(() => { isFullscreen.value = false })
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  isFullscreen.value = !!document.fullscreenElement
+})
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -100,6 +113,10 @@ function formatTime(d: Date): string {
 onMounted(() => {
   loadAll()
   timer = setInterval(() => { now.value = new Date() }, 1000)
+  setTimeout(() => renderProjectBar(), 500)
+  if (route.meta?.fullscreen) {
+    setTimeout(() => document.documentElement.requestFullscreen().catch(() => {}), 800)
+  }
 })
 
 onUnmounted(() => {
@@ -146,7 +163,12 @@ const paths = [
       <!-- 顶部标题栏 -->
       <div class="dashboard-header">
         <span class="header-title">仓库运营分析中心</span>
-        <span class="header-time">{{ formatTime(now) }}</span>
+        <span class="header-actions">
+          <span class="header-time" style="margin-right:12px">{{ formatTime(now) }}</span>
+          <span class="fullscreen-btn" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '全屏展示'">
+            {{ isFullscreen ? '⛶' : '⛶' }}
+          </span>
+        </span>
       </div>
 
       <!-- 核心KPI -->
@@ -299,6 +321,20 @@ const paths = [
     font-family: 'Courier New', monospace;
     font-size: 14px;
     font-weight: 600;
+  }
+
+  .fullscreen-btn {
+    cursor: pointer;
+    font-size: 20px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    user-select: none;
+    &:hover { opacity: 1; }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
   }
 }
 
