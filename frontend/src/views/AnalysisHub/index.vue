@@ -165,7 +165,7 @@ const paths = [
         <span class="header-title">仓库运营分析中心</span>
         <span class="header-time">{{ formatTime(now) }}</span>
         <span class="header-fs-btn" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '全屏展示'">
-          {{ isFullscreen ? '⛶ 退出全屏' : '⛶ 全屏' }}
+          {{ isFullscreen ? '⛶' : '⛶' }}
         </span>
       </div>
 
@@ -323,14 +323,10 @@ const paths = [
 
   .header-fs-btn {
     cursor: pointer;
-    padding: 4px 12px;
-    background: #3b82f6;
-    color: #fff;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    transition: background 0.2s;
-    &:hover { background: #2563eb; }
+    font-size: 18px;
+    color: #64748b;
+    transition: color 0.2s;
+    &:hover { color: #3b82f6; }
   }
 }
 
