@@ -123,35 +123,7 @@ onUnmounted(() => {
   document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 
-const paths = [
-  {
-    title: '业务分析',
-    // subtitle: '买了多少 → 用了多少 → 剩多少',
-    // icon: '📥📤📦',
-    route: '/path1',
-    desc: '追踪入库、领用、库存的月度变化趋势',
-    color: '#3b82f6',
-    bg: '#eff6ff',
-  },
-  {
-    title: '库存分析',
-    // subtitle: '剩的是谁的 → 谁剩的最多',
-    // icon: '🏗👤📊',
-    route: '/path2',
-    desc: '按项目、采购人定位库存责任主体',
-    color: '#f59e0b',
-    bg: '#fffbeb',
-  },
-  {
-    title: '库龄分析',
-    // subtitle: '放了多久 → 哪些要清理',
-    // icon: '⏱⚠️🧹',
-    route: '/path3',
-    desc: '库龄结构、长库龄明细、清理优先级',
-    color: '#ef4444',
-    bg: '#fef2f2',
-  },
-]
+
 
 </script>
 
@@ -199,20 +171,6 @@ const paths = [
             <div class="kpi-sub">≥1年占比 {{ (timeIndicators?.aged_ratio_1y * 100).toFixed(1) }}%</div>
           </div>
         </el-tooltip>
-      </div>
-
-      <!-- 三条路径入口 -->
-      <div class="path-grid">
-        <div
-          v-for="p in paths" :key="p.route"
-          class="path-card"
-          :style="{ borderTopColor: p.color, background: p.bg }"
-          @click="router.push(p.route)"
-        >
-          <!-- <div class="path-icon">{{ p.icon }}</div> -->
-          <div class="path-title" :style="{ color: p.color }">{{ p.title }}</div>
-          <div class="path-subtitle">{{ p.desc }}</div>
-        </div>
       </div>
 
       <!-- 快速一览 -->
