@@ -151,6 +151,12 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/dashboard',
+    name: 'FullscreenDashboard',
+    component: () => import('@/views/AnalysisHub/index.vue'),
+    meta: { title: '数据大屏', icon: 'Monitor', fullscreen: true },
+  },
+  {
     path: '/404',
     name: 'NotFound',
     component: () => import('@/views/errors/404.vue'),
