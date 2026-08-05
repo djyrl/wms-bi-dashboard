@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { echarts } from '@/utils/echarts'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
@@ -15,19 +15,6 @@ import { formatDays } from '@/utils/format'
 import { filterExcluded } from '@/utils/excludeMaterials'
 
 const router = useRouter()
-const route = useRoute()
-const isFullscreen = ref(false)
-
-function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().then(() => { isFullscreen.value = true })
-  } else {
-    document.exitFullscreen().then(() => { isFullscreen.value = false })
-  }
-}
-document.addEventListener('fullscreenchange', () => {
-  isFullscreen.value = !!document.fullscreenElement
-})
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -110,17 +97,30 @@ function formatTime(d: Date): string {
   return `${hh}:${mm}:${ss}`
 }
 
+// 全屏切换
+const isFullscreen = ref(false)
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen()
+    isFullscreen.value = true
+  } else {
+    document.exitFullscreen()
+    isFullscreen.value = false
+  }
+}
+function onFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
 onMounted(() => {
   loadAll()
   timer = setInterval(() => { now.value = new Date() }, 1000)
-  setTimeout(() => renderProjectBar(), 500)
-  if (route.meta?.fullscreen) {
-    setTimeout(() => document.documentElement.requestFullscreen().catch(() => {}), 800)
-  }
+  document.addEventListener('fullscreenchange', onFullscreenChange)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+  document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 
 const paths = [
@@ -163,11 +163,9 @@ const paths = [
       <!-- 顶部标题栏 -->
       <div class="dashboard-header">
         <span class="header-title">仓库运营分析中心</span>
-        <span class="header-actions">
-          <span class="header-time" style="margin-right:12px">{{ formatTime(now) }}</span>
-          <span class="fullscreen-btn" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '全屏展示'">
-            {{ isFullscreen ? '⛶' : '⛶' }}
-          </span>
+        <span class="header-time">{{ formatTime(now) }}</span>
+        <span class="header-fs-btn" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '全屏展示'">
+          {{ isFullscreen ? '⛶ 退出全屏' : '⛶ 全屏' }}
         </span>
       </div>
 
@@ -323,18 +321,16 @@ const paths = [
     font-weight: 600;
   }
 
-  .fullscreen-btn {
+  .header-fs-btn {
     cursor: pointer;
-    font-size: 20px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-    user-select: none;
-    &:hover { opacity: 1; }
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
+    padding: 4px 12px;
+    background: #3b82f6;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s;
+    &:hover { background: #2563eb; }
   }
 }
 
