@@ -166,15 +166,15 @@ FULL OUTER JOIN wms_batch w
 CREATE OR REPLACE VIEW v_monthly_inventory_timeline AS
 WITH monthly_total AS (
     SELECT
-        DATE_TRUNC('month', (row_json->>'BLDAT')::date)::date AS doc_month,
+        DATE_TRUNC('month', (row_json->>'BLDAT')::date)::date AS doc_month, -- 取移动日期
         SUM(CASE WHEN bwart IN ('101','102')
-            THEN (row_json->>'DMBTR')::numeric ELSE 0 END)   AS month_inbound,
+            THEN (row_json->>'DMBTR')::numeric ELSE 0 END)   AS month_inbound, -- 入
         SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
-            THEN -(row_json->>'DMBTR')::numeric ELSE 0 END)  AS month_outbound,
-        SUM((row_json->>'DMBTR')::numeric)                    AS net_amt_change,
-        SUM((row_json->>'MENGE')::numeric)                    AS net_qty_change,
-        COUNT(*)                                              AS move_cnt,
-        COUNT(DISTINCT row_json->>'MATNR' || '|' || charg)   AS active_batches
+            THEN -(row_json->>'DMBTR')::numeric ELSE 0 END)  AS month_outbound, -- 出
+        SUM((row_json->>'DMBTR')::numeric)                    AS net_amt_change, -- 净金额
+        SUM((row_json->>'MENGE')::numeric)                    AS net_qty_change, -- 净数量
+        COUNT(*)                                              AS move_cnt, -- 移动次数
+        COUNT(DISTINCT row_json->>'MATNR' || '|' || charg)   AS active_batches -- 批次数
     FROM public.erp_catalog_mb51
     WHERE werks = '2635'
       AND row_json->>'MATNR' IS NOT NULL
@@ -201,9 +201,9 @@ CREATE OR REPLACE VIEW v_material_monthly_inventory AS
 WITH material_monthly AS (
     SELECT
         row_json->>'MATNR'                                   AS material_code,
-        DATE_TRUNC('month', (row_json->>'BLDAT')::date)::date AS doc_month,
-        SUM((row_json->>'DMBTR')::numeric)                    AS net_amt_change,
-        COUNT(DISTINCT charg)                                 AS active_batches
+        DATE_TRUNC('month', (row_json->>'BLDAT')::date)::date AS doc_month, -- 取移动日期
+        SUM((row_json->>'DMBTR')::numeric)                    AS net_amt_change, -- 净金额
+        COUNT(DISTINCT charg)                                 AS active_batches -- 批次数
     FROM public.erp_catalog_mb51
     WHERE werks = '2635'
       AND row_json->>'MATNR' IS NOT NULL
