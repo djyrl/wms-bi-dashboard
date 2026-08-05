@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
+import { echarts } from '@/utils/echarts'
 import { useRouter } from 'vue-router'
 import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
@@ -26,6 +27,8 @@ const optimizeSuggest = ref<any[]>([])
 const claimWeeklyRate = ref<any[]>([])
 const claimWeeklyMonths = ref<string[]>([])
 const erpAgeMonthlyData = ref<any>(null)
+const projectBarRef = ref<HTMLDivElement>()
+let projectBarChart: any = null
 
 async function loadAll() {
   loading.value = true
@@ -62,6 +65,26 @@ function fmtAge(days: number | undefined | null): string {
   if (days == null) return '-'
   return formatDays(days)
 }
+
+function renderProjectBar() {
+  const projs = (structure.value?.project_ratios || [])
+    .filter((p: any) => p.project_name && p.project_name !== '非项目物资')
+    .slice(0, 8)
+  if (!projectBarRef.value || !projs.length) return
+  if (!projectBarChart) {
+    projectBarChart = echarts.init(projectBarRef.value)
+  }
+  projectBarChart.setOption({
+    tooltip: { trigger: 'axis', formatter: (params: any) => `${params[0].name}<br/>库存: ${params[0].value} 万` },
+    grid: { left: 10, right: 10, top: 10, bottom: 50 },
+    xAxis: { type: 'category', data: projs.map((p: any) => (p.project_name || '').length > 6 ? (p.project_name || '').slice(0, 6) + '…' : p.project_name), axisLabel: { rotate: 30, fontSize: 10 } },
+    yAxis: { type: 'value', axisLabel: { formatter: '{value}万' } },
+    series: [{ type: 'bar', data: projs.map((p: any) => +(p.inventory_amount_wan || 0).toFixed(0)), itemStyle: { color: '#3b82f6', borderRadius: [4,4,0,0] } }],
+  }, true)
+}
+
+watch(() => structure.value?.project_ratios, () => nextTick(renderProjectBar))
+onMounted(() => { setTimeout(renderProjectBar, 500) })
 
 // 实时时钟
 const now = ref(new Date())
@@ -175,31 +198,18 @@ const paths = [
       <!-- 快速一览 -->
       <div class="chart-grid">
         <ChartCard title="📉 物资领用率趋势（按周）">
-          <UsageRateTrend :data="claimWeeklyRate" :months="claimWeeklyMonths" granularity="周" />
+          <UsageRateTrend :data="claimWeeklyRate" :months="claimWeeklyMonths" granularity="周" :hideDetail="true" />
         </ChartCard>
 
-        <ChartCard title="⚠️ 未领用库存 TOP 8">
-          <table class="mini-table" v-if="topUnclaimed.length">
-            <tr v-for="item in topUnclaimed" :key="item.material_code">
-              <td>
-                <el-tooltip :content="item.material_name || item.material_code" placement="top" :disabled="(item.material_name || item.material_code || '').length <= 20">
-                  <span>{{ truncateText(item.material_name || item.material_code) }}</span>
-                </el-tooltip>
-              </td>
-              <td class="num" style="color:#f43f5e">
-                <el-tooltip :content="`${fmtWan(item.inventory_amount)}万 / TOP8未领用总额`" placement="top">
-                  <span>{{ (item.inventory_amount / topUnclaimed.reduce((s: number, x: any) => s + x.inventory_amount, 0) * 100).toFixed(1) }}%</span>
-                </el-tooltip>
-              </td>
-              <td class="num" style="font-size:11px;color:#94a3b8">{{ fmtWan(item.inventory_amount) }}万</td>
-            </tr>
-          </table>
+        <ChartCard title="🌳 项目库存金额分布 TOP 8">
+          <div ref="projectBarRef" style="width:100%;height:260px"></div>
         </ChartCard>
 
         <ChartCard title="📊 加权平均库龄月度趋势">
           <AgeTrend
             :data="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => ({ month: d.doc_month, avgAge: d.avg_age, trend: 0, over90Rate: d.over90_rate }))"
             :months="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => d.doc_month)"
+            :hideDetail="true"
           />
         </ChartCard>
 

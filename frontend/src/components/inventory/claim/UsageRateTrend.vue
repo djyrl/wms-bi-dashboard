@@ -8,6 +8,7 @@ const props = defineProps<{
   data: UsageRatePoint[]
   months: string[]
   granularity?: string
+  hideDetail?: boolean
 }>()
 
 const chartRef = ref<HTMLDivElement>()
@@ -63,7 +64,7 @@ watch([() => props.data, () => props.months], render, { deep: true })
 
 <template>
   <div ref="chartRef" class="chart" />
-  <DataDetail :headers="detailHeaders" :rows="detailRows" />
+  <DataDetail v-if="!props.hideDetail" :headers="detailHeaders" :rows="detailRows" />
 </template>
 
 <style lang="scss" scoped>
