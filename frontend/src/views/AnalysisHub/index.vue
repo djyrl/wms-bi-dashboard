@@ -75,7 +75,7 @@ function renderProjectBar() {
     projectBarChart = echarts.init(projectBarRef.value)
   }
   projectBarChart.setOption({
-    tooltip: { trigger: 'axis', formatter: (params: any) => `${params[0].name}<br/>库存: ${params[0].value} 万` },
+    tooltip: { trigger: 'axis', formatter: (params: any) => `${projs[params[0].dataIndex]?.project_name || params[0].name}<br/>库存: ${params[0].value} 万` },
     grid: { left: 10, right: 10, top: 10, bottom: 50 },
     xAxis: { type: 'category', data: projs.map((p: any) => (p.project_name || '').length > 6 ? (p.project_name || '').slice(0, 6) + '…' : p.project_name), axisLabel: { rotate: 30, fontSize: 10 } },
     yAxis: { type: 'value', axisLabel: { formatter: '{value}万' } },
