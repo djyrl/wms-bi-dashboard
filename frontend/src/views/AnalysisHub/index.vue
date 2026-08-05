@@ -79,7 +79,7 @@ function renderProjectBar() {
     grid: { left: 10, right: 10, top: 10, bottom: 50 },
     xAxis: { type: 'category', data: projs.map((p: any) => (p.project_name || '').length > 6 ? (p.project_name || '').slice(0, 6) + '…' : p.project_name), axisLabel: { rotate: 30, fontSize: 10 } },
     yAxis: { type: 'value', axisLabel: { formatter: '{value}万' } },
-    series: [{ type: 'bar', data: projs.map((p: any) => +(p.inventory_amount_wan || 0).toFixed(0)), itemStyle: { color: '#3b82f6', borderRadius: [4,4,0,0] } }],
+    series: [{ type: 'bar', data: projs.map((p: any) => +((p.inventory_amount || 0) / 10000).toFixed(0)), itemStyle: { color: '#3b82f6', borderRadius: [4,4,0,0] } }],
   }, true)
 }
 
