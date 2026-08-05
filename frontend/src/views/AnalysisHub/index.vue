@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getWmsSummary, getWmsClaim, getErpClaim } from '@/api/modules/theme1'
+import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
-import { getTimeIndicators, getAgeMonthly } from '@/api/modules/theme3'
+import { getTimeIndicators } from '@/api/modules/theme3'
 import { getTopUnclaimedAmount, getOptimizeSuggest } from '@/api/modules/theme4'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
+import UsageRateTrend from '@/components/inventory/claim/UsageRateTrend.vue'
+import AgeTrend from '@/components/inventory/time/AgeTrend.vue'
 import { formatDays } from '@/utils/format'
 import { filterExcluded } from '@/utils/excludeMaterials'
 
@@ -16,30 +18,35 @@ const router = useRouter()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<any>(null)
-const claim = ref<any>(null)
 const erpClaim = ref<any>(null)
 const structure = ref<WmsStructure | null>(null)
 const timeIndicators = ref<any>(null)
 const topUnclaimed = ref<any[]>([])
-const ageMonthly = ref<any>(null)
 const optimizeSuggest = ref<any[]>([])
+const claimWeeklyRate = ref<any[]>([])
+const claimWeeklyMonths = ref<string[]>([])
+const erpAgeMonthlyData = ref<any>(null)
 
 async function loadAll() {
   loading.value = true
   error.value = null
   try {
-    const [s, c, ec, st, ti, top, am, os] = await Promise.all([
-      getWmsSummary(), getWmsClaim(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(8),
-      getAgeMonthly(), getOptimizeSuggest(5, 60),
+    const [s, ec, st, ti, top, os, cw, eam] = await Promise.all([
+      getWmsSummary(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(8),
+      getOptimizeSuggest(5, 60), getClaimWeekly(), getErpAgeMonthly(),
     ])
     summary.value = s
-    claim.value = c
     erpClaim.value = ec
     structure.value = st
     timeIndicators.value = ti
     topUnclaimed.value = filterExcluded(top)
-    ageMonthly.value = am
     optimizeSuggest.value = os
+    // 领用率周趋势
+    if (cw?.data) {
+      claimWeeklyRate.value = cw.data.map((d: any) => ({ month: d.week, rate: d.claim_rate, target: 20, trend: 0 }))
+      claimWeeklyMonths.value = cw.weeks || []
+    }
+    erpAgeMonthlyData.value = eam
   } catch (e: any) {
     error.value = e.message || '加载失败'
   }
@@ -167,22 +174,8 @@ const paths = [
 
       <!-- 快速一览 -->
       <div class="chart-grid">
-        <ChartCard title="🏗 TOP 8 项目库存占比">
-          <table class="mini-table" v-if="structure?.project_ratios">
-            <tr v-for="p in structure.project_ratios.filter(p => p.project_name && p.project_name !== '非项目物资').slice(0, 8)" :key="p.project_code">
-              <td>
-                <el-tooltip :content="p.project_name || '-'" placement="top" :disabled="(p.project_name || '-' || '').length <= 20">
-                  <span>{{ truncateText(p.project_name || '-') }}</span>
-                </el-tooltip>
-              </td>
-              <td class="num" :style="{ color: p.ratio > 0.2 ? '#f43f5e' : '#334155' }">
-                <el-tooltip :content="`${fmtWan(p.inventory_amount)}万 / 总库存金额`" placement="top">
-                  <span>{{ (p.ratio * 100).toFixed(1) }}%</span>
-                </el-tooltip>
-              </td>
-              <td class="num" style="font-size:11px;color:#94a3b8">{{ fmtWan(p.inventory_amount) }}万</td>
-            </tr>
-          </table>
+        <ChartCard title="📉 物资领用率趋势（按周）">
+          <UsageRateTrend :data="claimWeeklyRate" :months="claimWeeklyMonths" granularity="周" />
         </ChartCard>
 
         <ChartCard title="⚠️ 未领用库存 TOP 8">
@@ -204,13 +197,10 @@ const paths = [
         </ChartCard>
 
         <ChartCard title="📊 加权平均库龄月度趋势">
-          <table class="mini-table" v-if="ageMonthly?.data">
-            <tr v-for="d in ageMonthly.data.slice(-8).reverse()" :key="d.month">
-              <td>{{ d.month }}</td>
-              <td class="num" :style="{ color: d.avg_age > 90 ? '#f43f5e' : '#334155' }">{{ fmtAge(d.avg_age) }}</td>
-              <td class="num" style="font-size:11px;color:#94a3b8">{{ d.over90_rate?.toFixed(1) }}% ≥90天</td>
-            </tr>
-          </table>
+          <AgeTrend
+            :data="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => ({ month: d.doc_month, avgAge: d.avg_age, trend: 0, over90Rate: d.over90_rate }))"
+            :months="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => d.doc_month)"
+          />
         </ChartCard>
 
         <!-- 第二行：3 个补充指标 -->
