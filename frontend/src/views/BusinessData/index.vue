@@ -218,7 +218,7 @@ onUnmounted(() => {
         <!-- 第二行：3 个补充指标 -->
         <ChartCard title="👤 项目负责人库存占比 TOP 5">
           <table class="mini-table" v-if="structure?.purchaser_ratios?.length">
-            <tr v-for="p in structure.purchaser_ratios.slice(0, 5)" :key="p.purchaser_id">
+            <tr v-for="p in structure.purchaser_ratios.slice(0, isFullscreen ? 10 : 5)" :key="p.purchaser_id">
               <td>{{ p.purchaser_name || p.purchaser_id }}</td>
               <td class="num" :style="{ color: p.ratio > 0.15 ? '#f43f5e' : '#334155' }">
                 <el-tooltip :content="`${fmtWan(p.inventory_amount)}万 / 总库存金额`" placement="top">
@@ -236,7 +236,7 @@ onUnmounted(() => {
 
         <ChartCard title="💡 智能库存优化建议 TOP 5">
           <table class="mini-table" v-if="optimizeSuggest?.length">
-            <tr v-for="item in optimizeSuggest.slice(0, 5)" :key="item.name">
+            <tr v-for="item in optimizeSuggest.slice(0, isFullscreen ? 10 : 5)" :key="item.name">
               <td>
                 <el-tooltip :content="item.name" placement="top" :disabled="(item.name || '').length <= 20">
                   <span>{{ truncateText(item.name) }}</span>
