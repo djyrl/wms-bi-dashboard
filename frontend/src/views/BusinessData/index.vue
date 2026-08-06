@@ -216,7 +216,7 @@ onUnmounted(() => {
         </ChartCard>
 
         <!-- 第二行：3 个补充指标 -->
-        <ChartCard title="👤 项目负责人库存占比 TOP 5">
+        <ChartCard :title="'👤 项目负责人库存占比 TOP ' + (isFullscreen ? 10 : 5)">
           <table class="mini-table" v-if="structure?.purchaser_ratios?.length">
             <tr v-for="p in structure.purchaser_ratios.slice(0, isFullscreen ? 10 : 5)" :key="p.purchaser_id">
               <td>{{ p.purchaser_name || p.purchaser_id }}</td>
@@ -234,7 +234,7 @@ onUnmounted(() => {
           <div ref="agePieRef" style="width:100%;height:100%"></div>
         </ChartCard>
 
-        <ChartCard title="💡 智能库存优化建议 TOP 5">
+        <ChartCard :title="'💡 智能库存优化建议 TOP ' + (isFullscreen ? 10 : 5)">
           <table class="mini-table" v-if="optimizeSuggest?.length">
             <tr v-for="item in optimizeSuggest.slice(0, isFullscreen ? 10 : 5)" :key="item.name">
               <td>
