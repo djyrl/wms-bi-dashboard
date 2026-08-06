@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { echarts } from '@/utils/echarts'
-import { useRouter, useRoute } from 'vue-router'
 import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
@@ -13,8 +12,6 @@ import UsageRateTrend from '@/components/inventory/claim/UsageRateTrend.vue'
 import AgeTrend from '@/components/inventory/time/AgeTrend.vue'
 import { formatDays } from '@/utils/format'
 import { filterExcluded } from '@/utils/excludeMaterials'
-
-const router = useRouter()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -129,9 +126,11 @@ function toggleFullscreen() {
 }
 function onFullscreenChange() {
   isFullscreen.value = !!document.fullscreenElement
+  setTimeout(() => {
+    projectBarChart?.resize()
+    agePieChart?.resize()
+  }, 100)
 }
-
-const route = useRoute()
 
 onMounted(() => {
   loadAll()
@@ -151,14 +150,6 @@ onUnmounted(() => {
 <template>
   <div v-loading="loading" class="hub-page">
     <ErrorResult v-if="error" :message="error" @retry="loadAll" />
-
-    <!-- 全屏入口遮罩 -->
-    <div v-if="!isFullscreen && !error && summary" class="fs-overlay" @click="toggleFullscreen">
-      <div class="fs-box">
-        <span class="fs-icon">⛶</span>
-        <span>点击进入全屏模式</span>
-      </div>
-    </div>
 
     <template v-if="!error && summary">
       <!-- 顶部标题栏 -->
@@ -333,16 +324,4 @@ onUnmounted(() => {
   .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 }
 
-// ═══ 全屏入口遮罩 ═══
-.fs-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.85);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  .fs-box {
-    text-align: center; color: #fff;
-    .fs-icon { display: block; font-size: 64px; margin-bottom: 16px; }
-    span:last-child { font-size: 22px; letter-spacing: 2px; }
-  }
-}
 </style>
