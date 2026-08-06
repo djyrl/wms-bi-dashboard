@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { echarts } from '@/utils/echarts'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
@@ -131,10 +131,16 @@ function onFullscreenChange() {
   isFullscreen.value = !!document.fullscreenElement
 }
 
+const route = useRoute()
+
 onMounted(() => {
   loadAll()
   timer = setInterval(() => { now.value = new Date() }, 1000)
   document.addEventListener('fullscreenchange', onFullscreenChange)
+  // businessboard 路由自动全屏
+  if (route.name === 'BusinessData' && !document.fullscreenElement) {
+    document.documentElement.requestFullscreen()
+  }
 })
 
 onUnmounted(() => {
