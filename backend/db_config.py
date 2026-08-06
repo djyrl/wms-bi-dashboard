@@ -41,6 +41,15 @@ def _get_env(first_key: str, second_key: str, default: str) -> str:
     return os.getenv(second_key, default)
 
 
+# BI 快照目标数据库（10.239.192.131 KingbaseES，每日定时任务落表）
+DB_CONFIG_BI = {
+    "host": os.getenv("DB_BI_HOST", "10.239.192.131"),
+    "port": int(os.getenv("DB_BI_PORT", "54321")),
+    "dbname": os.getenv("DB_BI_NAME", "bi_snapshot"),
+    "user": os.getenv("DB_BI_USER", "garden_wms"),
+    "password": _get_password("DB_BI_PASSWORD", "DB_BI_PASSWORD_BASE64", "garden_wms@2025"),
+}
+
 # ERP 源数据库（生产环境 10.239.192.229，导入物料目录时使用）
 # 环境变量优先级：DB_ERP_* > DB_* > 默认值
 DB_CONFIG = {
