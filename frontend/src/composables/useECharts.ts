@@ -1,4 +1,4 @@
-import { onBeforeUnmount } from 'vue'
+import { onBeforeUnmount, onMounted } from 'vue'
 import { echarts } from '@/utils/echarts'
 
 /**
@@ -8,17 +8,14 @@ import { echarts } from '@/utils/echarts'
  *   const chart = useECharts()
  *   chart.init(ref.value)
  *   chart.setOption({ ... })
- *   // 组件卸载时自动 dispose
+ *   // 组件卸载时自动 dispose, 自动监听 window resize
  */
 export function useECharts() {
   let instance: ReturnType<typeof echarts.init> | null = null
 
   function init(dom: HTMLElement) {
-    // 先销毁同一 DOM 上的已有实例，防止路由切换时重复 init 冲突
     const existing = echarts.getInstanceByDom(dom)
-    if (existing) {
-      existing.dispose()
-    }
+    if (existing) existing.dispose()
     instance = echarts.init(dom)
   }
 
@@ -26,7 +23,7 @@ export function useECharts() {
     instance?.setOption(option, true)
   }
 
-  function resize() {
+  function onResize() {
     instance?.resize()
   }
 
@@ -35,9 +32,11 @@ export function useECharts() {
     instance = null
   }
 
+  onMounted(() => window.addEventListener('resize', onResize))
   onBeforeUnmount(() => {
+    window.removeEventListener('resize', onResize)
     dispose()
   })
 
-  return { init, setOption, resize, dispose, get instance() { return instance } }
+  return { init, setOption, resize: onResize, dispose, get instance() { return instance } }
 }

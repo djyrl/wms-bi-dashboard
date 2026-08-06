@@ -129,7 +129,9 @@ function onFullscreenChange() {
   setTimeout(() => {
     projectBarChart?.resize()
     agePieChart?.resize()
-  }, 100)
+    // 触发 window resize 让所有子组件的 echarts 实例也重绘
+    window.dispatchEvent(new Event('resize'))
+  }, 200)
 }
 
 onMounted(() => {
