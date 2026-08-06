@@ -137,10 +137,6 @@ onMounted(() => {
   loadAll()
   timer = setInterval(() => { now.value = new Date() }, 1000)
   document.addEventListener('fullscreenchange', onFullscreenChange)
-  // businessboard 路由自动全屏
-  if (route.name === 'BusinessData' && !document.fullscreenElement) {
-    document.documentElement.requestFullscreen()
-  }
 })
 
 onUnmounted(() => {
@@ -155,6 +151,14 @@ onUnmounted(() => {
 <template>
   <div v-loading="loading" class="hub-page">
     <ErrorResult v-if="error" :message="error" @retry="loadAll" />
+
+    <!-- 全屏入口遮罩 -->
+    <div v-if="!isFullscreen && !error && summary" class="fs-overlay" @click="toggleFullscreen">
+      <div class="fs-box">
+        <span class="fs-icon">⛶</span>
+        <span>点击进入全屏模式</span>
+      </div>
+    </div>
 
     <template v-if="!error && summary">
       <!-- 顶部标题栏 -->
@@ -327,5 +331,18 @@ onUnmounted(() => {
 .mini-table { width: 100%; font-size: 13px; border-collapse: collapse;
   td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
   .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+}
+
+// ═══ 全屏入口遮罩 ═══
+.fs-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.85);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  .fs-box {
+    text-align: center; color: #fff;
+    .fs-icon { display: block; font-size: 64px; margin-bottom: 16px; }
+    span:last-child { font-size: 22px; letter-spacing: 2px; }
+  }
 }
 </style>
