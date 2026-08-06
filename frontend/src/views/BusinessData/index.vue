@@ -322,6 +322,9 @@ onUnmounted(() => {
 .chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; flex: 1; min-height: 0;
   @media (max-width: 1024px) { grid-template-columns: 1fr; }
   .chart-card { display: flex; flex-direction: column; min-height: 0; }
+  // 让 card body 填满、子组件的 echarts 容器自适应
+  :deep(.el-card__body) { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  :deep(.chart) { width: 100% !important; flex: 1; min-height: 180px; }
 }
 .mini-table { width: 100%; font-size: 13px; border-collapse: collapse;
   td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
