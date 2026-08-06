@@ -319,7 +319,7 @@ onUnmounted(() => {
   .path-desc { font-size: 11px; color: #64748b; }
 }
 
-.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 12px; flex: 1; min-height: 0;
+.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 12px; flex: 1; min-height: 0;
   @media (max-width: 1024px) { grid-template-columns: 1fr; }
   .chart-card { display: flex; flex-direction: column; min-height: 0; }
   // 让 card body 填满、子组件的 echarts 容器自适应
