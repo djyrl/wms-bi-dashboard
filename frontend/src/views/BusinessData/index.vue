@@ -204,7 +204,7 @@ onUnmounted(() => {
         </ChartCard>
 
         <ChartCard title="🌳 项目库存金额分布 TOP 8">
-          <div ref="projectBarRef" style="width:100%;height:260px"></div>
+          <div ref="projectBarRef" style="width:100%;height:100%;min-height:200px"></div>
         </ChartCard>
 
         <ChartCard title="📊 加权平均库龄月度趋势">
@@ -319,7 +319,7 @@ onUnmounted(() => {
   .path-desc { font-size: 11px; color: #64748b; }
 }
 
-.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; flex: 1; min-height: 0;
+.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 12px; flex: 1; min-height: 0;
   @media (max-width: 1024px) { grid-template-columns: 1fr; }
   .chart-card { display: flex; flex-direction: column; min-height: 0; }
   // 让 card body 填满、子组件的 echarts 容器自适应
