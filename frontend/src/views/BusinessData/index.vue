@@ -126,12 +126,14 @@ function toggleFullscreen() {
 }
 function onFullscreenChange() {
   isFullscreen.value = !!document.fullscreenElement
-  setTimeout(() => {
-    projectBarChart?.resize()
-    agePieChart?.resize()
-    // 触发 window resize 让所有子组件的 echarts 实例也重绘
-    window.dispatchEvent(new Event('resize'))
-  }, 200)
+  // 全屏动画结束后多次 resize，确保 echarts 拿到最终尺寸
+  ;[300, 600, 1000].forEach(delay => {
+    setTimeout(() => {
+      projectBarChart?.resize()
+      agePieChart?.resize()
+      window.dispatchEvent(new Event('resize'))
+    }, delay)
+  })
 }
 
 onMounted(() => {
