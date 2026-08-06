@@ -28,7 +28,9 @@ const claimWeeklyRate = ref<any[]>([])
 const claimWeeklyMonths = ref<string[]>([])
 const erpAgeMonthlyData = ref<any>(null)
 const projectBarRef = ref<HTMLDivElement>()
+const agePieRef = ref<HTMLDivElement>()
 let projectBarChart: any = null
+let agePieChart: any = null
 
 async function loadAll() {
   loading.value = true
@@ -83,8 +85,25 @@ function renderProjectBar() {
   }, true)
 }
 
+function renderAgePie() {
+  const segs = (timeIndicators.value?.age_structure || []).filter((s: any) => s.range !== '≥5年')
+  if (!agePieRef.value || !segs.length) return
+  if (!agePieChart) agePieChart = echarts.init(agePieRef.value)
+  agePieChart.setOption({
+    tooltip: { trigger: 'item', formatter: '{b}: {c} 万 ({d}%)' },
+    series: [{
+      type: 'pie', radius: ['40%', '70%'], center: ['50%', '50%'],
+      data: segs.map((s: any) => ({ name: s.range, value: +(s.amount / 10000).toFixed(2) })),
+      label: { formatter: '{b}\n{d}%' },
+      itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+      color: ['#3b82f6', '#f59e0b', '#f43f5e'],
+    }],
+  }, true)
+}
+
 watch(() => structure.value?.project_ratios, () => nextTick(renderProjectBar))
-onMounted(() => { setTimeout(renderProjectBar, 500) })
+watch(() => timeIndicators.value?.age_structure, () => nextTick(renderAgePie))
+onMounted(() => { setTimeout(renderProjectBar, 500); setTimeout(renderAgePie, 600) })
 
 // 实时时钟
 const now = ref(new Date())
@@ -207,20 +226,7 @@ onUnmounted(() => {
         </ChartCard>
 
         <ChartCard title="📦 库龄结构分布">
-          <div class="age-bars" v-if="timeIndicators?.age_structure?.length">
-            <div class="age-bar" v-for="seg in timeIndicators.age_structure.filter((s: any) => s.range !== '≥5年')" :key="seg.range">
-              <span class="age-label">{{ seg.range }}</span>
-              <div class="age-track">
-                <div class="age-fill" :style="{ width: Math.min(seg.ratio * 100, 100) + '%', background: seg.range.includes('≥') ? '#f43f5e' : seg.range.includes('3') ? '#f59e0b' : '#3b82f6' }"></div>
-              </div>
-              <span class="age-info">
-                <el-tooltip :content="`${fmtWan(seg.amount)}万 / 总库存金额`" placement="top">
-                  <span class="age-pct">{{ (seg.ratio * 100).toFixed(2) }}%</span>
-                </el-tooltip>
-                <span class="age-amount">{{ fmtWan(seg.amount) }}万</span>
-              </span>
-            </div>
-          </div>
+          <div ref="agePieRef" style="width:100%;height:100%"></div>
         </ChartCard>
 
         <ChartCard title="💡 智能库存优化建议 TOP 5">
@@ -308,19 +314,12 @@ onUnmounted(() => {
   .path-desc { font-size: 11px; color: #64748b; }
 }
 
-.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; flex: 1; min-height: 0;
   @media (max-width: 1024px) { grid-template-columns: 1fr; }
+  .chart-card { display: flex; flex-direction: column; min-height: 0; }
 }
 .mini-table { width: 100%; font-size: 13px; border-collapse: collapse;
   td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
   .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 }
-.age-bars { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-height: 140px; padding: 0 4px; }
-.age-bar { display: flex; align-items: center; gap: 10px; }
-.age-label { width: 56px; font-size: 12px; color: #64748b; text-align: right; flex-shrink: 0; }
-.age-track { flex: 1; height: 20px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
-.age-fill { height: 100%; border-radius: 4px; min-width: 2px; transition: width 0.4s ease; }
-.age-info { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
-.age-pct { font-size: 13px; font-weight: 600; text-align: right; }
-.age-amount { font-size: 11px; color: #94a3b8; text-align: right; }
 </style>
