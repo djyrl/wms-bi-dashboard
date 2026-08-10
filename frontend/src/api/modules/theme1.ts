@@ -140,7 +140,7 @@ export const getWmsClaim = () =>
 // ---- ERP 领用率（erp_catalog_mb51）----
 
 export interface ErpClaimRange {
-  total_inbound_amount: number      // 101毛收货
+  total_inbound_amount: number      // 101收货
   reversal_amount: number           // 102冲销(正数)
   net_inbound_amount: number        // 101+102净入库
   total_outbound_amount: number

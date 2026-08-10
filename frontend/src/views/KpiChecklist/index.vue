@@ -2,8 +2,8 @@
 import { onMounted, computed, ref } from 'vue'
 import { getKpiChecklist } from '@/api/modules/kpiChecklist'
 import type { KpiChecklistRes, KpiItem } from '@/api/modules/kpiChecklist'
-import { getErpClaim } from '@/api/modules/theme1'
-import type { ErpClaimSplit } from '@/api/modules/theme1'
+import { getErpClaim, getWmsSummary } from '@/api/modules/theme1'
+import type { ErpClaimSplit, WmsSummary } from '@/api/modules/theme1'
 
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
@@ -15,6 +15,7 @@ const error = ref<string | null>(null)
 
 const summary = ref<KpiChecklistRes['summary'] | null>(null)
 const erpClaim = ref<ErpClaimSplit | null>(null)
+const wmsSummary = ref<WmsSummary | null>(null)
 const coreKpis = ref<Record<string, KpiItem>>({})
 const constraintKpis = ref<Record<string, KpiItem>>({})
 const structureKpis = ref<KpiChecklistRes['structure_kpis'] | null>(null)
@@ -38,9 +39,10 @@ async function loadAllData() {
   loading.value = true
   error.value = null
   try {
-    const [data, ec] = await Promise.all([getKpiChecklist(), getErpClaim()])
+    const [data, ec, ws] = await Promise.all([getKpiChecklist(), getErpClaim(), getWmsSummary()])
     summary.value = data.summary
     erpClaim.value = ec
+    wmsSummary.value = ws
     coreKpis.value = data.core_kpis
     constraintKpis.value = data.constraint_kpis
     structureKpis.value = data.structure_kpis
@@ -77,13 +79,34 @@ const coreKpiList = computed(() => {
     if (kpi.key === 'K2') {
       return {
         ...kpi,
-        value: erpClaim.value!.erp_inventory,
+        value: wmsSummary.value?.total_inventory_amount ?? 0,
       }
     }
     return kpi
   })
 })
-const constraintKpiList = computed(() => Object.values(constraintKpis.value))
+const constraintKpiList = computed(() => {
+  const list = Object.values(constraintKpis.value)
+  if (!erpClaim.value) return list
+  return list.map(kpi => {
+    if (kpi.key === 'K4') {
+      const ec = erpClaim.value!.year
+      return {
+        ...kpi,
+        value: ec.unclaimed_amount,
+        formula: `入库金额 - 领用金额（${ec.total_inbound_amount?.toFixed(0) ?? 0}万 - ${ec.total_outbound_amount?.toFixed(0) ?? 0}万）`,
+        detail: {
+          ...kpi.detail,
+          unclaimed_amount_wan: ec.unclaimed_amount,
+          unclaimed_ratio: ec.unclaimed_amount_ratio,
+          total_inbound_wan: ec.total_inbound_amount,
+          total_claimed_wan: ec.total_outbound_amount,
+        },
+      }
+    }
+    return kpi
+  })
+})
 
 // 状态颜色与标签
 const statusConfig: Record<string, { color: string; label: string; bg: string }> = {
@@ -112,7 +135,7 @@ const overviewCards = computed(() => {
   if (!summary.value) return []
   const ec = erpClaim.value
   return [
-     { icon: '📦', label: '当前库存', value: ec?.erp_inventory ?? 0, unit: '万元', color: '#f59e0b' },
+     { icon: '📦', label: '当前库存', value: wmsSummary.value?.total_inventory_amount ?? 0, unit: '万元', color: '#f59e0b' },
     { icon: '📤', label: `出库总额（${ec?.current_year ?? ''}年）`, value: ec?.year?.total_outbound_amount ?? 0, unit: '万元', color: '#10b981' },
     { icon: '📥', label: `入库总额（${ec?.current_year ?? ''}年）`, value: ec?.year?.total_inbound_amount ?? 0, unit: '万元', color: '#3b82f6' },
    { icon: '📈', label: '综合领用率', value: ec?.year?.claim_rate_amount ?? 0, unit: '%', color: '#8b5cf6' },
@@ -218,15 +241,15 @@ onMounted(() => {
                 </span>
                 <span class="kpi-card__unit">{{ kpi.unit }}</span>
               </div>
-              <div class="kpi-card__formula" v-if="kpi.formula">
+              <!-- <div class="kpi-card__formula" v-if="kpi.formula">
                 <span class="label">计算方式：</span>{{ kpi.formula }}
-              </div>
+              </div> -->
               <div class="kpi-card__target">
                 <span class="label">目标：</span>{{ kpi.target }}
               </div>
               <div class="kpi-card__detail" v-if="kpi.key === 'K1' && kpi.detail">
                 <div class="detail-row">
-                  <span>101毛收货</span><span>{{ kpi.detail.inbound_amount_wan?.toLocaleString() }} 万元</span>
+                  <span>101收货</span><span>{{ kpi.detail.inbound_amount_wan?.toLocaleString() }} 万元</span>
                 </div>
                 <div class="detail-row">
                   <span>102冲销</span><span>{{ kpi.detail.reversal_amount_wan?.toLocaleString() }} 万元</span>
@@ -876,11 +899,11 @@ onMounted(() => {
 }
 
 .proj-name {
-  max-width: 120px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: inline-block;
+  display: block;
 }
 
 // ═══ 结构分析网格 ═══

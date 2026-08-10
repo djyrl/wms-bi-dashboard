@@ -11,5 +11,15 @@ const isFullscreen = computed(() => route.meta?.fullscreen === true)
   <Layout v-if="!isFullscreen">
     <router-view />
   </Layout>
-  <router-view v-else />
+  <div v-else class="fullscreen-viewport"><router-view /></div>
 </template>
+
+<style>
+html, body, #app {
+  height: 100%;
+}
+.fullscreen-viewport {
+  height: 100%;
+  overflow: hidden;
+}
+</style>

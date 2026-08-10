@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, provide } from 'vue'
+import { useRoute } from 'vue-router'
 import Sidebar from './Sidebar.vue'
+
+const route = useRoute()
+const isFullscreen = computed(() => route.meta?.fullscreen === true)
 
 const sidebarCollapsed = ref(false)
 function toggleSidebar() {
@@ -17,13 +21,13 @@ const sidebarWidth = computed(() =>
 
 <template>
   <el-container class="app-container">
-    <!-- 侧边栏 
+    <!-- 侧边栏 -->
     <el-aside
       :width="sidebarWidth"
       class="app-sidebar"
     >
       <Sidebar />
-    </el-aside>-->
+    </el-aside>
 
     <!-- 右侧区域 -->
     <el-container class="app-right">
@@ -33,7 +37,7 @@ const sidebarWidth = computed(() =>
       </el-header>-->
       
       <!-- 主内容区 -->
-      <el-main class="app-main">
+      <el-main class="app-main" :class="{ 'app-main--fullscreen': isFullscreen }">
         <router-view v-slot="{ Component: RouteComponent }">
           <transition name="fade" mode="out-in">
             <component :is="RouteComponent" />
@@ -70,5 +74,10 @@ const sidebarWidth = computed(() =>
   overflow-y: auto;
   background: $bg-color;
   padding: 16px;
+
+  &--fullscreen {
+    padding: 0;
+    overflow: hidden;
+  }
 }
 </style>

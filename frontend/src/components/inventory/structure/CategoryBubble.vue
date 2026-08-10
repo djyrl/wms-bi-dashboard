@@ -4,7 +4,7 @@ import { useECharts } from '@/composables/useECharts'
 import DataDetail from '@/components/inventory/DataDetail.vue'
 import type { CategoryBubbleItem } from '@/types/inventory'
 
-const props = defineProps<{ data: CategoryBubbleItem[] }>()
+const props = defineProps<{ data: CategoryBubbleItem[]; hideDetail?: boolean }>()
 const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
@@ -68,7 +68,7 @@ watch(() => props.data, render, { deep: true })
 
 <template>
   <div ref="chartRef" class="chart" />
-  <DataDetail :headers="detailHeaders" :rows="detailRows" />
+  <DataDetail v-if="!props.hideDetail" :headers="detailHeaders" :rows="detailRows" />
 </template>
 
 <style lang="scss" scoped>

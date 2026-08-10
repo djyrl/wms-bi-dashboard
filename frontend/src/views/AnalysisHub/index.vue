@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
-import { echarts } from '@/utils/echarts'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
+import { getWmsSummary, getWmsClaim, getErpClaim } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
-import { getTimeIndicators } from '@/api/modules/theme3'
+import { getTimeIndicators, getAgeMonthly } from '@/api/modules/theme3'
 import { getTopUnclaimedAmount, getOptimizeSuggest } from '@/api/modules/theme4'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
-import UsageRateTrend from '@/components/inventory/claim/UsageRateTrend.vue'
-import AgeTrend from '@/components/inventory/time/AgeTrend.vue'
 import { formatDays } from '@/utils/format'
 import { filterExcluded } from '@/utils/excludeMaterials'
 
@@ -19,37 +16,30 @@ const router = useRouter()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<any>(null)
+const claim = ref<any>(null)
 const erpClaim = ref<any>(null)
 const structure = ref<WmsStructure | null>(null)
 const timeIndicators = ref<any>(null)
 const topUnclaimed = ref<any[]>([])
+const ageMonthly = ref<any>(null)
 const optimizeSuggest = ref<any[]>([])
-const claimWeeklyRate = ref<any[]>([])
-const claimWeeklyMonths = ref<string[]>([])
-const erpAgeMonthlyData = ref<any>(null)
-const projectBarRef = ref<HTMLDivElement>()
-let projectBarChart: any = null
 
 async function loadAll() {
   loading.value = true
   error.value = null
   try {
-    const [s, ec, st, ti, top, os, cw, eam] = await Promise.all([
-      getWmsSummary(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(8),
-      getOptimizeSuggest(5, 60), getClaimWeekly(), getErpAgeMonthly(),
+    const [s, c, ec, st, ti, top, am, os] = await Promise.all([
+      getWmsSummary(), getWmsClaim(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(8),
+      getAgeMonthly(), getOptimizeSuggest(5, 60),
     ])
     summary.value = s
+    claim.value = c
     erpClaim.value = ec
     structure.value = st
     timeIndicators.value = ti
     topUnclaimed.value = filterExcluded(top)
+    ageMonthly.value = am
     optimizeSuggest.value = os
-    // 领用率周趋势
-    if (cw?.data) {
-      claimWeeklyRate.value = cw.data.map((d: any) => ({ month: d.week, rate: d.claim_rate, target: 20, trend: 0 }))
-      claimWeeklyMonths.value = cw.weeks || []
-    }
-    erpAgeMonthlyData.value = eam
   } catch (e: any) {
     error.value = e.message || '加载失败'
   }
@@ -66,26 +56,6 @@ function fmtAge(days: number | undefined | null): string {
   return formatDays(days)
 }
 
-function renderProjectBar() {
-  const projs = (structure.value?.project_ratios || [])
-    .filter((p: any) => p.project_name && p.project_name !== '非项目物资')
-    .slice(0, 8)
-  if (!projectBarRef.value || !projs.length) return
-  if (!projectBarChart) {
-    projectBarChart = echarts.init(projectBarRef.value)
-  }
-  projectBarChart.setOption({
-    tooltip: { trigger: 'axis', formatter: (params: any) => `${projs[params[0].dataIndex]?.project_name || params[0].name}<br/>库存: ${params[0].value} 万` },
-    grid: { left: 10, right: 10, top: 10, bottom: 50 },
-    xAxis: { type: 'category', data: projs.map((p: any) => (p.project_name || '').length > 6 ? (p.project_name || '').slice(0, 6) + '…' : p.project_name), axisLabel: { rotate: 30, fontSize: 10 } },
-    yAxis: { type: 'value', axisLabel: { formatter: '{value}万' } },
-    series: [{ type: 'bar', data: projs.map((p: any) => +((p.inventory_amount || 0) / 10000).toFixed(0)), itemStyle: { color: '#3b82f6', borderRadius: [4,4,0,0] } }],
-  }, true)
-}
-
-watch(() => structure.value?.project_ratios, () => nextTick(renderProjectBar))
-onMounted(() => { setTimeout(renderProjectBar, 500) })
-
 // 实时时钟
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval> | null = null
@@ -97,30 +67,13 @@ function formatTime(d: Date): string {
   return `${hh}:${mm}:${ss}`
 }
 
-// 全屏切换
-const isFullscreen = ref(false)
-function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen()
-    isFullscreen.value = true
-  } else {
-    document.exitFullscreen()
-    isFullscreen.value = false
-  }
-}
-function onFullscreenChange() {
-  isFullscreen.value = !!document.fullscreenElement
-}
-
 onMounted(() => {
   loadAll()
   timer = setInterval(() => { now.value = new Date() }, 1000)
-  document.addEventListener('fullscreenchange', onFullscreenChange)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
-  document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 
 const paths = [
@@ -164,9 +117,6 @@ const paths = [
       <div class="dashboard-header">
         <span class="header-title">仓库运营分析中心</span>
         <span class="header-time">{{ formatTime(now) }}</span>
-        <span class="header-fs-btn" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '全屏展示'">
-          {{ isFullscreen ? '⛶' : '⛶' }}
-        </span>
       </div>
 
       <!-- 核心KPI -->
@@ -174,8 +124,8 @@ const paths = [
         <el-tooltip content="WMS实物在库 + ERP有余额未入WMS的批次" placement="top">
           <div class="kpi-box" style="border-left-color:#f59e0b">
             <div class="kpi-label">当前库存总额</div>
-            <div class="kpi-num">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万</div>
-            <div class="kpi-sub">期末在库物资总金额</div>
+            <div class="kpi-num">{{ (summary?.total_inventory_amount ?? 0).toFixed(2) }} 万</div>
+            <div class="kpi-sub">WMS 当前库存金额</div>
           </div>
         </el-tooltip>
         <el-tooltip content="ERP数据：当年出库金额 / 入库金额 × 100%" placement="top">
@@ -217,20 +167,50 @@ const paths = [
 
       <!-- 快速一览 -->
       <div class="chart-grid">
-        <ChartCard title="📉 物资领用率趋势（按周）">
-          <UsageRateTrend :data="claimWeeklyRate" :months="claimWeeklyMonths" granularity="周" :hideDetail="true" />
+        <ChartCard title="🏗 TOP 8 项目库存占比">
+          <table class="mini-table" v-if="structure?.project_ratios">
+            <tr v-for="p in structure.project_ratios.filter(p => p.project_name && p.project_name !== '非项目物资').slice(0, 8)" :key="p.project_code">
+              <td>
+                <el-tooltip :content="p.project_name || '-'" placement="top" :disabled="(p.project_name || '-' || '').length <= 20">
+                  <span>{{ truncateText(p.project_name || '-') }}</span>
+                </el-tooltip>
+              </td>
+              <td class="num" :style="{ color: p.ratio > 0.2 ? '#f43f5e' : '#334155' }">
+                <el-tooltip :content="`${fmtWan(p.inventory_amount)}万 / 总库存金额`" placement="top">
+                  <span>{{ (p.ratio * 100).toFixed(1) }}%</span>
+                </el-tooltip>
+              </td>
+              <td class="num" style="font-size:11px;color:#94a3b8">{{ fmtWan(p.inventory_amount) }}万</td>
+            </tr>
+          </table>
         </ChartCard>
 
-        <ChartCard title="🌳 项目库存金额分布 TOP 8">
-          <div ref="projectBarRef" style="width:100%;height:260px"></div>
+        <ChartCard title="⚠️ 未领用库存 TOP 8">
+          <table class="mini-table" v-if="topUnclaimed.length">
+            <tr v-for="item in topUnclaimed" :key="item.material_code">
+              <td>
+                <el-tooltip :content="item.material_name || item.material_code" placement="top" :disabled="(item.material_name || item.material_code || '').length <= 20">
+                  <span>{{ truncateText(item.material_name || item.material_code) }}</span>
+                </el-tooltip>
+              </td>
+              <td class="num" style="color:#f43f5e">
+                <el-tooltip :content="`${fmtWan(item.inventory_amount)}万 / TOP8未领用总额`" placement="top">
+                  <span>{{ (item.inventory_amount / topUnclaimed.reduce((s: number, x: any) => s + x.inventory_amount, 0) * 100).toFixed(1) }}%</span>
+                </el-tooltip>
+              </td>
+              <td class="num" style="font-size:11px;color:#94a3b8">{{ fmtWan(item.inventory_amount) }}万</td>
+            </tr>
+          </table>
         </ChartCard>
 
         <ChartCard title="📊 加权平均库龄月度趋势">
-          <AgeTrend
-            :data="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => ({ month: d.doc_month, avgAge: d.avg_age, trend: 0, over90Rate: d.over90_rate }))"
-            :months="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => d.doc_month)"
-            :hideDetail="true"
-          />
+          <table class="mini-table" v-if="ageMonthly?.data">
+            <tr v-for="d in ageMonthly.data.slice(-8).reverse()" :key="d.month">
+              <td>{{ d.month }}</td>
+              <td class="num" :style="{ color: d.avg_age > 90 ? '#f43f5e' : '#334155' }">{{ fmtAge(d.avg_age) }}</td>
+              <td class="num" style="font-size:11px;color:#94a3b8">{{ d.over90_rate?.toFixed(1) }}% ≥90天</td>
+            </tr>
+          </table>
         </ChartCard>
 
         <!-- 第二行：3 个补充指标 -->
@@ -319,14 +299,6 @@ const paths = [
     font-family: 'Courier New', monospace;
     font-size: 14px;
     font-weight: 600;
-  }
-
-  .header-fs-btn {
-    cursor: pointer;
-    font-size: 18px;
-    color: #64748b;
-    transition: color 0.2s;
-    &:hover { color: #3b82f6; }
   }
 }
 

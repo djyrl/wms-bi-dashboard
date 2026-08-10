@@ -151,10 +151,16 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/dashboard',
+    path: '/businessboard',
     name: 'BusinessData',
     component: () => import('@/views/BusinessData/index.vue'),
     meta: { title: '业务数据', icon: 'Monitor', fullscreen: true },
+  },
+  {
+    path: '/operationsboard',
+    name: 'OperationsMonitor',
+    component: () => import('@/views/OperationsMonitor/index.vue'),
+    meta: { title: '运营监控', icon: 'Warning', fullscreen: true },
   },
   {
     path: '/404',

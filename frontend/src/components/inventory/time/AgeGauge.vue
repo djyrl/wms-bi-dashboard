@@ -5,7 +5,7 @@ import DataDetail from '@/components/inventory/DataDetail.vue'
 import { formatDays } from '@/utils/format'
 import type { AgeGaugeItem } from '@/types/inventory'
 
-const props = defineProps<{ data: AgeGaugeItem[] }>()
+const props = defineProps<{ data: AgeGaugeItem[]; hideDetail?: boolean }>()
 const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
@@ -68,7 +68,7 @@ watch(() => props.data, render, { deep: true })
 
 <template>
   <div ref="chartRef" class="chart" />
-  <DataDetail :headers="detailHeaders" :rows="detailRows" />
+  <DataDetail v-if="!props.hideDetail" :headers="detailHeaders" :rows="detailRows" />
 </template>
 
 <style lang="scss" scoped>

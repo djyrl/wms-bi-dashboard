@@ -14,6 +14,7 @@ import type {
   AgeMonthlyRes,
   AgeHeatmapRes,
 } from '@/api/modules/theme3'
+import { getWmsSummary } from '@/api/modules/theme1'
 import type { AgePyramidItem, AgeTrendPoint, AgeGaugeItem, KpiCardData } from '@/types/inventory'
 
 import ErrorResult from '@/components/common/ErrorResult.vue'
@@ -36,6 +37,7 @@ const heatmapAgeLabels = ref<string[]>([])
 const ageGauge = ref<AgeGaugeItem[]>([])
 
 const timeIndicators = ref<TimeIndicatorsRes | null>(null)
+const wmsSummary = ref<any>(null)
 const ageLayers = ref<AgeLayerItem[]>([])
 const projectIndicators = ref<WmsProjectIndicator[]>([])
 const ageMonthlyData = ref<AgeMonthlyRes | null>(null)
@@ -58,9 +60,9 @@ const kpiCards = computed<KpiCardData[]>(() => {
     {
       icon: '📦',
       label: '库存总额',
-      value: t ? +(t.age_structure.reduce((s, i) => s + i.amount, 0) / 10000).toFixed(2) : 0,
+      value: wmsSummary.value?.total_inventory_amount ?? 0,
       unit: '万元',
-      change: t ? `${t.age_structure.length} 个库龄段` : '--',
+      change: wmsSummary.value ? `${wmsSummary.value.total_records} 个批次` : '--',
       changeType: 'up',
       color: '#3b82f6',
     },
@@ -154,6 +156,7 @@ async function loadAllData() {
   let ageMonthly: AgeMonthlyRes | null = null
   let heatmap: AgeHeatmapRes | null = null
 
+  try { wmsSummary.value = await getWmsSummary() } catch (e: any) { errs.push('WMS总览: ' + (e?.message || '失败')) }
   try { t = await getTimeIndicators() } catch (e: any) { errs.push('时间指标: ' + (e?.message || '失败')) }
   try { ageLayers.value = await getAgeLayers({ min_amount: 0, min_age: 0 }) } catch (e: any) { errs.push('库龄分层: ' + (e?.message || '失败')) }
   try { projs = await getByProject() } catch (e: any) { errs.push('项目分析: ' + (e?.message || '失败')) }

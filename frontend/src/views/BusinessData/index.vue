@@ -4,8 +4,9 @@ import { echarts } from '@/utils/echarts'
 import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
 import { getStructure } from '@/api/modules/theme2'
 import type { WmsStructure } from '@/api/modules/theme2'
-import { getTimeIndicators } from '@/api/modules/theme3'
-import { getTopUnclaimedAmount, getOptimizeSuggest } from '@/api/modules/theme4'
+import { getTimeIndicators, getByProject } from '@/api/modules/theme3'
+import type { WmsProjectIndicator } from '@/api/modules/theme3'
+import { getTopUnclaimedAmount } from '@/api/modules/theme4'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
 import UsageRateTrend from '@/components/inventory/claim/UsageRateTrend.vue'
@@ -20,7 +21,7 @@ const erpClaim = ref<any>(null)
 const structure = ref<WmsStructure | null>(null)
 const timeIndicators = ref<any>(null)
 const topUnclaimed = ref<any[]>([])
-const optimizeSuggest = ref<any[]>([])
+const projectIndicators = ref<WmsProjectIndicator[]>([])
 const claimWeeklyRate = ref<any[]>([])
 const claimWeeklyMonths = ref<string[]>([])
 const erpAgeMonthlyData = ref<any>(null)
@@ -33,22 +34,22 @@ async function loadAll() {
   loading.value = true
   error.value = null
   try {
-    const [s, ec, st, ti, top, os, cw, eam] = await Promise.all([
-      getWmsSummary(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(8),
-      getOptimizeSuggest(5, 60), getClaimWeekly(), getErpAgeMonthly(),
+    const [s, ec, st, ti, top, cw, eam, projInd] = await Promise.all([
+      getWmsSummary(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(20),
+      getClaimWeekly(), getErpAgeMonthly(), getByProject(),
     ])
     summary.value = s
     erpClaim.value = ec
     structure.value = st
     timeIndicators.value = ti
     topUnclaimed.value = filterExcluded(top)
-    optimizeSuggest.value = os
     // 领用率周趋势
     if (cw?.data) {
       claimWeeklyRate.value = cw.data.map((d: any) => ({ month: d.week, rate: d.claim_rate, target: 20, trend: 0 }))
       claimWeeklyMonths.value = cw.weeks || []
     }
     erpAgeMonthlyData.value = eam
+    projectIndicators.value = projInd
   } catch (e: any) {
     error.value = e.message || '加载失败'
   }
@@ -65,6 +66,9 @@ function fmtAge(days: number | undefined | null): string {
   return formatDays(days)
 }
 
+// 固定调色板：活泼多彩系
+const BAR_COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
+
 function renderProjectBar() {
   const projs = (structure.value?.project_ratios || [])
     .filter((p: any) => p.project_name && p.project_name !== '非项目物资')
@@ -76,9 +80,12 @@ function renderProjectBar() {
   projectBarChart.setOption({
     tooltip: { trigger: 'axis', formatter: (params: any) => `${projs[params[0].dataIndex]?.project_name || params[0].name}<br/>库存: ${params[0].value} 万` },
     grid: { left: 10, right: 10, top: 10, bottom: 50 },
-    xAxis: { type: 'category', data: projs.map((p: any) => (p.project_name || '').length > 6 ? (p.project_name || '').slice(0, 6) + '…' : p.project_name), axisLabel: { rotate: 30, fontSize: 10 } },
-    yAxis: { type: 'value', axisLabel: { formatter: '{value}万' } },
-    series: [{ type: 'bar', data: projs.map((p: any) => +((p.inventory_amount || 0) / 10000).toFixed(0)), itemStyle: { color: '#3b82f6', borderRadius: [4,4,0,0] } }],
+    xAxis: { type: 'category', data: projs.map((p: any) => (p.project_name || '').length > 6 ? (p.project_name || '').slice(0, 6) + '…' : p.project_name), axisLabel: { rotate: 30, fontSize: 10, color: '#8a9aa9' }, axisLine: { lineStyle: { color: 'rgb(255 255 255 / 15%)' } } },
+    yAxis: { type: 'value', axisLabel: { formatter: '{value}万', color: '#8a9aa9' }, splitLine: { lineStyle: { color: 'rgb(255 255 255 / 8%)' } } },
+    series: [{
+      type: 'bar',
+      data: projs.map((p: any, i: number) => ({ value: +((p.inventory_amount || 0) / 10000).toFixed(0), itemStyle: { color: BAR_COLORS[i], borderRadius: [4, 4, 0, 0] } })),
+    }],
   }, true)
 }
 
@@ -91,8 +98,8 @@ function renderAgePie() {
     series: [{
       type: 'pie', radius: ['40%', '70%'], center: ['50%', '50%'],
       data: segs.map((s: any) => ({ name: s.range, value: +(s.amount / 10000).toFixed(2) })),
-      label: { formatter: '{b}\n{d}%' },
-      itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+      label: { formatter: '{b}\n{d}%', color: '#e2e8f0' },
+      itemStyle: { borderRadius: 4, borderColor: 'rgb(2, 4, 8)', borderWidth: 2 },
       color: ['#3b82f6', '#f59e0b', '#f43f5e'],
     }],
   }, true)
@@ -115,6 +122,22 @@ function formatTime(d: Date): string {
 
 // 全屏切换
 const isFullscreen = ref(false)
+
+// 根据视口高度动态计算表格可见行数（约 34px/行，card 头部约 60px，上半版约 210px 固定开销）
+const ROW_HEIGHT = 34
+const PAGE_OVERHEAD = 210
+
+function calcTableRows() {
+  const cardH = (window.innerHeight - PAGE_OVERHEAD) / 2
+  return Math.max(3, Math.floor(cardH / ROW_HEIGHT))
+}
+
+const tableRowCount = ref(calcTableRows())
+
+function updateTableRowCount() {
+  tableRowCount.value = calcTableRows()
+}
+
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen()
@@ -131,6 +154,7 @@ function onFullscreenChange() {
     setTimeout(() => {
       projectBarChart?.resize()
       agePieChart?.resize()
+      updateTableRowCount()
       window.dispatchEvent(new Event('resize'))
     }, delay)
   })
@@ -140,11 +164,13 @@ onMounted(() => {
   loadAll()
   timer = setInterval(() => { now.value = new Date() }, 1000)
   document.addEventListener('fullscreenchange', onFullscreenChange)
+  window.addEventListener('resize', updateTableRowCount)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
   document.removeEventListener('fullscreenchange', onFullscreenChange)
+  window.removeEventListener('resize', updateTableRowCount)
 })
 
 
@@ -188,11 +214,11 @@ onUnmounted(() => {
             <div class="kpi-sub">当年采购入库金额</div>
           </div>
         </el-tooltip>
-        <el-tooltip content="Σ(库存金额 × 库龄天数) / Σ(库存金额)  金额加权平均" placement="top">
-          <div class="kpi-box" style="border-left-color:#8b5cf6">
-            <div class="kpi-label">加权平均库龄（{{ erpClaim?.current_year }}年）</div>
-            <div class="kpi-num">{{ fmtAge(timeIndicators?.avg_age_weighted_days) }}</div>
-            <div class="kpi-sub">≥1年占比 {{ (timeIndicators?.aged_ratio_1y * 100).toFixed(1) }}%</div>
+        <el-tooltip content="ERP数据：当年出库金额（201+Z61+Z62等）" placement="top">
+          <div class="kpi-box" style="border-left-color:#10b981">
+            <div class="kpi-label">出库总额（{{ erpClaim?.current_year }}年）</div>
+            <div class="kpi-num">{{ erpClaim?.year?.total_outbound_amount?.toFixed(2) }} 万</div>
+            <div class="kpi-sub">数量 {{ erpClaim?.year?.total_outbound_quantity?.toLocaleString() ?? '--' }} | 领用率 {{ erpClaim?.year?.claim_rate_amount?.toFixed(1) ?? '--' }}%</div>
           </div>
         </el-tooltip>
       </div>
@@ -203,8 +229,8 @@ onUnmounted(() => {
           <UsageRateTrend :data="claimWeeklyRate" :months="claimWeeklyMonths" granularity="周" :hideDetail="true" />
         </ChartCard>
 
-        <ChartCard title="🌳 项目库存金额分布 TOP 8">
-          <div ref="projectBarRef" style="width:100%;height:100%;min-height:200px"></div>
+        <ChartCard title="📦 库龄结构分布">
+          <div ref="agePieRef" style="width:100%;height:100%"></div>
         </ChartCard>
 
         <ChartCard title="📊 加权平均库龄月度趋势">
@@ -216,33 +242,45 @@ onUnmounted(() => {
         </ChartCard>
 
         <!-- 第二行：3 个补充指标 -->
-        <ChartCard :title="'👤 项目负责人库存占比 TOP ' + (isFullscreen ? 10 : 5)">
-          <table class="mini-table" v-if="structure?.purchaser_ratios?.length">
-            <tr v-for="p in structure.purchaser_ratios.slice(0, isFullscreen ? 10 : 5)" :key="p.purchaser_id">
-              <td>{{ p.purchaser_name || p.purchaser_id }}</td>
-              <td class="num" :style="{ color: p.ratio > 0.15 ? '#f43f5e' : '#334155' }">
-                <el-tooltip :content="`${fmtWan(p.inventory_amount)}万 / 总库存金额`" placement="top">
-                  <span>{{ (p.ratio * 100).toFixed(1) }}%</span>
-                </el-tooltip>
-              </td>
-              <td class="num" style="font-size:11px;color:#94a3b8">{{ fmtWan(p.inventory_amount) }}万</td>
-            </tr>
+        <ChartCard :title="'📋 项目维度指标'">
+          <table class="mini-table" v-if="projectIndicators.length">
+            <thead>
+              <tr style="color:#8a9aa9;font-size:11px;border-bottom:1px solid rgb(255 255 255 / 10%)">
+                <td>项目名称</td>
+                <td class="num">领用率</td>
+                <td class="num">库存金额</td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in projectIndicators.filter(p => p.project_name && !p.project_name.includes('日常')).sort((a, b) => b.claim_rate - a.claim_rate).slice(0, tableRowCount)" :key="p.project_code">
+                <td>
+                  <el-tooltip :content="p.project_name" placement="top" :disabled="(p.project_name || '').length <= 20">
+                    <span>{{ truncateText(p.project_name) }}</span>
+                  </el-tooltip>
+                </td>
+                <td class="num" :style="{ color: p.claim_rate >= 60 ? '#10b981' : p.claim_rate >= 30 ? '#f59e0b' : '#f87171' }">
+                  {{ p.claim_rate }}%
+                </td>
+                <td class="num" style="font-size:11px;color:#8a9aa9">{{ fmtWan(p.unclaimed_amount) }}万</td>
+              </tr>
+            </tbody>
           </table>
         </ChartCard>
 
-        <ChartCard title="📦 库龄结构分布">
-          <div ref="agePieRef" style="width:100%;height:100%"></div>
+        <ChartCard title="🌳 项目库存金额分布">
+          <div ref="projectBarRef" style="width:100%;height:100%;min-height:200px"></div>
         </ChartCard>
 
-        <ChartCard :title="'💡 智能库存优化建议 TOP ' + (isFullscreen ? 10 : 5)">
-          <table class="mini-table" v-if="optimizeSuggest?.length">
-            <tr v-for="item in optimizeSuggest.slice(0, isFullscreen ? 10 : 5)" :key="item.name">
+        <ChartCard :title="'📦 未领用库存'">
+          <table class="mini-table" v-if="topUnclaimed?.length">
+            <tr v-for="item in topUnclaimed.slice(0, tableRowCount)" :key="item.id">
               <td>
-                <el-tooltip :content="item.name" placement="top" :disabled="(item.name || '').length <= 20">
-                  <span>{{ truncateText(item.name) }}</span>
+                <el-tooltip :content="item.material_name" placement="top" :disabled="(item.material_name || '').length <= 20">
+                  <span>{{ truncateText(item.material_name) }}</span>
                 </el-tooltip>
               </td>
-              <td class="num" style="color:#f43f5e">{{ item.current.toFixed(2) }} 万</td>
+              <td class="num" style="color:#f87171">{{ fmtWan(item.inventory_amount) }} 万</td>
+              <td class="num" style="font-size:11px;color:#8a9aa9">{{ fmtAge(item.age_days) }}</td>
             </tr>
           </table>
         </ChartCard>
@@ -255,10 +293,11 @@ onUnmounted(() => {
 .hub-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  margin: -16px;
-  padding: 16px;
-  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+  background: rgb(2, 4, 8);
+  padding: 0 16px;
+  color: #fff;
 }
 
 // ═══ Dashboard 顶部标题栏 ═══
@@ -268,13 +307,13 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 10px 20px;
   border-radius: 8px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: rgb(2, 4, 8);
+  border: 1px solid rgb(255 255 255 / 8%);
   margin-bottom: 12px;
   flex-shrink: 0;
 
   .header-title {
-    background: linear-gradient(90deg, var(--db-title-from, #1e3a8a), var(--db-title-to, #3b82f6));
+    background: linear-gradient(90deg, #00d4ff, #a855f7);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -284,7 +323,7 @@ onUnmounted(() => {
   }
 
   .header-time {
-    color: var(--db-time-color, #64748b);
+    color: #00d4ff;
     font-family: 'Courier New', monospace;
     font-size: 14px;
     font-weight: 600;
@@ -293,41 +332,63 @@ onUnmounted(() => {
   .header-fs-btn {
     cursor: pointer;
     font-size: 18px;
-    color: #64748b;
+    color: #8a9aa9;
     transition: color 0.2s;
-    &:hover { color: #3b82f6; }
+    &:hover { color: #00d4ff; }
   }
 }
 
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;
   @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
 }
-.kpi-box { background: #fff; border-radius: 8px; padding: 14px 18px; border: 1px solid #e2e8f0; border-left-width: 3px;
-  .kpi-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
-  .kpi-num { font-size: 24px; font-weight: 800; color: #1e293b; }
-  .kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.kpi-box {
+  background: linear-gradient(180deg, rgb(30 41 59 / 80%) 0%, rgb(15 23 42 / 90%) 100%);
+  border-radius: 8px;
+  padding: 14px 18px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-left-width: 3px;
+  .kpi-label { font-size: 12px; color: #8a9aa9; margin-bottom: 4px; }
+  .kpi-num { font-size: 24px; font-weight: 800; color: #fff; }
+  .kpi-sub { font-size: 11px; color: #8a9aa9; margin-top: 4px; }
 }
 
-.path-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;
-  @media (max-width: 768px) { grid-template-columns: 1fr; }
-}
-.path-card { border-radius: 10px; padding: 18px 20px; border: 1px solid #e2e8f0; border-top-width: 3px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
-  &:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-  .path-icon { font-size: 32px; margin-bottom: 8px; }
-  .path-title { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
-  .path-subtitle { font-size: 13px; color: #64748b; margin-bottom: 4px; }
-  .path-desc { font-size: 11px; color: #64748b; }
-}
-
-.chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 6fr 4fr; gap: 12px; flex: 1; min-height: 0;
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
   @media (max-width: 1024px) { grid-template-columns: 1fr; }
-  .chart-card { display: flex; flex-direction: column; min-height: 0; }
-  // 让 card body 填满、子组件的 echarts 容器自适应
-  :deep(.el-card__body) { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  // 所有 el-card 深色主题覆盖
+  :deep(.el-card) {
+    background: linear-gradient(180deg, rgb(30 41 59 / 80%) 0%, rgb(15 23 42 / 90%) 100%);
+    border: 1px solid rgb(255 255 255 / 8%);
+    color: #fff;
+  }
+  :deep(.el-card__header) {
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
+    color: #fff;
+  }
+  :deep(.el-card__body) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
   :deep(.chart) { width: 100% !important; flex: 1; min-height: 180px; }
 }
-.mini-table { width: 100%; font-size: 13px; border-collapse: collapse;
-  td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; }
+
+.mini-table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+  color: #e2e8f0;
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid rgb(255 255 255 / 6%);
+  }
   .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 }
 

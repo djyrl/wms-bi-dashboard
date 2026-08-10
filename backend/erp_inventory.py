@@ -444,7 +444,7 @@ def _query_erp_claim_aggregates(current_year: int) -> dict:
     """
     sql = f"""
         SELECT
-            -- 全部历史：入库(101毛收货)
+            -- 全部历史：入库
             COALESCE(SUM(CASE WHEN bwart = '101'
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS gross_inbound_all,
             COALESCE(SUM(CASE WHEN bwart = '102'
@@ -454,7 +454,7 @@ def _query_erp_claim_aggregates(current_year: int) -> dict:
             -- 全部历史：出库
             COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_all,
-            -- 当年：入库(101毛收货)
+            -- 当年：入库
             COALESCE(SUM(CASE WHEN bwart = '101'
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS gross_inbound_year,
@@ -495,13 +495,13 @@ def _build_erp_claim_metrics(gross_inbound: float, reversal: float,
     基于出入库金额计算领用率指标。
 
     Args:
-        gross_inbound: 101 毛收货金额（不含冲销）
+        gross_inbound: 101 收货金额（不含冲销）
         reversal:      102 冲销金额（绝对值，正数）
         net_inbound:   101+102 净入库（用于领用率计算）
     """
     unclaimed = net_inbound - outbound
     return {
-        "total_inbound_amount": round(gross_inbound / 10000, 2),       # 101毛收货
+        "total_inbound_amount": round(gross_inbound / 10000, 2),       # 101收货
         "reversal_amount": round(reversal / 10000, 2),                  # 冲销金额
         "net_inbound_amount": round(net_inbound / 10000, 2),            # 净入库
         "total_outbound_amount": round(outbound / 10000, 2),
@@ -554,7 +554,7 @@ def get_erp_claim_indicators() -> Dict:
             agg.get("inbound_qty_year", 0), agg.get("outbound_qty_year", 0),
         ),
         "erp_inventory": erp_inventory,
-        "note": "ERP数据(erp_catalog_mb51)，入库=101毛收货，出库=201+221+222+Z61+Z62",
+        "note": "ERP数据(erp_catalog_mb51)，入库=101收货，出库=201+221+222+Z61+Z62",
     }
 
 

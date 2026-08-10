@@ -2,6 +2,8 @@
 import { onMounted, ref, computed } from 'vue'
 import { getStructure, getByProject, getByPurchaser, getByCategory, getBatchDigest } from '@/api/modules/theme2'
 import type { WmsStructure, WmsProjectIndicator, WmsPurchaserIndicator, WmsCategoryItem, WmsBatchDigest } from '@/api/modules/theme2'
+import { getWmsSummary } from '@/api/modules/theme1'
+import type { WmsSummary } from '@/api/modules/theme1'
 import type { ProjectTreeNode, BuyerRankItem, CategoryBubbleItem, BatchDigestItem, KpiCardData } from '@/types/inventory'
 
 import ErrorResult from '@/components/common/ErrorResult.vue'
@@ -23,6 +25,7 @@ const structureBatch = ref<BatchDigestItem[]>([])
 const structureBatchLabels = ref<string[]>([])
 
 const structure = ref<WmsStructure | null>(null)
+const wmsSummary = ref<WmsSummary | null>(null)
 const projectIndicators = ref<WmsProjectIndicator[]>([])
 const purchaserIndicators = ref<WmsPurchaserIndicator[]>([])
 
@@ -44,9 +47,9 @@ const kpiCards = computed<KpiCardData[]>(() => {
     {
       icon: '📦',
       label: '当前库存总额',
-      value: s?.current_inventory_amount ? Math.round(s.current_inventory_amount) : 0,
+      value: wmsSummary.value?.total_inventory_amount ? Math.round(wmsSummary.value.total_inventory_amount) : 0,
       unit: '万',
-      change: s ? `${s.current_inventory_quantity?.toLocaleString?.() || 0} 项库存` : '--',
+      change: wmsSummary.value ? `${wmsSummary.value.total_records} 个批次` : '--',
       changeType: 'down',
       color: '#f59e0b',
     },
@@ -55,7 +58,7 @@ const kpiCards = computed<KpiCardData[]>(() => {
       label: '项目平均库存金额',
       value: (() => {
         return validRatios.length
-          ? Math.round(s!.current_inventory_amount / validRatios.length)
+          ? Math.round((wmsSummary.value?.total_inventory_amount ?? 0) / validRatios.length)
           : 0
       })(),
       unit: '万',
@@ -135,6 +138,7 @@ async function loadAllData() {
   let categories: WmsCategoryItem[] = []
   let batchDigest: WmsBatchDigest | null = null
 
+  try { wmsSummary.value = await getWmsSummary() } catch (e: any) { errs.push('WMS总览: ' + (e?.message || '失败')) }
   try { s = await getStructure() } catch (e: any) { errs.push('库存结构: ' + (e?.message || '失败')) }
   try { projs = await getByProject() } catch (e: any) { errs.push('项目分析: ' + (e?.message || '失败')) }
   try { purchasers = await getByPurchaser() } catch (e: any) { errs.push('采购人: ' + (e?.message || '失败')) }
