@@ -19,12 +19,19 @@ def query_one(sql: str, params: tuple = None) -> Optional[Dict[str, Any]]:
 # 时序统计接口
 # ================================================================
 
-def get_claim_monthly() -> Dict:
+def get_claim_monthly(non_project_only: bool = False) -> Dict:
     """
     按月统计入库金额、领用金额、领用率（最近12个月）。
     供「领用率月度趋势」「入库vs领用对比」两个图表使用。
+
+    Args:
+        non_project_only: 若为 True，仅统计非项目物资（project_name 为空）
     """
     rows = _get_inventory_rows()
+
+    # 可选过滤：仅非项目物资
+    if non_project_only:
+        rows = [r for r in rows if not (r.get("project_name") or "").strip()]
 
     monthly: OrderedDict[str, Dict[str, float]] = OrderedDict()
     for r in rows:
@@ -295,12 +302,13 @@ def get_anomaly_daily(days: int = 30) -> Dict:
     today = dt_date.today()
     AMPLITUDE = 0.30
 
-    # Step 1 — 新建项目检测
+    # Step 1 — 新建项目检测（仅日常维护项目）
     new_cutoff = today - timedelta(days=days)
     proj_rows = query("""
         SELECT owner_project_code, MIN(create_date)::date AS first_date
         FROM v_project_inventory_wide
         WHERE owner_project_code IS NOT NULL
+          AND project_name LIKE '%日常%'
         GROUP BY owner_project_code
     """)
     new_project_weeks: Set[str] = set()
@@ -324,6 +332,9 @@ def get_anomaly_daily(days: int = 30) -> Dict:
         if hasattr(d, 'date'):
             d = d.date()
         if d is None or d < cutoff:
+            continue
+        # 仅统计项目名称含「日常」的物资（日常维护物资）
+        if "日常" not in (r.get("project_name") or ""):
             continue
         iso = d.isocalendar()
         week_key = f"{iso[0]}-W{iso[1]:02d}"

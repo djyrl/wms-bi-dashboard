@@ -14,3 +14,4 @@ Thumbs.db
 # Env
 venv/
 .env
+bi-dashboard.tar.gz

@@ -105,9 +105,9 @@ export interface WmsClaimSplit {
 
 // ---- API 方法 ----
 
-/** 月度入库/领用/领用率（最近12个月） */
-export const getClaimMonthly = () =>
-  request.get<ClaimMonthlyRes>('/wms/indicators/claim/monthly')
+/** 月度入库/领用/领用率（最近12个月）。nonProjectOnly=true 时仅统计非项目物资 */
+export const getClaimMonthly = (nonProjectOnly?: boolean) =>
+  request.get<ClaimMonthlyRes>('/wms/indicators/claim/monthly', { params: { non_project: nonProjectOnly ? '1' : '0' } })
 
 /** 按天入库/领用/领用率（当月） */
 export const getClaimDaily = () =>

@@ -380,7 +380,8 @@ def api_wms_claim_monthly():
     供「领用率月度趋势」「入库vs领用对比」图表使用。
     """
     try:
-        return ok(db_get_claim_monthly())
+        non_project = request.args.get("non_project", "0") == "1"
+        return ok(db_get_claim_monthly(non_project_only=non_project))
     except Exception as e:
         return jsonify({"code": -1, "msg": str(e)})
 

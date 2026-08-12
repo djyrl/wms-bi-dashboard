@@ -33,7 +33,7 @@ async function loadAll() {
       getErpClaim(),
       getStructure(),
       getAnomalyDaily(30),
-      getClaimMonthly(),
+      getClaimMonthly(true),
       getTopUnclaimedAmount(15),
       getStructureByCategory(),
     ])
@@ -249,7 +249,7 @@ onUnmounted(() => {
       <div class="section">
         <div class="chart-grid chart-grid--2col">
           <!-- 项目库存占比 TOP8 -->
-          <ChartCard title="项目库存占比 TOP8">
+          <ChartCard title="项目库存占比">
             <table class="data-table" v-if="projectRows.length">
               <thead>
                 <tr><th style="text-align:center">#</th><th>项目名称</th><th style="text-align:right">库存(万元)</th><th style="text-align:right">占比</th><th>进度</th></tr>
