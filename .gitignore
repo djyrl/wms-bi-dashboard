@@ -14,4 +14,7 @@ Thumbs.db
 # Env
 venv/
 .env
+
+# 构建产物 / 导出包
 bi-dashboard.tar.gz
+bi-dashboard-src.tar.gz

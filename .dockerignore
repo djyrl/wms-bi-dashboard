@@ -1,4 +1,5 @@
 node_modules/
+venv/
 .git/
 __pycache__/
 *.pyc
@@ -9,3 +10,9 @@ olddashboard.html
 olddashboard_files/
 schema_ddl.sql
 *.md
+docs/
+*.tar.gz
+*.xlsx
+wmsmcp.txt
+root@192.168.51.34
+.env
