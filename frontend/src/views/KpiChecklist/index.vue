@@ -55,6 +55,18 @@ async function loadAllData() {
   }
 }
 
+// 状态判定（与后端 kpi_checklist._status_for_rate 规则一致）
+function statusForRate(rate: number, target: number, direction: 'up' | 'down'): 'ok' | 'warning' | 'alert' {
+  if (direction === 'up') {
+    if (rate >= target) return 'ok'
+    if (rate >= target * 0.85) return 'warning'
+    return 'alert'
+  }
+  if (rate <= target) return 'ok'
+  if (rate <= target * 1.15) return 'warning'
+  return 'alert'
+}
+
 // 核心考核 KPI 条目（便于迭代）
 const coreKpiList = computed(() => {
   const list = Object.values(coreKpis.value)
@@ -62,9 +74,12 @@ const coreKpiList = computed(() => {
   return list.map(kpi => {
     if (kpi.key === 'K1') {
       const ec = erpClaim.value!.year
+      const value = ec.claim_rate_amount
       return {
         ...kpi,
-        value: ec.claim_rate_amount,
+        value,
+        // 状态跟随显示口径（ERP 领用率），否则后端 WMS 口径的 status 与显示值脱节
+        status: statusForRate(value, kpi.target_value ?? 60, kpi.direction),
         formula: `出库金额 / 净入库 × 100%（${ec.total_outbound_amount?.toFixed(0) ?? 0}万 / ${ec.net_inbound_amount?.toFixed(0) ?? 0}万）`,
         detail: {
           ...kpi.detail,
@@ -405,7 +420,7 @@ onMounted(() => {
           <!-- 库龄结构分段 -->
           <div class="age-bar-wrap" v-if="structureKpis?.K7?.age_structure">
             <div
-              v-for="seg in structureKpis.K7.age_structure.filter((s: any) => s.range !== '≥5年')"
+              v-for="seg in structureKpis.K7.age_structure"
               :key="seg.range"
               class="age-bar"
             >

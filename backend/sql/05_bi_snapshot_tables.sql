@@ -1,14 +1,22 @@
 -- =====================================================================
--- BI 快照表 — 每日定时任务落表
+-- BI 快照表 — 定时任务落表（指标表每小时 / 明细大表每日）
 -- =====================================================================
--- 目标数据库：10.239.192.131 KingbaseES
--- 执行方式：python bi_snapshot.py（每天凌晨执行）
+-- 目标数据库：10.239.192.131 KingbaseES（兼容 PostgreSQL）
+-- 执行方式：python bi_snapshot.py（定时每小时执行一次）
+--
+-- 快照粒度说明：
+--   snapshot_date  DATE       —— 快照日期（供按天查询/汇总）
+--   snapshot_time  TIMESTAMP  —— 快照时间戳（指标表以此区分每小时一条历史快照）
+--
+-- 指标表（13 张，每小时追加一条历史）：UNIQUE 以 snapshot_time 为维度
+-- 明细表（4 张，每日覆盖）：UNIQUE 仍以 snapshot_date 为维度
 -- =====================================================================
 
--- 表 1：核心汇总指标
+-- 表 1：核心汇总指标（指标表）
 CREATE TABLE IF NOT EXISTS bi_kpi_summary (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
-    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期（唯一）
+    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     total_inbound_amount    NUMERIC(16,2) NOT NULL DEFAULT 0,             -- 入库总额（万元）
     total_claimed_amount    NUMERIC(16,2) NOT NULL DEFAULT 0,             -- 领用总额（万元）
     total_inventory_amount  NUMERIC(16,2) NOT NULL DEFAULT 0,             -- 当前库存金额（万元）
@@ -24,13 +32,14 @@ CREATE TABLE IF NOT EXISTS bi_kpi_summary (
     identity_deviation_pct         NUMERIC(8,4),                          -- 恒等式 偏差率（%）
     identity_holds                 BOOLEAN,                               -- 恒等式是否成立（偏差<1%）
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date)
+    UNIQUE(snapshot_time)
 );
 
--- 表 2：领用率指标（all=全部批次, year=当年批次）
+-- 表 2：领用率指标（all=全部批次, year=当年批次）（指标表）
 CREATE TABLE IF NOT EXISTS bi_claim_indicators (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     period_type     VARCHAR(10) NOT NULL,                                  -- 周期类型 all=全部 year=当年
     current_year    INTEGER NOT NULL,                                      -- 当前年份
     total_inbound_amount   NUMERIC(16,2) NOT NULL DEFAULT 0,              -- 入库总额（万元）
@@ -42,13 +51,14 @@ CREATE TABLE IF NOT EXISTS bi_claim_indicators (
     unclaimed_amount       NUMERIC(16,2) NOT NULL DEFAULT 0,              -- 未领用金额（万元）= inbound - claimed
     unclaimed_amount_ratio NUMERIC(6,2)  NOT NULL DEFAULT 0,              -- 未领用占比（%）
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date, period_type)
+    UNIQUE(snapshot_time, period_type)
 );
 
--- 表 3：库存结构指标
+-- 表 3：库存结构指标（指标表）
 CREATE TABLE IF NOT EXISTS bi_structure_indicators (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
-    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期（唯一）
+    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     current_year    INTEGER NOT NULL,                                      -- 当前年份
     current_inventory_amount       NUMERIC(16,2) NOT NULL DEFAULT 0,      -- 全部库存金额（万元）
     current_year_inventory_amount  NUMERIC(16,2) NOT NULL DEFAULT 0,      -- 当年入库库存金额（万元）
@@ -56,25 +66,27 @@ CREATE TABLE IF NOT EXISTS bi_structure_indicators (
     project_ratios_json    JSONB,                                          -- 项目库存占比 TOP10 [{project_code, project_name, inventory_amount, ratio}]
     purchaser_ratios_json  JSONB,                                          -- 采购人库存占比 TOP10 [{purchaser_name, inventory_amount, ratio}]
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date)
+    UNIQUE(snapshot_time)
 );
 
--- 表 4：库龄时间指标
+-- 表 4：库龄时间指标（指标表）
 CREATE TABLE IF NOT EXISTS bi_age_indicators (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
-    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期（唯一）
+    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     aged_ratio_1y           NUMERIC(8,4)  NOT NULL DEFAULT 0,            -- 长库龄占比（比例值，如0.15=15%）
     aged_amount_1y          NUMERIC(16,2) NOT NULL DEFAULT 0,            -- 长库龄金额（元）
     avg_age_weighted_days   NUMERIC(10,2) NOT NULL DEFAULT 0,            -- 加权平均库龄（天）= Σ(inventory×age) / Σ(inventory)
     age_structure_json      JSONB NOT NULL DEFAULT '[]',                  -- 库龄结构 [{range, amount, ratio, count}] ≤1年/1~3年/3~5年/≥5年
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date)
+    UNIQUE(snapshot_time)
 );
 
--- 表 5：项目维度分析（每项目一行）
+-- 表 5：项目维度分析（每项目一行）（明细表）
 CREATE TABLE IF NOT EXISTS bi_dimension_project (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳
     project_code    VARCHAR(100) NOT NULL,                                 -- 项目编码
     project_name    VARCHAR(200),                                          -- 项目名称
     inbound_amount   NUMERIC(16,2) NOT NULL DEFAULT 0,                   -- 入库金额（元，project_ratio 分配后）
@@ -88,10 +100,11 @@ CREATE TABLE IF NOT EXISTS bi_dimension_project (
     UNIQUE(snapshot_date, project_code)
 );
 
--- 表 6：采购人维度分析（按 project_contact 聚合）
+-- 表 6：采购人维度分析（按 project_contact 聚合）（明细表）
 CREATE TABLE IF NOT EXISTS bi_dimension_purchaser (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳
     purchaser_name  VARCHAR(200) NOT NULL,                                 -- 采购人/联系人名称
     inbound_amount   NUMERIC(16,2) NOT NULL DEFAULT 0,                   -- 入库金额（元）
     claimed_amount   NUMERIC(16,2) NOT NULL DEFAULT 0,                   -- 领用金额（元）
@@ -103,10 +116,11 @@ CREATE TABLE IF NOT EXISTS bi_dimension_purchaser (
     UNIQUE(snapshot_date, purchaser_name)
 );
 
--- 表 7：TOP 排行（未领用金额/数量, 领用金额/数量）
+-- 表 7：TOP 排行（未领用金额/数量, 领用金额/数量）（指标表）
 CREATE TABLE IF NOT EXISTS bi_top_ranking (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     rank_type       VARCHAR(30) NOT NULL,                                  -- 排行类型 unclaimed_amount=未领用金额 unclaimed_quantity=未领用数量 claimed_amount=领用金额 claimed_quantity=领用数量
     rank_position   INTEGER NOT NULL,                                      -- 排名
     material_code   VARCHAR(100),                                          -- 物料编码
@@ -125,13 +139,14 @@ CREATE TABLE IF NOT EXISTS bi_top_ranking (
     project_name     VARCHAR(200),                                         -- 项目名称
     purchaser_name   VARCHAR(200),                                         -- 采购人
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date, rank_type, rank_position)
+    UNIQUE(snapshot_time, rank_type, rank_position)
 );
 
--- 表 8：时序分析（月/日/周粒度）
+-- 表 8：时序分析（月/日/周粒度）（明细表）
 CREATE TABLE IF NOT EXISTS bi_time_series (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳
     granularity     VARCHAR(10) NOT NULL,                                  -- 粒度 monthly=月度 daily=日度 weekly=周度
     period_label    VARCHAR(30) NOT NULL,                                  -- 时间标签 如2026-01/2026-01-15/2026-W03
     inbound_amount  NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 入库金额（元）
@@ -142,10 +157,11 @@ CREATE TABLE IF NOT EXISTS bi_time_series (
     UNIQUE(snapshot_date, granularity, period_label)
 );
 
--- 表 9：批次消化进度（TOP 6 批次）
+-- 表 9：批次消化进度（TOP 6 批次）（指标表）
 CREATE TABLE IF NOT EXISTS bi_batch_digest (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     batch_code      VARCHAR(100) NOT NULL,                                 -- 批次号
     inbound_wan     NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 入库金额（万元）
     remain_pct      NUMERIC(6,2)  NOT NULL DEFAULT 0,                     -- 剩余占比（%）= remain / inbound × 100
@@ -153,13 +169,14 @@ CREATE TABLE IF NOT EXISTS bi_batch_digest (
     digest_data_json JSONB NOT NULL DEFAULT '[]',                          -- 逐月消化数据 [100, 95, 88, ...] 百分比序列
     color_hex       VARCHAR(7),                                            -- 颜色标识
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date, batch_code)
+    UNIQUE(snapshot_time, batch_code)
 );
 
--- 表 10：异常检测（近12周）
+-- 表 10：异常检测（近12周）（指标表）
 CREATE TABLE IF NOT EXISTS bi_anomaly_detection (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     week_label      VARCHAR(30) NOT NULL,                                  -- 周标签 如3/1-3/7
     inbound_amount  NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 入库金额（万元）
     claimed_amount  NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 领用金额（万元）
@@ -167,13 +184,14 @@ CREATE TABLE IF NOT EXISTS bi_anomaly_detection (
     anomaly_label   VARCHAR(500),                                          -- 异常描述 如'新项目(XX项目);环比↑35%'
     huanbi_pct      NUMERIC(6,2),                                          -- 周度环比变化（%）
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date, week_label)
+    UNIQUE(snapshot_time, week_label)
 );
 
--- 表 11：KPI 考核清单（K1-K9 + T1-T2）
+-- 表 11：KPI 考核清单（K1-K9 + T1-T2）（指标表）
 CREATE TABLE IF NOT EXISTS bi_kpi_checklist (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
-    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期（唯一）
+    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     total_inbound_wan       NUMERIC(16,2),                                 -- 入库总额（万元）
     total_claimed_wan       NUMERIC(16,2),                                 -- 领用总额（万元）
     current_inventory_wan   NUMERIC(16,2),                                 -- 当前库存（万元）
@@ -191,13 +209,14 @@ CREATE TABLE IF NOT EXISTS bi_kpi_checklist (
     data_start_date  DATE,                                                 -- 数据起始日期
     data_end_date    DATE,                                                 -- 数据截止日期
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date)
+    UNIQUE(snapshot_time)
 );
 
--- 表 12：安全库存偏离度（按物料编码，TOP 10+其他）
+-- 表 12：安全库存偏离度（按物料编码，TOP 10+其他）（指标表）
 CREATE TABLE IF NOT EXISTS bi_safety_stock (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     rank_position   INTEGER NOT NULL,                                      -- 排名（1-10, 99=其他）
     material_code   VARCHAR(100) NOT NULL,                                 -- 物料编码
     category_name   VARCHAR(200),                                          -- 物料名称
@@ -206,13 +225,14 @@ CREATE TABLE IF NOT EXISTS bi_safety_stock (
     safe_min        NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 安全下限（元）= TOP10均值 × 0.5
     record_count    INTEGER,                                               -- 批次数
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date, material_code)
+    UNIQUE(snapshot_time, material_code)
 );
 
--- 表 13：采购批次库存报表（批次级明细）
+-- 表 13：采购批次库存报表（批次级明细）（明细表）
 CREATE TABLE IF NOT EXISTS bi_inventory_report (
     id                  SERIAL PRIMARY KEY,                                -- 自增主键
     snapshot_date       DATE NOT NULL DEFAULT CURRENT_DATE,                -- 快照日期
+    snapshot_time       TIMESTAMP NOT NULL DEFAULT NOW(),                  -- 快照时间戳
     purchase_batch      VARCHAR(100),                                      -- 采购批次号
     material_name       VARCHAR(200),                                      -- 物料名称
     material_code       VARCHAR(100),                                      -- 物料编码
@@ -240,13 +260,15 @@ CREATE TABLE IF NOT EXISTS bi_inventory_report (
     inventory_amount    NUMERIC(16,2),                                     -- 项目级库存金额（元）= 批次库存 × project_ratio
     claim_rate          NUMERIC(6,2),                                      -- 领用率（%）批次级，上限100%
     age_days            INTEGER,                                           -- 库龄（天）
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW()                          -- 创建时间
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                          -- 创建时间
+    UNIQUE(snapshot_date, material_code, purchase_batch, project_code)
 );
 
--- 附加表：物资类别气泡图（按 material_group_code 聚合）
+-- 表 14：物资类别气泡图（按 material_group_code 聚合）（指标表）
 CREATE TABLE IF NOT EXISTS bi_category_bubble (
     id              SERIAL PRIMARY KEY,                                    -- 自增主键
     snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
     category_code   VARCHAR(100) NOT NULL,                                 -- 物资类别编码
     category_name   VARCHAR(200),                                          -- 物资类别名称
     inventory_amount  NUMERIC(16,2) NOT NULL DEFAULT 0,                   -- 库存金额（元）
@@ -256,7 +278,46 @@ CREATE TABLE IF NOT EXISTS bi_category_bubble (
     sku_count         INTEGER,                                             -- SKU数
     record_count      INTEGER,                                             -- 批次数
     created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
-    UNIQUE(snapshot_date, category_code)
+    UNIQUE(snapshot_time, category_code)
+);
+
+-- 表 15：滞留库存热力图（物料类别 × 库龄段）（指标表）
+CREATE TABLE IF NOT EXISTS bi_age_heatmap (
+    id              SERIAL PRIMARY KEY,                                    -- 自增主键
+    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
+    category_name   VARCHAR(200) NOT NULL,                                 -- 物料类别名称（TOP 10）
+    age_range       VARCHAR(20)  NOT NULL,                                 -- 库龄段 0-30天/30-60天/60-90天/90-180天/180-365天/>365天
+    inventory_amount_wan NUMERIC(16,2) NOT NULL DEFAULT 0,                 -- 库存金额（万元）
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
+    UNIQUE(snapshot_time, category_name, age_range)
+);
+
+-- 表 16：智能备货优化建议（指标表）
+CREATE TABLE IF NOT EXISTS bi_optimize_suggest (
+    id              SERIAL PRIMARY KEY,                                    -- 自增主键
+    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
+    rank_position   INTEGER NOT NULL,                                      -- 排名（按超出量降序）
+    material_name   VARCHAR(200),                                          -- 物料名称
+    current_wan     NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 当前库存（万元）
+    daily_use_wan   NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 日均消耗（万元/天）
+    max_stock_wan   NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 建议安全库存上限（万元）
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
+    UNIQUE(snapshot_time, rank_position)
+);
+
+-- 表 17：库存来源结构（按项目）（指标表）
+CREATE TABLE IF NOT EXISTS bi_source_structure (
+    id              SERIAL PRIMARY KEY,                                    -- 自增主键
+    snapshot_date   DATE NOT NULL DEFAULT CURRENT_DATE,                    -- 快照日期
+    snapshot_time   TIMESTAMP NOT NULL DEFAULT NOW(),                      -- 快照时间戳（每小时一条）
+    source_name     VARCHAR(200) NOT NULL,                                 -- 来源/项目名称
+    inventory_amount NUMERIC(16,2) NOT NULL DEFAULT 0,                    -- 库存金额（元）
+    ratio           NUMERIC(6,2)  NOT NULL DEFAULT 0,                     -- 占比（%）
+    total_amount    NUMERIC(16,2) NOT NULL DEFAULT 0,                     -- 总库存金额（元，冗余便于前端）
+    created_at  TIMESTAMP NOT NULL DEFAULT NOW(),                         -- 创建时间
+    UNIQUE(snapshot_time, source_name)
 );
 
 CREATE INDEX IF NOT EXISTS idx_ir_snapshot ON bi_inventory_report(snapshot_date);

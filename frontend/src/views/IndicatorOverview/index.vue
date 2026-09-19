@@ -55,10 +55,11 @@ function truncateText(text: string, maxLen = 20): string {
 }
 function erpClaimRange(type: 'year' | 'all'): ErpClaimRange {
   return erpClaim.value?.[type] ?? {
+    total_inbound_amount: 0, reversal_amount: 0, net_inbound_amount: 0,
+    total_outbound_amount: 0,
+    total_inbound_quantity: 0, total_outbound_quantity: 0,
     claim_rate_amount: 0, claim_rate_quantity: 0,
     unclaimed_amount: 0, unclaimed_amount_ratio: 0,
-    total_inbound_amount: 0, total_outbound_amount: 0,
-    total_inbound_quantity: 0, total_outbound_quantity: 0,
   }
 }
 
@@ -126,7 +127,7 @@ onMounted(loadAll)
         <div class="kpi-cards">
           <div class="kpi-card">
             <div class="kpi-label">1. 当年采购领用率（金额）</div>
-            <div class="kpi-formula">= {{ erpClaimRange('year').total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaimRange('year').total_inbound_amount?.toFixed(0) || 0 }}万</div>
+            <div class="kpi-formula">= {{ erpClaimRange('year').total_outbound_amount?.toFixed(0) || 0 }}万 / {{ erpClaimRange('year').net_inbound_amount?.toFixed(0) || 0 }}万（净入库）</div>
             <div class="kpi-value">{{ fmtPct(erpClaimRange('year').claim_rate_amount) }}</div>
           </div>
           <!-- 1b 隐藏：全部历史领用率>100%,ERP上线前期初库存无对应入库记录 -->
@@ -165,7 +166,7 @@ onMounted(loadAll)
         <h3>（二）库存结构指标</h3>
         <div class="kpi-cards">
           <div class="kpi-card"><div class="kpi-label">4. 当年库存金额</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
-          <div class="kpi-card"><div class="kpi-label">5. 所有库存金额</div><div class="kpi-value">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">5. 所有库存金额</div><div class="kpi-value">{{ (summary?.total_inventory_amount ?? 0).toFixed(2) }} 万元</div></div>
           <!-- <div class="kpi-card"><div class="kpi-label">6. 当前库存数量</div><div class="kpi-value">{{ fmtNum(structure?.current_inventory_quantity) }}</div></div> -->
         </div>
         <h4>10. 项目库存占比 TOP 10</h4>
@@ -191,7 +192,7 @@ onMounted(loadAll)
         </div>
         <h4>12. 库龄结构占比</h4>
         <div class="age-bars" v-if="timeIndicators?.age_structure">
-          <div v-for="seg in timeIndicators.age_structure.filter((s: any) => s.range !== '≥5年')" :key="seg.range" class="age-bar">
+          <div v-for="seg in timeIndicators.age_structure" :key="seg.range" class="age-bar">
             <span class="age-range">{{ seg.range }}</span><div class="age-track"><div class="age-fill" :style="{ width: Math.max(seg.ratio*100,1)+'%' }"></div></div>
             <span class="age-pct">{{ (seg.ratio*100).toFixed(2) }}%</span><span class="age-count">{{ seg.count }}笔</span>
           </div>

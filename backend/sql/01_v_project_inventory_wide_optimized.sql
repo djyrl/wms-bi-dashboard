@@ -18,6 +18,7 @@ inv_agg 只消除了同批次多货位的膨胀，但 LEFT JOIN wms_project_inve
   = 视图 N 行/批次
 **/
 -- =====================================================================
+
 CREATE OR REPLACE VIEW v_project_inventory_wide AS
 WITH
 -- 物理库存按批次聚合（避免同批次多货位导致行膨胀）
@@ -33,7 +34,7 @@ inv_agg AS (
         CASE
             WHEN SUM(current_quantity) > 0
             THEN SUM(current_quantity*unit_price) / SUM(current_quantity)
-            ELSE MAX(unit_price)
+            ELSE AVG(unit_price)
         END                                 AS v_unit_price,
         MIN(inbound_date)                   AS inbound_date,
         MAX(putaway_date)                   AS putaway_date,
@@ -41,9 +42,17 @@ inv_agg AS (
         MAX(barcode)                        AS barcode,
         MAX(inventory_code)                 AS inventory_code,
         MAX(warehouse_code)                 AS warehouse_code
-    FROM wms_inventory
-    WHERE del_flag = '0'  and warehouse_code = 'A00' and status = 1
-    GROUP BY tenant_id, material_code, batch_code, erp_inventory
+    FROM wms_inventory winv
+    WHERE del_flag = '0' and status = 1 
+    AND business_type <> 'RELOCATION_ORDER' 
+    AND EXISTS (
+      SELECT 1 FROM wms_inventory_location iloc
+      INNER JOIN wms_location loc ON iloc.location_id = loc.id AND loc.del_flag = '0'
+      WHERE iloc.inventory_id = winv.id AND iloc.del_flag = '0'
+        AND iloc.status = 1 AND iloc.current_quantity > 0
+        AND loc.warehouse_code = 'A00'
+    )
+    GROUP BY tenant_id, material_code, batch_code,warehouse_code,erp_inventory
 )
 SELECT
     -- ==================== 物理库存主键（批次级） ====================
@@ -96,7 +105,8 @@ SELECT
     COALESCE(ol.pick_quantity, 0)                                                               AS pick_quantity,           -- 拣货数量
     COALESCE(ol.repair_quantity, 0)                                                             AS repair_quantity,         -- 维修数量
     COALESCE(ol.scrap_quantity, 0)                                                              AS scrap_quantity,          -- 报废数量
-    COALESCE(ol.repaired_quantity, 0)                                                           AS repaired_quantity        -- 返修数量
+    COALESCE(ol.repaired_quantity, 0)                                                           AS repaired_quantity,       -- 返修数量
+    ol.last_outbound_time                                                                       AS last_outbound_time       -- 最后出库时间（operation_time）
 
 FROM inv_agg inv
 
@@ -105,6 +115,7 @@ LEFT JOIN wms_project_inventory pi
     ON  pi.tenant_id      = inv.tenant_id
     AND pi.material_code  = inv.material_code
     AND pi.batch_code     = inv.batch_code
+    AND pi.warehouse_code  = inv.warehouse_code
     AND pi.erp_inventory  = inv.erp_inventory
     AND pi.del_flag       = '0'
 
@@ -122,5 +133,6 @@ LEFT JOIN dim_outbound_log_cache ol
     AND ol.material_code  = inv.material_code
     AND ol.batch_code     = inv.batch_code
     AND ol.erp_inventory  = inv.erp_inventory;
+
 
 COMMENT ON VIEW v_project_inventory_wide IS '核心宽表 — wms_inventory 批次聚合后通过主键关联 dim_material_cache + wms_project_inventory + dim_project_cache + dim_outbound_log_cache';

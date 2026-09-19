@@ -14,6 +14,12 @@
 
 import os
 import base64
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# 本地开发：读取项目根目录 .env（Docker 场景由 docker-compose 注入环境变量，不依赖此文件）
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 def _get_password(env_key: str, env_key_b64: str, default: str) -> str:
@@ -30,7 +36,7 @@ DB_CONFIG_CCCK = {
     "port": int(os.getenv("DB_PORT", "54321")),
     "dbname": os.getenv("DB_NAME", "garden_wms"),
     "user": os.getenv("DB_USER", "garden_wms"),
-    "password": _get_password("DB_PASSWORD", "DB_PASSWORD_BASE64", "garden_wms@2025"),
+    "password": _get_password("DB_PASSWORD", "DB_PASSWORD_BASE64", "123456"),
 }
 
 def _get_env(first_key: str, second_key: str, default: str) -> str:
@@ -45,7 +51,7 @@ def _get_env(first_key: str, second_key: str, default: str) -> str:
 DB_CONFIG_BI = {
     "host": os.getenv("DB_BI_HOST", "10.239.192.131"),
     "port": int(os.getenv("DB_BI_PORT", "54321")),
-    "dbname": os.getenv("DB_BI_NAME", "bi_snapshot"),
+    "dbname": os.getenv("DB_BI_NAME", "garden_wms"),
     "user": os.getenv("DB_BI_USER", "garden_wms"),
     "password": _get_password("DB_BI_PASSWORD", "DB_BI_PASSWORD_BASE64", "garden_wms@2025"),
 }

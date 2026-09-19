@@ -21,13 +21,13 @@ const sidebarWidth = computed(() =>
 
 <template>
   <el-container class="app-container">
-    <!-- 侧边栏 
+    <!-- 侧边栏
     <el-aside
       :width="sidebarWidth"
       class="app-sidebar"
     >
       <Sidebar />
-    </el-aside>-->
+    </el-aside> -->
 
     <!-- 右侧区域 -->
     <el-container class="app-right">

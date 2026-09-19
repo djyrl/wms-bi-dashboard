@@ -66,6 +66,7 @@ declare module 'vue' {
     ProjectTreemap: typeof import('./components/inventory/structure/ProjectTreemap.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    ScreenAdapter: typeof import('./components/common/ScreenAdapter.vue')['default']
     SectionHeader: typeof import('./components/inventory/SectionHeader.vue')['default']
     SluggishHeatmap: typeof import('./components/inventory/time/SluggishHeatmap.vue')['default']
     SluggishTable: typeof import('./components/inventory/actions/SluggishTable.vue')['default']

@@ -70,7 +70,7 @@ v_project_inventory_wide 的行膨胀路径：
     → 视图最终有 N 行/批次（膨胀 N 倍）
 
 所有聚合级别金额计算必须：
-  1. 批次级：DISTINCT ON (tenant_id, material_code, batch_code, erp_inventory) 去重
+  1. 批次级：DISTINCT ON (tenant_id, material_code, batch_code) 去重
   2. 项目级：先批次去重得到批次金额，再 × project_ratio 分配到各项目
   3. 严禁直接在视图上 SUM(total_price)（会被膨胀行数放大） ⚠️
 """
@@ -182,7 +182,7 @@ def query_one(sql: str, params: tuple = None) -> Optional[Dict[str, Any]]:
 #  ================================================================
 #  作用：
 #    1. 对 v_project_inventory_wide 按物理批次去重
-#       DISTINCT ON (tenant_id, material_code, batch_code, erp_inventory)
+#       DISTINCT ON (tenant_id, material_code, batch_code)
 #    2. 计算三个核心金额：batch_inbound / batch_claimed / batch_inventory
 #    3. 同时计算分项出库金额（pick / repair / scrap / repaired）
 #    4. 提取库龄、日期、类别等维度字段
@@ -194,12 +194,11 @@ def query_one(sql: str, params: tuple = None) -> Optional[Dict[str, Any]]:
 
 _BATCH_AMOUNTS_SQL = """
     batch_amounts AS (
-        SELECT DISTINCT ON (tenant_id, material_code, batch_code, erp_inventory)
+        SELECT DISTINCT ON (tenant_id, material_code, batch_code)
             -- 主键
             tenant_id,
             material_code,
             batch_code,
-            erp_inventory                       AS inv_code,
 
             -- ★ 三个核心金额 —
             --   batch_inbound:  入库金额 = 原始数量 × 当前加权均价
@@ -252,18 +251,18 @@ _PROJECT_RATIO_SQL = """
     CASE
         -- 该批次在项目台账中没有关联行 → 100%% 归属当前行
         WHEN COUNT(w.pi_current_quantity) OVER (
-            PARTITION BY w.tenant_id, w.material_code, w.batch_code, w.erp_inventory
+            PARTITION BY w.tenant_id, w.material_code, w.batch_code
         ) = 0 THEN 1.0
         -- 有项目台账，但所有行的 pi_current_quantity 均为 0 → 平均分配
         WHEN COALESCE(SUM(w.pi_current_quantity) OVER (
-            PARTITION BY w.tenant_id, w.material_code, w.batch_code, w.erp_inventory
+            PARTITION BY w.tenant_id, w.material_code, w.batch_code
         ), 0) = 0
         THEN 1.0::numeric / COUNT(w.pi_current_quantity) OVER (
-            PARTITION BY w.tenant_id, w.material_code, w.batch_code, w.erp_inventory
+            PARTITION BY w.tenant_id, w.material_code, w.batch_code
         )
         -- 正常：按各项目当前库存数量占比分配
         ELSE COALESCE(w.pi_current_quantity, 0)::numeric / SUM(w.pi_current_quantity) OVER (
-            PARTITION BY w.tenant_id, w.material_code, w.batch_code, w.erp_inventory
+            PARTITION BY w.tenant_id, w.material_code, w.batch_code
         )
     END
 """
@@ -355,7 +354,6 @@ def _get_inventory_rows(start_date=None, end_date=None) -> List[Dict]:
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
             WHERE 1=1{_date_filter_sql(start_date, end_date)}
         )
         SELECT
@@ -372,6 +370,7 @@ def _get_inventory_rows(start_date=None, end_date=None) -> List[Dict]:
             r.plan_category                         AS project_type,
             r.inbound_date::date                    AS inbound_date,
             r.putaway_date::date                    AS putaway_date,
+            r.last_outbound_time                    AS last_outbound_time,
             r.batch_code,
 
             -- 数量字段
@@ -435,7 +434,7 @@ def _get_batch_rows(start_date=None, end_date=None) -> List[Dict]:
     获取批次级明细（物理去重后，不做项目分配）。
     用于需要逐批次迭代的场景（如 age_structure、summary 聚合）。
 
-    返回的每一行对应一个独立的物理批次（tenant_id + material_code + batch_code + erp_inventory）。
+    返回的每一行对应一个独立的物理批次（tenant_id + material_code + batch_code）。
 
     返回列说明：
       - inbound_amount:    批次入库金额
@@ -589,7 +588,6 @@ def _get_wide_structure_aggregates(start_date=None, end_date=None) -> Dict[str, 
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
             WHERE 1=1{date_clause}
         )
         SELECT
@@ -617,7 +615,6 @@ def _get_wide_structure_aggregates(start_date=None, end_date=None) -> Dict[str, 
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
             WHERE w.project_contact IS NOT NULL
               AND char_length(w.project_contact) > 0{date_clause}
         )

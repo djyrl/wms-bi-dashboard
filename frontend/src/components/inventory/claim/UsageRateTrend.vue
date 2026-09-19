@@ -29,7 +29,7 @@ const shortLabels = computed(() => props.months.map(m => {
 }))
 
 const detailHeaders = computed(() => [timeLabel.value, '领用率(%)', '目标(%)', '趋势值(%)'])
-const detailRows = computed(() => props.data.map(d => [d.month, d.rate, d.target, d.trend] as (string | number)[]))
+const detailRows = computed(() => [...props.data].reverse().map(d => [d.month, d.rate, d.target, d.trend] as (string | number)[]))
 
 function render() {
   if (!chartRef.value || !props.data.length) return
@@ -48,12 +48,12 @@ function render() {
     series: [
       {
         name: '领用率', type: 'line', data: rates, smooth: true,
-        lineStyle: { color: '#f43f5e', width: 2.5 }, itemStyle: { color: '#f43f5e' }, symbol: 'circle', symbolSize: 6,
-        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(244,63,94,0.25)' }, { offset: 1, color: 'rgba(244,63,94,0)' }] } },
-        markLine: { silent: true, symbol: 'none', data: [{ yAxis: 15, label: { formatter: '预警线 15%', color: '#f59e0b' }, lineStyle: { color: '#f59e0b', type: 'dashed', width: 1.5 } }] },
+        lineStyle: { color: '#10b981', width: 2.5 }, itemStyle: { color: '#10b981' }, symbol: 'circle', symbolSize: 6,
+        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(16,185,129,0.25)' }, { offset: 1, color: 'rgba(16,185,129,0)' }] } },
+        markLine: { silent: true, symbol: 'none', data: [{ yAxis: 15, label: { formatter: '预警线 15%', color: '#ef4444' }, lineStyle: { color: '#ef4444', type: 'dashed', width: 1.5 } }] },
       },
-      { name: '趋势线', type: 'line', data: trends, lineStyle: { color: '#facc15', width: 4, type: 'solid' }, itemStyle: { color: '#facc15' }, symbol: 'diamond', symbolSize: 10, z: 10, endLabel: { show: true, formatter: '趋势', color: '#facc15', fontSize: 13, fontWeight: 'bold', distance: 10 } },
-      { name: '目标线(20%)', type: 'line', data: targets, lineStyle: { color: '#10b981', width: 1.5, type: 'dashed' }, itemStyle: { color: '#10b981' }, symbol: 'none' },
+      { name: '趋势线', type: 'line', data: trends, lineStyle: { color: '#3b82f6', width: 4, type: 'solid' }, itemStyle: { color: '#3b82f6' }, symbol: 'diamond', symbolSize: 10, z: 10, endLabel: { show: true, formatter: '趋势', color: '#3b82f6', fontSize: 13, fontWeight: 'bold', distance: 10 } },
+      { name: '目标线(20%)', type: 'line', data: targets, lineStyle: { color: '#f59e0b', width: 1.5, type: 'dashed' }, itemStyle: { color: '#f59e0b' }, symbol: 'none' },
     ],
   })
 }

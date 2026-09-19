@@ -59,12 +59,17 @@ from other_indicators import (
     get_anomaly_daily as db_get_anomaly_daily,
     get_batch_digest as db_get_batch_digest,
     get_inventory_report as db_get_inventory_report,
+    FILTERABLE_COLUMNS,
 )
 from erp_inventory import (
     get_erp_claim_indicators,
     get_erp_claim_monthly,
     get_erp_age_indicators,
     get_erp_age_monthly,
+)
+from data_wide import (
+    get_inventory_wide_report as db_get_inventory_wide_report,
+    FILTERABLE_COLUMNS as WIDE_FILTERABLE_COLUMNS,
 )
 
 app = Flask(__name__)
@@ -505,13 +510,47 @@ def api_wms_inventory_report():
     """
     采购批次库存报表。
     参数：?sort_by=claim_rate|age_days|inventory_amount&sort_order=asc|desc&limit=500&offset=0
+          &material_code=xxx&material_name=xxx&...（每个筛选字段做 ILIKE 子串匹配，可任意组合）
     """
     sort_by = request.args.get("sort_by", "inventory_amount")
     sort_order = request.args.get("sort_order", "desc")
     limit = request.args.get("limit", 500, type=int)
     offset = request.args.get("offset", 0, type=int)
+
+    # 收集筛选参数（仅白名单列，值为非空字符串时生效）
+    filters = {
+        key: request.args.get(key)
+        for key in FILTERABLE_COLUMNS
+        if request.args.get(key) and request.args.get(key).strip()
+    }
     try:
-        return ok(db_get_inventory_report(sort_by, sort_order, limit, offset))
+        return ok(db_get_inventory_report(sort_by, sort_order, limit, offset, filters=filters))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/inventory-wide-report", methods=["GET"])
+def api_wms_inventory_wide_report():
+    """
+    采购批次明细宽表（WMS × ERP 批次级联）。
+    在 inventory-report 基础上，追加 ERP 收货/冲销/净入库/出库（全部+当年）与最佳估计库存。
+    参数：?sort_by=...&sort_order=asc|desc&limit=500&offset=0&year=2026
+          &material_code=xxx&project_name=xxx&...（文本列 ILIKE 子串匹配，可任意组合）
+    """
+    sort_by = request.args.get("sort_by", "inventory_amount")
+    sort_order = request.args.get("sort_order", "desc")
+    limit = request.args.get("limit", 500, type=int)
+    offset = request.args.get("offset", 0, type=int)
+    year = request.args.get("year", None, type=int)
+
+    # 收集筛选参数（仅白名单列，值为非空字符串时生效）
+    filters = {
+        key: request.args.get(key)
+        for key in WIDE_FILTERABLE_COLUMNS
+        if request.args.get(key) and request.args.get(key).strip()
+    }
+    try:
+        return ok(db_get_inventory_wide_report(sort_by, sort_order, limit, offset, filters=filters, year=year))
     except Exception as e:
         return jsonify({"code": -1, "msg": str(e)})
 
@@ -821,7 +860,7 @@ def api_wms_debug():
 
         # 检查后端必需的关键列
         required_cols = [
-            "tenant_id", "material_code", "batch_code", "erp_inventory",
+            "tenant_id", "material_code", "batch_code",
             "original_quantity", "current_quantity", "pi_current_quantity",
             "total_price", "unit_price",
             "project_inventory_id", "owner_project_code",

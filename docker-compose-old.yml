@@ -1,0 +1,37 @@
+version: "3.8"
+
+x-db-env: &db-env
+  DB_HOST: ${DB_HOST}
+  DB_PORT: ${DB_PORT}
+  DB_NAME: ${DB_NAME}
+  DB_USER: ${DB_USER}
+  DB_PASSWORD_BASE64: ${DB_PASSWORD_BASE64}
+
+services:
+  # ── Flask REST API + 前端静态文件 ─────────────────────────
+  bi-dashboard:
+    image: bi-dashboard:latest
+    container_name: wms-api
+    restart: unless-stopped
+    ports:
+      - "8088:5001"
+    environment:
+      <<: *db-env
+      STATIC_FOLDER: /app/static
+      PYTHONUNBUFFERED: "1"
+    command: ["python", "app.py"]
+
+  # ── WMS MCP Server（Streamable HTTP）──────────────────────
+  wms-mcp:
+    image: bi-dashboard:latest
+    container_name: wms-mcp
+    restart: unless-stopped
+    ports:
+      - "8766:8766"
+    environment:
+      <<: *db-env
+      PYTHONUNBUFFERED: "1"
+      MCP_HOST: "0.0.0.0"
+      MCP_TRANSPORT: streamable-http
+      MCP_PORT: "8766"
+    command: ["python", "mcp_server.py"]

@@ -230,7 +230,7 @@ const paths = [
 
         <ChartCard title="📦 库龄结构分布">
           <div class="age-bars" v-if="timeIndicators?.age_structure?.length">
-            <div class="age-bar" v-for="seg in timeIndicators.age_structure.filter((s: any) => s.range !== '≥5年')" :key="seg.range">
+            <div class="age-bar" v-for="seg in timeIndicators.age_structure" :key="seg.range">
               <span class="age-label">{{ seg.range }}</span>
               <div class="age-track">
                 <div class="age-fill" :style="{ width: Math.min(seg.ratio * 100, 100) + '%', background: seg.range.includes('≥') ? '#f43f5e' : seg.range.includes('3') ? '#f59e0b' : '#3b82f6' }"></div>

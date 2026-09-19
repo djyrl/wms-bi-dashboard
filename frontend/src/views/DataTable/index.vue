@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getInventoryReport } from '@/api/modules/dataTable'
 import type { InventoryRow } from '@/api/modules/dataTable'
@@ -18,6 +18,25 @@ const currentPage = ref(1)
 const sortBy = ref('inventory_amount')
 const sortOrder = ref('desc')
 const filters = ref<Record<string, string>>({})
+const summary = ref<{ total_inbound: number; total_claimed: number; total_inventory: number }>({
+  total_inbound: 0,
+  total_claimed: 0,
+  total_inventory: 0,
+})
+
+// 表头筛选防抖：变更后回到第 1 页并请求后端过滤（全量数据过滤，非当前页）
+let filterTimer: ReturnType<typeof setTimeout> | null = null
+watch(filters, () => {
+  if (filterTimer) clearTimeout(filterTimer)
+  filterTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadData()
+  }, 400)
+}, { deep: true })
+
+function fmtWan(v: number) {
+  return (v / 10000).toFixed(2)
+}
 
 const allColumns = ref([
   { key: 'material_code', label: '物料编码', visible: true, width: 110 },
@@ -70,18 +89,31 @@ function applyColumns() {
   columnPickerVisible.value = false
 }
 
+/** 组装请求参数：排序 + 分页 + 非空筛选值（后端按白名单列做 ILIKE 子串过滤） */
+function buildParams(limit: number, offset: number) {
+  const activeFilters: Record<string, string> = {}
+  for (const [k, v] of Object.entries(filters.value)) {
+    if (v && v.trim()) activeFilters[k] = v.trim()
+  }
+  return {
+    sort_by: sortBy.value,
+    sort_order: sortOrder.value,
+    limit,
+    offset,
+    ...activeFilters,
+  }
+}
+
 async function loadData() {
   loading.value = true
   error.value = null
   try {
-    const res = await getInventoryReport({
-      sort_by: sortBy.value,
-      sort_order: sortOrder.value,
-      limit: pageSize.value,
-      offset: (currentPage.value - 1) * pageSize.value,
-    })
+    const res = await getInventoryReport(
+      buildParams(pageSize.value, (currentPage.value - 1) * pageSize.value),
+    )
     rows.value = filterExcluded(res.rows)
     total.value = res.total
+    summary.value = res.summary
   } catch (e: any) {
     error.value = e.message || '加载失败'
   }
@@ -92,7 +124,7 @@ async function handleExport(format: 'csv' | 'excel') {
   exporting.value = true
   try {
     const headers: ExportHeader[] = visibleColumns.value.map((c) => ({ key: c.key, label: c.label }))
-    const res = await getInventoryReport({ sort_by: sortBy.value, sort_order: sortOrder.value, limit: 10000, offset: 0 })
+    const res = await getInventoryReport(buildParams(10000, 0))
     const rows = res.rows as unknown as Record<string, unknown>[]
     const filename = '批次追溯明细表'
     if (format === 'csv') {
@@ -119,17 +151,6 @@ function onPageChange(page: number) {
   loadData()
 }
 
-const filteredRows = computed(() => {
-  const activeFilters = Object.entries(filters.value).filter(([, v]) => v)
-  if (!activeFilters.length) return rows.value
-  return rows.value.filter(row =>
-    activeFilters.every(([key, val]) => {
-      const cell = String(row[key as keyof InventoryRow] ?? '').toLowerCase()
-      return cell.includes(val.toLowerCase())
-    })
-  )
-})
-
 onMounted(() => loadData())
 </script>
 
@@ -141,7 +162,9 @@ onMounted(() => loadData())
       <!-- 列管理 -->
       <div class="toolbar">
         明细表（批次追溯表）
-        <span class="total-info">共 {{ total }} 条</span>
+        <span class="total-info">
+          共 {{ total }} 条 ｜ 入库 {{ fmtWan(summary.total_inbound) }}万 · 领用 {{ fmtWan(summary.total_claimed) }}万 · 库存 {{ fmtWan(summary.total_inventory) }}万
+        </span>
         <div class="toolbar-right">
           <el-dropdown @command="handleExport">
             <el-button size="small" :loading="exporting">
@@ -175,7 +198,7 @@ onMounted(() => loadData())
 
       <!-- 表格 -->
       <el-table
-        :data="filteredRows"
+        :data="rows"
         stripe
         border
         size="small"

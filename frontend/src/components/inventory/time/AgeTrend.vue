@@ -10,7 +10,7 @@ const chartRef = ref<HTMLDivElement>()
 const chart = useECharts()
 
 const detailHeaders = ['月份', '平均库龄(天)', '趋势值(天)', '>90天占比(%)']
-const detailRows = computed(() => props.data.map(d => [d.month, formatDays(d.avgAge), formatDays(d.trend), d.over90Rate.toFixed(1) + '%'] as (string | number)[]))
+const detailRows = computed(() => [...props.data].reverse().map(d => [d.month, formatDays(d.avgAge), formatDays(d.trend), d.over90Rate.toFixed(1) + '%'] as (string | number)[]))
 
 function render() {
   if (!chartRef.value || !props.data.length) return
@@ -36,9 +36,9 @@ function render() {
       { type: 'value', name: '%', nameTextStyle: { color: '#94a3b8' }, axisLabel: { color: '#94a3b8' }, splitLine: { show: false }, min: rateMin, max: rateMax },
     ],
     series: [
-      { name: '平均库龄(天)', type: 'line', data: avgAges, smooth: true, lineStyle: { color: '#8b5cf6', width: 2.5 }, itemStyle: { color: '#8b5cf6' }, symbol: 'circle', symbolSize: 5, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(139,92,246,0.2)' }, { offset: 1, color: 'rgba(139,92,246,0)' }] } }, markLine: { silent: true, symbol: 'none', data: [{ yAxis: 45, label: { formatter: '警戒线 45天', color: '#f59e0b' }, lineStyle: { color: '#f59e0b', type: 'dashed' } }] } },
+      { name: '平均库龄(天)', type: 'line', data: avgAges, smooth: true, lineStyle: { color: '#8b5cf6', width: 2.5 }, itemStyle: { color: '#8b5cf6' }, symbol: 'circle', symbolSize: 5, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(139,92,246,0.2)' }, { offset: 1, color: 'rgba(139,92,246,0)' }] } }, markLine: { silent: true, symbol: 'none', data: [{ yAxis: 730, label: { formatter: '警戒线 730天', color: '#f59e0b' }, lineStyle: { color: '#f59e0b', type: 'dashed' } }] } },
       { name: '趋势线', type: 'line', data: trends, lineStyle: { color: '#fbbf24', width: 2, type: 'dotted' }, itemStyle: { color: '#fbbf24' }, symbol: 'none', endLabel: { show: true, formatter: '↑ 上升趋势', color: '#fbbf24', fontSize: 11 } },
-      { name: '>90天占比(%)', type: 'line', yAxisIndex: 1, data: over90s, smooth: true, lineStyle: { color: '#f43f5e', width: 2 }, itemStyle: { color: '#f43f5e' }, symbol: 'diamond', symbolSize: 5, markLine: { silent: true, symbol: 'none', data: [{ yAxis: 15, label: { formatter: '危险线 15%', color: '#f43f5e' }, lineStyle: { color: '#f43f5e', type: 'dashed' } }] } },
+      { name: '>90天占比(%)', type: 'line', yAxisIndex: 1, data: over90s, smooth: true, lineStyle: { color: '#f59e0b', width: 2 }, itemStyle: { color: '#f59e0b' }, symbol: 'diamond', symbolSize: 5, markLine: { silent: true, symbol: 'none', data: [{ yAxis: 15, label: { formatter: '危险线 15%', color: '#d97706' }, lineStyle: { color: '#d97706', type: 'dashed' } }] } },
     ],
   })
 }

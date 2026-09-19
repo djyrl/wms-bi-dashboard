@@ -8,7 +8,7 @@ import {
   getAgeMonthly,
   getAgeHeatmap,
 } from '@/api/modules/theme3'
-import { getErpAge, getErpAgeMonthly, getWmsSummary } from '@/api/modules/theme1'
+import { getWmsSummary } from '@/api/modules/theme1'
 import type {
   TimeIndicatorsRes,
   WmsProjectIndicator,
@@ -36,20 +36,17 @@ const heatmapAgeLabels = ref<string[]>([])
 const ageGauge = ref<AgeGaugeItem[]>([])
 
 const timeIndicators = ref<TimeIndicatorsRes | null>(null)
-const erpAge = ref<any>(null)
 const wmsSummary = ref<any>(null)
 const projectIndicators = ref<WmsProjectIndicator[]>([])
 const ageMonthlyData = ref<AgeMonthlyRes | null>(null)
-const erpAgeMonthly = ref<any>(null)
 
 const kpiCards = computed<KpiCardData[]>(() => {
   const t = timeIndicators.value
-  const ea = erpAge.value
   const projs = projectIndicators.value
   return [
-    { icon: '⏱', label: '加权平均库龄', value: ea?.avg_age_weighted_days ?? t?.avg_age_weighted_days ?? 52, unit: '天', change: (ea?.avg_age_weighted_days ?? t?.avg_age_weighted_days ?? 52) > 45 ? '⚠️ 偏高' : '✅ 正常', changeType: (ea?.avg_age_weighted_days ?? t?.avg_age_weighted_days ?? 52) <= 45 ? 'up' : 'down', color: '#8b5cf6' },
+    { icon: '⏱', label: '加权平均库龄', value: t?.avg_age_weighted_days ?? 52, unit: '天', change: (t?.avg_age_weighted_days ?? 52) > 730 ? '⚠️ 偏高' : '✅ 正常', changeType: (t?.avg_age_weighted_days ?? 52) <= 730 ? 'up' : 'down', color: '#8b5cf6' },
     { icon: '📦', label: '库存总额 (WMS)', value: wmsSummary.value?.total_inventory_amount ?? 0, unit: '万元', change: wmsSummary.value ? `${wmsSummary.value.total_records} 个批次` : '--', changeType: 'up', color: '#3b82f6' },
-    { icon: '⚠️', label: '长库龄占比(≥1年)', value: ea?.aged_ratio_1y ?? +(t?.aged_ratio_1y * 100).toFixed(1) ?? 17, unit: '%', change: ea ? `金额 ¥${ea.aged_amount_1y} 万` : '--', changeType: (ea?.aged_ratio_1y ?? 17) <= 15 ? 'up' : 'down', color: '#f43f5e' },
+    { icon: '⚠️', label: '长库龄占比(≥1年)', value: t ? +(t.aged_ratio_1y * 100).toFixed(1) : 17, unit: '%', change: t ? `金额 ¥${(t.aged_amount_1y / 10000).toFixed(2)} 万` : '--', changeType: t && (t.aged_ratio_1y * 100) <= 15 ? 'up' : 'down', color: '#f43f5e' },
     { icon: '🏗', label: '覆盖项目', value: projs.length || 8, unit: '个', change: projs.length > 0 ? `≥90天滞留 ${ageGauge.value.filter(g => g.over90Rate > 15).length} 个` : '--', changeType: 'up', color: '#10b981' },
   ]
 })
@@ -70,15 +67,13 @@ function buildChartData(
   projs: WmsProjectIndicator[],
   ageMonthly: AgeMonthlyRes | null,
   heatmap: AgeHeatmapRes | null,
-  erpAm: any,
 ) {
   if (t.age_structure && t.age_structure.length > 0) {
     agePyramid.value = t.age_structure
-      .filter(item => item.range !== '≥5年')
       .map(item => ({ range: item.range, amount: +(item.amount / 10000).toFixed(2), skuCount: item.count }))
   }
-  // 优先用 ERP 月度库龄（2021至今），回退 WMS
-  const ageSrc = (erpAm && erpAm.rows?.length) ? erpAm.rows : (ageMonthly?.data || [])
+  // 统一以 WMS 月度库龄为准（近 12 个月）
+  const ageSrc = ageMonthly?.data || []
   if (ageSrc.length > 0) {
     const avgAges = ageSrc.map((d: any) => d.avg_age ?? d.avgAge)
     const trendVals = calcTrend(avgAges)
@@ -113,8 +108,6 @@ async function loadAllData() {
   let heatmap: AgeHeatmapRes | null = null
   try { t = await getTimeIndicators() } catch (e: any) { errs.push('时间指标: ' + (e?.message || '失败')) }
   try { wmsSummary.value = await getWmsSummary() } catch (e: any) { errs.push('WMS总览: ' + (e?.message || '失败')) }
-  try { erpAge.value = await getErpAge() } catch (e: any) { errs.push('ERP库龄: ' + (e?.message || '失败')) }
-  try { erpAgeMonthly.value = await getErpAgeMonthly() } catch (e: any) { errs.push('ERP月度库龄: ' + (e?.message || '失败')) }
   try { await getAgeLayers({ min_amount: 0, min_age: 0 }) } catch (e: any) { errs.push('库龄分层: ' + (e?.message || '失败')) }
   try { projs = await getByProject() } catch (e: any) { errs.push('项目分析: ' + (e?.message || '失败')) }
   try { const r = await getAgeMonthly(); ageMonthlyData.value = r; ageMonthly = r } catch (e: any) { errs.push('库龄趋势: ' + (e?.message || '失败')) }
@@ -122,7 +115,7 @@ async function loadAllData() {
   if (t) {
     timeIndicators.value = t
     projectIndicators.value = projs
-    buildChartData(t, projs, ageMonthly, heatmap, erpAgeMonthly.value)
+    buildChartData(t, projs, ageMonthly, heatmap)
   }
   if (errs.length > 0) error.value = errs.join('；')
   loading.value = false

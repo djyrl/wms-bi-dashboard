@@ -88,6 +88,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '数据表格', icon: 'Grid' },
   },
   {
+    path: '/data-wide',
+    name: 'DataWide',
+    component: () => import('@/views/DataWide/index.vue'),
+    meta: { title: '明细宽表(WMS×ERP)', icon: 'Grid' },
+  },
+  {
     path: '/cross-analysis',
     name: 'CrossAnalysis',
     component: () => import('@/views/CrossAnalysis/index.vue'),

@@ -220,6 +220,7 @@ def get_kpi_checklist() -> Dict[str, Any]:
     total_inventory_qty = 0.0  # 库存总数量
     min_inbound_date = None
     max_inbound_date = None
+    max_outbound_time = None   # 最后出库时间（用于「数据截至」取较新者）
 
     for r in inv_rows:
         inventory = r["inventory_amount"]
@@ -234,6 +235,14 @@ def get_kpi_checklist() -> Dict[str, Any]:
                 min_inbound_date = d
             if max_inbound_date is None or d > max_inbound_date:
                 max_inbound_date = d
+
+        # 最后出库时间（批次级，可能为 None）
+        ot = r.get("last_outbound_time")
+        if ot is not None:
+            if hasattr(ot, 'date'):
+                ot = ot.date()
+            if max_outbound_time is None or ot > max_outbound_time:
+                max_outbound_time = ot
 
         total_inventory_qty += r["current_quantity"]
 
@@ -251,7 +260,7 @@ def get_kpi_checklist() -> Dict[str, Any]:
     # ================================================================
 
     # ── K1: 采购领用率（金额）──
-    K1_status = _status_for_rate(claim_rate_amt, 80, "up")
+    K1_status = _status_for_rate(claim_rate_amt, 60, "up")
     core_kpis = {
         "K1": {
             "key": "K1",
@@ -259,8 +268,8 @@ def get_kpi_checklist() -> Dict[str, Any]:
             "formula": "领用金额 / 入库金额 × 100%",
             "value": claim_rate_amt,
             "unit": "%",
-            "target": "≥80%",
-            "target_value": 80,
+            "target": "≥60%",
+            "target_value": 60,
             "direction": "up",
             "status": K1_status,
             "detail": {
@@ -602,11 +611,16 @@ def get_kpi_checklist() -> Dict[str, Any]:
         abs(calculated_inventory - total_inventory_amt) / total_inventory_amt * 100, 4
     ) if total_inventory_amt else 0.0
 
+    # 数据截至：取「最晚入库日期」与「最后出库时间」中较新者
+    data_end = max_inbound_date
+    if max_outbound_time is not None and (data_end is None or max_outbound_time > data_end):
+        data_end = max_outbound_time
+
     summary = {
-        "update_time": TODAY.strftime("%Y-%m-%d"),
+        "update_time": date.today().strftime("%Y-%m-%d"),
         # 数据覆盖日期范围
         "data_start_date": min_inbound_date.strftime("%Y-%m-%d") if min_inbound_date else "",
-        "data_end_date": max_inbound_date.strftime("%Y-%m-%d") if max_inbound_date else "",
+        "data_end_date": data_end.strftime("%Y-%m-%d") if data_end else "",
         # 核心汇总（万元）
         "total_inbound_wan": total_inbound_wan,
         "total_claimed_wan": total_claimed_wan,

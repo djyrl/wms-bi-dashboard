@@ -542,7 +542,7 @@ def get_erp_claim_indicators() -> Dict:
     return {
         "current_year": current_year,
         "year_start": f"{current_year}-01-01",
-        "year_end": f"{current_year}-12-31",
+        "year_end": date.today().isoformat(),
         "all": _build_erp_claim_metrics(
             agg.get("gross_inbound_all", 0), agg.get("reversal_all", 0),
             agg.get("net_inbound_all", 0), agg.get("outbound_all", 0),

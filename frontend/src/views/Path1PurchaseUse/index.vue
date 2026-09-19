@@ -57,7 +57,7 @@ const kpiCards = computed<KpiCardData[]>(() => {
   return [
     { icon: '\u{1F4C9}', label: '采购领用率（金额）', value: ec?.claim_rate_amount ?? 0, unit: '%', change: `未领用 ${ec?.unclaimed_amount_ratio ?? 0}%`, changeType: (ec?.claim_rate_amount ?? 0) >= 70 ? 'up' : 'down', color: '#f43f5e' },
     { icon: '\u{1F4E6}', label: '入库总额', value: ec?.total_inbound_amount ?? 0, unit: '万元', change: `出库 ${ec?.total_outbound_amount?.toFixed(0) ?? 0} 万元`, changeType: 'up', color: '#f59e0b' },
-    { icon: '⏱', label: '加权平均库龄', value: s?.avg_age_weighted_days ?? 0, unit: '天', change: `长库龄(≥1年)占比 ${((s?.aged_ratio_1y ?? 0) * 100).toFixed(1)}%`, changeType: (s?.avg_age_weighted_days ?? 0) <= 90 ? 'up' : 'down', color: '#8b5cf6' },
+    { icon: '⏱', label: '加权平均库龄', value: s?.avg_age_weighted_days ?? 0, unit: '天', change: `长库龄(≥1年)占比 ${(s?.aged_ratio_1y ?? 0).toFixed(2)}%`, changeType: (s?.avg_age_weighted_days ?? 0) <= 90 ? 'up' : 'down', color: '#8b5cf6' },
     { icon: '\u{1F4CB}', label: '当前库存总额', value: s?.total_inventory_amount ?? 0, unit: '万元', change: `库存记录 ${s?.total_records ?? 0} 条`, changeType: 'up', color: '#10b981' },
   ]
 })

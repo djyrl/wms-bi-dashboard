@@ -5,7 +5,7 @@ Extracted from compute_indicators.py — each function imports from utils as nee
 
 from datetime import date as dt_date, timedelta
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from utils import query, _f, _get_inventory_rows, _rows_to_float, _BATCH_AMOUNTS_SQL, _PROJECT_RATIO_SQL
 
@@ -47,7 +47,7 @@ def get_claim_monthly(non_project_only: bool = False) -> Dict:
         monthly[month]["inbound"] += r["inbound_amount"]
         monthly[month]["claimed"] += r["claimed_amount"]
 
-    all_months = list(monthly.keys())
+    all_months = sorted(monthly.keys())
     recent_months = all_months[-12:] if len(all_months) > 12 else all_months
 
     months = []
@@ -477,57 +477,66 @@ ALLOWED_SORT_COLUMNS = {
     "inbound_date": "inbound_date",
 }
 
+# 允许用于筛选的列（即 SELECT 输出的别名），防止通过任意字段注入 SQL
+FILTERABLE_COLUMNS = {
+    "purchase_batch", "material_name", "material_code", "project_code",
+    "project_name", "purchaser_name", "project_type", "inbound_date",
+    "putaway_date", "batch_code", "original_quantity", "current_quantity",
+    "used_quantity", "pick_quantity", "repair_quantity", "scrap_quantity",
+    "repaired_quantity", "unit_price", "unit", "supplier_code",
+    "inbound_amount", "claimed_amount", "inventory_amount", "claim_rate",
+    "age_days",
+}
+
+
+def _build_inventory_report_where(filters: Optional[Dict[str, str]]) -> Tuple[str, List[str]]:
+    """
+    根据 filters 生成 WHERE 子句与参数列表。
+    对 base 别名 b 的列做 `::text ILIKE '%value%'` 子串匹配（忽略大小写）。
+    """
+    if not filters:
+        return "", []
+    parts: List[str] = []
+    params: List[str] = []
+    for key, val in filters.items():
+        if val is None:
+            continue
+        val = str(val).strip()
+        if not val:
+            continue
+        if key not in FILTERABLE_COLUMNS:
+            continue
+        parts.append(f'b."{key}"::text ILIKE %s')
+        params.append(f"%{val}%")
+    where = " WHERE " + " AND ".join(parts) if parts else ""
+    return where, params
+
 
 def get_inventory_report(
     sort_by: str = "inventory_amount",
     sort_order: str = "desc",
     limit: int = 500,
     offset: int = 0,
+    filters: Optional[Dict[str, str]] = None,
 ) -> Dict:
     """
     采购批次库存报表。
     复用 _BATCH_AMOUNTS_SQL + _PROJECT_RATIO_SQL 模式，
     与 _get_inventory_rows 保持一致的去重和分配逻辑。
+
+    filters: {列别名: 筛选值}，对每个值做 ILIKE 子串匹配，多个条件 AND 组合。
+    明细行、分页 total、summary 汇总金额共用同一套 CTE 与筛选条件，
+    保证三者口径一致（汇总为筛选命中的全部行金额之和，跨页汇总）。
     """
     # 安全校验排序字段，防止 SQL 注入
     sort_col = ALLOWED_SORT_COLUMNS.get(sort_by, "inventory_amount")
     order_dir = "DESC" if sort_order.lower() == "desc" else "ASC"
 
-    # 汇总金额（使用 _BATCH_AMOUNTS_SQL 批次去重，与其他接口统一）
-    summary_row = query_one(f"""
-        WITH {_BATCH_AMOUNTS_SQL}
-        SELECT
-            COALESCE(SUM(batch_inbound), 0)   AS total_inbound,
-            COALESCE(SUM(batch_claimed), 0)   AS total_claimed,
-            COALESCE(SUM(batch_inventory), 0) AS total_inventory
-        FROM batch_amounts
-    """)
+    # 生成筛选 WHERE 子句（作用于 base 别名 b，与排序列同一层）
+    where_sql, where_params = _build_inventory_report_where(filters)
 
-    # 查数据（与 _get_inventory_rows 使用相同的 CTE + JOIN 模式）
-    sql = f"""
-        WITH {_BATCH_AMOUNTS_SQL},
-        wide_with_ratio AS (
-            SELECT
-                w.*,
-                ba.batch_inbound,
-                ba.batch_claimed,
-                ba.batch_inventory,
-                ba.batch_orig_qty,
-                ba.batch_outbound_qty,
-                ba.batch_unit_price,
-                ba.batch_age_days,
-                ba.batch_pick,
-                ba.batch_repair,
-                ba.batch_scrap,
-                ba.batch_repaired,
-                {_PROJECT_RATIO_SQL} AS project_ratio
-            FROM v_project_inventory_wide w
-            JOIN batch_amounts ba ON
-                ba.tenant_id = w.tenant_id
-                AND ba.material_code = w.material_code
-                AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
-        )
+    # 计算列的公共 SELECT（包装为 base CTE，供排序与过滤引用别名）
+    base_select = """
         SELECT
             r.project_inventory_id                  AS id,
             r.batch_code                            AS purchase_batch,
@@ -575,14 +584,62 @@ def get_inventory_report(
             END                                     AS claim_rate_on_inbound,
             r.batch_age_days                        AS age_days
         FROM wide_with_ratio r
+    """
+
+    # 公共 CTE：明细行 / 分页 total / 汇总金额三者共用，保证同口径
+    cte_sql = f"""
+        WITH {_BATCH_AMOUNTS_SQL},
+        wide_with_ratio AS (
+            SELECT
+                w.*,
+                ba.batch_inbound,
+                ba.batch_claimed,
+                ba.batch_inventory,
+                ba.batch_orig_qty,
+                ba.batch_outbound_qty,
+                ba.batch_unit_price,
+                ba.batch_age_days,
+                ba.batch_pick,
+                ba.batch_repair,
+                ba.batch_scrap,
+                ba.batch_repaired,
+                {_PROJECT_RATIO_SQL} AS project_ratio
+            FROM v_project_inventory_wide w
+            JOIN batch_amounts ba ON
+                ba.tenant_id = w.tenant_id
+                AND ba.material_code = w.material_code
+                AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
+            -- 与 /api/inventory/inventory/projectInventory/list 取数口径对齐：
+            -- 只保留项目台账 current_quantity > 0 的行，排除负/零库存，
+            -- 避免负的 pi_current_quantity 经 project_ratio 映射成负库存金额。
+            WHERE w.pi_current_quantity > 0
+        ),
+        base AS ({base_select})
+    """
+
+    # 总行数 + 汇总金额：应用与明细行相同的筛选，一次查询取回
+    # （汇总跨页，等于筛选命中的全部行金额之和；无筛选时与原批次口径一致）
+    summary_row = query_one(f"""
+        {cte_sql}
+        SELECT
+            COUNT(*)                             AS total,
+            COALESCE(SUM(b.inbound_amount), 0)   AS total_inbound,
+            COALESCE(SUM(b.claimed_amount), 0)   AS total_claimed,
+            COALESCE(SUM(b.inventory_amount), 0) AS total_inventory
+        FROM base b
+        {where_sql}
+    """, tuple(where_params))
+    total = int(summary_row["total"]) if summary_row else 0
+
+    # 查数据（与 _get_inventory_rows 使用相同的 CTE + JOIN 模式，筛选后排序分页）
+    rows = query(f"""
+        {cte_sql}
+        SELECT *
+        FROM base b
+        {where_sql}
         ORDER BY {sort_col} {order_dir} NULLS LAST
         LIMIT %s OFFSET %s
-    """
-    rows = query(sql, (limit, offset))
-
-    # 获取总行数
-    total_row = query_one("SELECT COUNT(*) AS total FROM v_project_inventory_wide")
-    total = int(total_row["total"]) if total_row else 0
+    """, (*where_params, limit, offset))
 
     rows = _rows_to_float(rows,
         "inbound_amount", "claimed_amount", "inventory_amount", "claim_rate",

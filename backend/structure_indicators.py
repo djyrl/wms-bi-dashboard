@@ -76,7 +76,6 @@ def get_structure_indicators() -> Dict:
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
         ),
         -- 按项目聚合
         project_agg AS (

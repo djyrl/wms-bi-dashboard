@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Layout from '@/layout/Layout.vue'
+import ScreenAdapter from '@/components/common/ScreenAdapter.vue'
 
 const route = useRoute()
 const isFullscreen = computed(() => route.meta?.fullscreen === true)
@@ -11,7 +12,7 @@ const isFullscreen = computed(() => route.meta?.fullscreen === true)
   <Layout v-if="!isFullscreen">
     <router-view />
   </Layout>
-  <div v-else class="fullscreen-viewport"><router-view /></div>
+  <div v-else class="fullscreen-viewport"><ScreenAdapter><router-view /></ScreenAdapter></div>
 </template>
 
 <style>

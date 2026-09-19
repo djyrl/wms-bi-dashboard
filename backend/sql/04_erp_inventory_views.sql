@@ -14,7 +14,7 @@
 -- 关键约定：
 --   - ERP DMBTR 天然带正负号，直接 SUM 即净变化
 --   - KingbaseES Oracle 兼容模式：空字符串 '' 视为 NULL，不可用 != '' 判断
---   - WMS 使用 DISTINCT ON (tenant_id,material_code,batch_code,erp_inventory) 去重
+--   - WMS 使用 DISTINCT ON (tenant_id,material_code,batch_code) 去重
 -- =====================================================================
 
 -- ---------------------------------------------------------------
@@ -60,7 +60,7 @@ WITH erp_batch AS (
     GROUP BY row_json->>'MATNR', charg
 ),
 wms_batch_raw AS (
-    SELECT DISTINCT ON (tenant_id, material_code, batch_code, erp_inventory)
+    SELECT DISTINCT ON (tenant_id, material_code, batch_code)
         material_code,
         batch_code,
         total_price                              AS wms_inventory_amt,

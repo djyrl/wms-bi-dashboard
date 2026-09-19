@@ -45,7 +45,7 @@ def _query_claim_aggregates(current_year: int) -> Dict[str, Dict[str, float]]:
     sql = f"""
         WITH batch_amounts AS (
             -- 物理批次去重（与 utils._BATCH_AMOUNTS_SQL 口径一致）
-            SELECT DISTINCT ON (tenant_id, material_code, batch_code, erp_inventory)
+            SELECT DISTINCT ON (tenant_id, material_code, batch_code)
                 -- 三个核心金额
                 original_quantity * unit_price       AS batch_inbound,
                 total_outbound_quantity * unit_price AS batch_claimed,

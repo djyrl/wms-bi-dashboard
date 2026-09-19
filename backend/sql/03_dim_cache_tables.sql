@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS dim_outbound_log_cache (
     repair_quantity         NUMERIC,
     scrap_quantity          NUMERIC,
     repaired_quantity       NUMERIC,
+    last_outbound_time      TIMESTAMP,       -- 最后出库时间（wms_inventory_log.operation_time）
     refreshed_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -198,7 +199,7 @@ BEGIN
     INSERT INTO dim_outbound_log_cache (
         tenant_id, material_code, batch_code, erp_inventory,
         total_outbound_quantity, pick_quantity, repair_quantity,
-        scrap_quantity, repaired_quantity
+        scrap_quantity, repaired_quantity, last_outbound_time
     )
     SELECT
         inv.tenant_id,
@@ -209,7 +210,8 @@ BEGIN
         SUM(CASE WHEN log.change_type = 31 THEN log.change_quantity ELSE 0 END),
         SUM(CASE WHEN log.change_type = 34 THEN log.change_quantity ELSE 0 END),
         SUM(CASE WHEN log.change_type = 35 THEN log.change_quantity ELSE 0 END),
-        SUM(CASE WHEN log.change_type = 36 THEN log.change_quantity ELSE 0 END)
+        SUM(CASE WHEN log.change_type = 36 THEN log.change_quantity ELSE 0 END),
+        MAX(log.update_date)
     FROM wms_inventory inv
     INNER JOIN wms_inventory_log log ON log.inventory_id = inv.id
     WHERE log.change_type IN (31, 34, 35, 36)

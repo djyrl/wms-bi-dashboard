@@ -170,13 +170,13 @@ def get_kpi_checklist_by_date_range(start_date: str, end_date: str) -> Dict[str,
     #  Step 3: 组装 KPI 指标
     # ================================================================
 
-    K1_status = _status_for_rate(claim_rate_amt, 80, "up")
+    K1_status = _status_for_rate(claim_rate_amt, 60, "up")
     core_kpis = {
         "K1": {
             "key": "K1", "name": "采购领用率（金额）",
             "formula": "领用金额 / 入库金额 × 100%",
-            "value": claim_rate_amt, "unit": "%", "target": "≥80%",
-            "target_value": 80, "direction": "up", "status": K1_status,
+            "value": claim_rate_amt, "unit": "%", "target": "≥60%",
+            "target_value": 60, "direction": "up", "status": K1_status,
             "detail": {
                 "claimed_amount_wan": total_claimed_wan,
                 "inbound_amount_wan": total_inbound_wan,
@@ -440,7 +440,7 @@ def get_kpi_checklist_by_date_range(start_date: str, end_date: str) -> Dict[str,
     ) if total_inventory_amt else 0.0
 
     summary = {
-        "update_time": TODAY.strftime("%Y-%m-%d"),
+        "update_time": date.today().strftime("%Y-%m-%d"),
         "data_start_date": min_inbound_date.strftime("%Y-%m-%d") if min_inbound_date else "",
         "data_end_date": max_inbound_date.strftime("%Y-%m-%d") if max_inbound_date else "",
         "date_filter_start": start_date,

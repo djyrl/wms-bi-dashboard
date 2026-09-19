@@ -1,54 +1,61 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
-import { echarts } from '@/utils/echarts'
-import { getWmsSummary, getErpClaim, getClaimWeekly, getErpAgeMonthly } from '@/api/modules/theme1'
-import { getStructure } from '@/api/modules/theme2'
-import type { WmsStructure } from '@/api/modules/theme2'
-import { getTimeIndicators, getByProject } from '@/api/modules/theme3'
+import { useECharts } from '@/composables/useECharts'
+import { getWmsSummary, getErpClaim, getClaimWeekly } from '@/api/modules/theme1'
+import { getStructure, getByCategory } from '@/api/modules/theme2'
+import { getTimeIndicators, getByProject, getAgeMonthly } from '@/api/modules/theme3'
 import type { WmsProjectIndicator } from '@/api/modules/theme3'
-import { getTopUnclaimedAmount } from '@/api/modules/theme4'
+import type { CategoryBubbleItem } from '@/types/inventory'
 import ErrorResult from '@/components/common/ErrorResult.vue'
 import ChartCard from '@/components/common/ChartCard.vue'
 import UsageRateTrend from '@/components/inventory/claim/UsageRateTrend.vue'
+import CategoryBubble from '@/components/inventory/structure/CategoryBubble.vue'
 import AgeTrend from '@/components/inventory/time/AgeTrend.vue'
-import { formatDays } from '@/utils/format'
-import { filterExcluded } from '@/utils/excludeMaterials'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<any>(null)
 const erpClaim = ref<any>(null)
-const structure = ref<WmsStructure | null>(null)
 const timeIndicators = ref<any>(null)
-const topUnclaimed = ref<any[]>([])
+const projectRows = ref<any[]>([])
 const projectIndicators = ref<WmsProjectIndicator[]>([])
 const claimWeeklyRate = ref<any[]>([])
 const claimWeeklyMonths = ref<string[]>([])
-const erpAgeMonthlyData = ref<any>(null)
-const projectBarRef = ref<HTMLDivElement>()
+const ageMonthlyData = ref<any>(null)
+const categoryBubble = ref<CategoryBubbleItem[]>([])
 const agePieRef = ref<HTMLDivElement>()
-let projectBarChart: any = null
-let agePieChart: any = null
+const agePie = useECharts()
 
 async function loadAll() {
   loading.value = true
   error.value = null
   try {
-    const [s, ec, st, ti, top, cw, eam, projInd] = await Promise.all([
-      getWmsSummary(), getErpClaim(), getStructure(), getTimeIndicators(), getTopUnclaimedAmount(20),
-      getClaimWeekly(), getErpAgeMonthly(), getByProject(),
+    const [s, ec, st, ti, cw, eam, projInd, cat] = await Promise.all([
+      getWmsSummary(), getErpClaim(), getStructure(), getTimeIndicators(),
+      getClaimWeekly(), getAgeMonthly(), getByProject(), getByCategory(),
     ])
     summary.value = s
     erpClaim.value = ec
-    structure.value = st
     timeIndicators.value = ti
-    topUnclaimed.value = filterExcluded(top)
+    projectRows.value = (st?.project_ratios || [])
+      .filter((p: any) => p.project_name && p.project_name !== '非项目物资')
+      .slice(0, 8)
+    // 物资类别气泡图
+    const catData: any = cat?.data || cat || []
+    categoryBubble.value = (Array.isArray(catData) ? catData : []).map((c: any) => ({
+      name: c.category_name || c.category_code || '未知',
+      inventory: c.inventory_amount,
+      usageRate: c.claim_rate,
+      skuCount: c.sku_count,
+    }))
     // 领用率周趋势
     if (cw?.data) {
-      claimWeeklyRate.value = cw.data.map((d: any) => ({ month: d.week, rate: d.claim_rate, target: 20, trend: 0 }))
+      const rates = cw.data.map((d: any) => d.claim_rate)
+      const trends = calcTrend(rates)
+      claimWeeklyRate.value = cw.data.map((d: any, i: number) => ({ month: d.week, rate: d.claim_rate, target: 20, trend: trends[i] }))
       claimWeeklyMonths.value = cw.weeks || []
     }
-    erpAgeMonthlyData.value = eam
+    ageMonthlyData.value = eam
     projectIndicators.value = projInd
   } catch (e: any) {
     error.value = e.message || '加载失败'
@@ -61,53 +68,37 @@ function truncateText(text: string, maxLen = 20): string {
   if (!text) return ''
   return text.length > maxLen ? text.slice(0, maxLen) + '…' : text
 }
-function fmtAge(days: number | undefined | null): string {
-  if (days == null) return '-'
-  return formatDays(days)
-}
-
-// 固定调色板：活泼多彩系
-const BAR_COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316']
-
-function renderProjectBar() {
-  const projs = (structure.value?.project_ratios || [])
-    .filter((p: any) => p.project_name && p.project_name !== '非项目物资')
-    .slice(0, 8)
-  if (!projectBarRef.value || !projs.length) return
-  if (!projectBarChart) {
-    projectBarChart = echarts.init(projectBarRef.value)
-  }
-  projectBarChart.setOption({
-    tooltip: { trigger: 'axis', formatter: (params: any) => `${projs[params[0].dataIndex]?.project_name || params[0].name}<br/>库存: ${params[0].value} 万` },
-    grid: { left: 10, right: 10, top: 10, bottom: 50 },
-    xAxis: { type: 'category', data: projs.map((p: any) => (p.project_name || '').length > 6 ? (p.project_name || '').slice(0, 6) + '…' : p.project_name), axisLabel: { rotate: 30, fontSize: 10, color: '#8a9aa9' }, axisLine: { lineStyle: { color: 'rgb(255 255 255 / 15%)' } } },
-    yAxis: { type: 'value', axisLabel: { formatter: '{value}万', color: '#8a9aa9' }, splitLine: { lineStyle: { color: 'rgb(255 255 255 / 8%)' } } },
-    series: [{
-      type: 'bar',
-      data: projs.map((p: any, i: number) => ({ value: +((p.inventory_amount || 0) / 10000).toFixed(0), itemStyle: { color: BAR_COLORS[i], borderRadius: [4, 4, 0, 0] } })),
-    }],
-  }, true)
+function calcTrend(values: number[]): number[] {
+  const n = values.length
+  if (n < 2) return values.map(() => values[0] ?? 0)
+  const xs = values.map((_, i) => i)
+  const yMean = values.reduce((a, b) => a + b, 0) / n
+  const xMean = (n - 1) / 2
+  const slope =
+    xs.reduce((s, x, i) => s + (x - xMean) * (values[i] - yMean), 0) /
+    xs.reduce((s, x) => s + (x - xMean) * (x - xMean), 0)
+  const intercept = yMean - slope * xMean
+  return values.map((_, i) => +(slope * i + intercept).toFixed(1))
 }
 
 function renderAgePie() {
-  const segs = (timeIndicators.value?.age_structure || []).filter((s: any) => s.range !== '≥5年')
+  const segs = timeIndicators.value?.age_structure || []
   if (!agePieRef.value || !segs.length) return
-  if (!agePieChart) agePieChart = echarts.init(agePieRef.value)
-  agePieChart.setOption({
+  if (!agePie.instance) agePie.init(agePieRef.value)
+  agePie.setOption({
     tooltip: { trigger: 'item', formatter: '{b}: {c} 万 ({d}%)' },
     series: [{
       type: 'pie', radius: ['40%', '70%'], center: ['50%', '50%'],
       data: segs.map((s: any) => ({ name: s.range, value: +(s.amount / 10000).toFixed(2) })),
       label: { formatter: '{b}\n{d}%', color: '#e2e8f0' },
       itemStyle: { borderRadius: 4, borderColor: 'rgb(2, 4, 8)', borderWidth: 2 },
-      color: ['#3b82f6', '#f59e0b', '#f43f5e'],
+      color: ['#3b82f6', '#f59e0b', '#f43f5e', '#a855f7'],
     }],
-  }, true)
+  })
 }
 
-watch(() => structure.value?.project_ratios, () => nextTick(renderProjectBar))
 watch(() => timeIndicators.value?.age_structure, () => nextTick(renderAgePie))
-onMounted(() => { setTimeout(renderProjectBar, 500); setTimeout(renderAgePie, 600) })
+onMounted(() => { setTimeout(renderAgePie, 600) })
 
 // 实时时钟
 const now = ref(new Date())
@@ -152,8 +143,7 @@ function onFullscreenChange() {
   // 全屏动画结束后多次 resize，确保 echarts 拿到最终尺寸
   ;[300, 600, 1000].forEach(delay => {
     setTimeout(() => {
-      projectBarChart?.resize()
-      agePieChart?.resize()
+      agePie.resize()
       updateTableRowCount()
       window.dispatchEvent(new Event('resize'))
     }, delay)
@@ -222,13 +212,13 @@ onUnmounted(() => {
         </ChartCard>
 
         <ChartCard title="📦 库龄结构分布">
-          <div ref="agePieRef" style="width:100%;height:100%"></div>
+          <div ref="agePieRef" class="chart"></div>
         </ChartCard>
 
         <ChartCard title="📊 加权平均库龄月度趋势">
           <AgeTrend
-            :data="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => ({ month: d.doc_month, avgAge: d.avg_age, trend: 0, over90Rate: d.over90_rate }))"
-            :months="(erpAgeMonthlyData?.rows || []).filter((d: any) => d.doc_month.startsWith('2026')).map((d: any) => d.doc_month)"
+            :data="(ageMonthlyData?.data || []).filter((d: any) => d.month.startsWith(String(new Date().getFullYear()))).map((d: any) => ({ month: d.month, avgAge: d.avg_age, trend: 0, over90Rate: d.over90_rate }))"
+            :months="(ageMonthlyData?.data || []).filter((d: any) => d.month.startsWith(String(new Date().getFullYear()))).map((d: any) => d.month)"
             :hideDetail="true"
           />
         </ChartCard>
@@ -259,21 +249,28 @@ onUnmounted(() => {
           </table>
         </ChartCard>
 
-        <ChartCard title="🌳 项目库存金额分布">
-          <div ref="projectBarRef" style="width:100%;height:100%;min-height:200px"></div>
+        <ChartCard title="🫧 物资类别气泡图">
+          <CategoryBubble :data="categoryBubble" :hideDetail="true" />
         </ChartCard>
 
-        <ChartCard :title="'📦 未领用库存'">
-          <table class="mini-table" v-if="topUnclaimed?.length">
-            <tr v-for="item in topUnclaimed.slice(0, tableRowCount)" :key="item.id">
-              <td>
-                <el-tooltip :content="item.material_name" placement="top" :disabled="(item.material_name || '').length <= 20">
-                  <span>{{ truncateText(item.material_name) }}</span>
-                </el-tooltip>
-              </td>
-              <td class="num" style="color:#f87171">{{ fmtWan(item.inventory_amount) }} 万</td>
-              <td class="num" style="font-size:11px;color:#8a9aa9">{{ fmtAge(item.age_days) }}</td>
-            </tr>
+        <ChartCard title="项目库存占比">
+          <table class="data-table" v-if="projectRows.length">
+            <thead>
+              <tr><th style="text-align:center">#</th><th>项目名称</th><th style="text-align:right">库存(万元)</th><th style="text-align:right">占比</th><th>进度</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="(p, i) in projectRows" :key="p.project_code">
+                <td style="text-align:center"><span class="rank-badge" :class="i < 3 ? `rank-${i + 1}` : ''">{{ i + 1 }}</span></td>
+                <td>{{ p.project_name || '-' }}</td>
+                <td class="num">{{ fmtWan(p.inventory_amount) }}</td>
+                <td class="num">{{ (p.ratio * 100).toFixed(1) }}%</td>
+                <td>
+                  <div class="ratio-bar">
+                    <div class="ratio-bar__fill" :style="{ width: (p.ratio * 100) + '%' }"></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
           </table>
         </ChartCard>
       </div>
@@ -369,7 +366,7 @@ onUnmounted(() => {
     flex-direction: column;
     min-height: 0;
   }
-  :deep(.chart) { width: 100% !important; flex: 1; min-height: 180px; }
+  :deep(.chart) { width: 100% !important; flex: 1; min-height: 0; }
 }
 
 .mini-table {
@@ -382,6 +379,48 @@ onUnmounted(() => {
     border-bottom: 1px solid rgb(255 255 255 / 6%);
   }
   .num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  th {
+    padding: 8px 10px;
+    border-bottom: 2px solid rgb(255 255 255 / 10%);
+    color: #8a9aa9;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgb(255 255 255 / 6%);
+    color: #cbd5e1;
+    &.num { text-align: right; font-variant-numeric: tabular-nums; }
+  }
+}
+.rank-badge {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+  background: rgb(255 255 255 / 8%);
+  &.rank-1 { background: #f59e0b; color: #000; }
+  &.rank-2 { background: #94a3b8; color: #000; }
+  &.rank-3 { background: #cd853f; color: #fff; }
+}
+.ratio-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 6%);
+  overflow: hidden;
+  &__fill { height: 100%; border-radius: 3px; background: #3b82f6; }
 }
 
 </style>

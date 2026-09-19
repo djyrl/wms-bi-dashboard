@@ -22,7 +22,7 @@ const shortLabels = computed(() => props.months.map(m => {
 }))
 
 const detailHeaders = computed(() => [timeLabel.value, '入库(万)', '领用(万)', '净增(万)'])
-const detailRows = computed(() => props.data.map(d => [d.month, toWan(d.inbound), toWan(d.outbound), toWan(d.net)] as (string | number)[]))
+const detailRows = computed(() => [...props.data].reverse().map(d => [d.month, toWan(d.inbound), toWan(d.outbound), toWan(d.net)] as (string | number)[]))
 
 function render() {
   if (!chartRef.value || !props.data.length) return

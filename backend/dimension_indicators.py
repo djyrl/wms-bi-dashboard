@@ -83,7 +83,6 @@ def get_by_project(owner_project_type: str = None, start_date=None, end_date=Non
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
             WHERE 1=1{date_clause}
         )
         SELECT
@@ -175,7 +174,6 @@ def get_by_purchaser(start_date=None, end_date=None) -> List[Dict]:
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
             WHERE 1=1{date_clause}
         )
         SELECT
@@ -251,7 +249,6 @@ def get_project_summary(
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
         )
         SELECT
             project_code,
@@ -324,7 +321,6 @@ def get_purchaser_summary(
                 ba.tenant_id = w.tenant_id
                 AND ba.material_code = w.material_code
                 AND ba.batch_code IS NOT DISTINCT FROM w.batch_code
-                AND ba.inv_code IS NOT DISTINCT FROM w.erp_inventory
         )
         SELECT
             contact_name,
