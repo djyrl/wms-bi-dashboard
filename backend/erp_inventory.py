@@ -427,8 +427,10 @@ def get_inventory_overview() -> Dict:
 #    WMS: 只统计当前有库存的批次 → 领用率偏低（大量已消耗的没算）
 #
 #  移动类型映射：
-#    入库 = 101 + 102（102已是负数）
-#    出库 = 201(成本中心) + 221(项目) + 222 + Z61(项目) + Z62
+#    入库 = 101(收货) + 102(收货冲销，已是负数)
+#    出库 = 201(成本中心发货) + 221(项目发货) + Z61(订单发货-PM)
+#    ⚠️ Z62(订单收货-PM)、222(项目退货)、202(成本中心收货) 属收货/退货方向，
+#      不计入出库（与 v_mb51_ledger_2026 视图 direction 归类一致）。
 #    领用率 = 出库 / 入库 × 100%
 # ================================================================
 
@@ -452,7 +454,7 @@ def _query_erp_claim_aggregates(current_year: int) -> dict:
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS net_inbound_all,
             -- 全部历史：出库
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_all,
             -- 当年：入库
             COALESCE(SUM(CASE WHEN bwart = '101'
@@ -465,18 +467,18 @@ def _query_erp_claim_aggregates(current_year: int) -> dict:
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS net_inbound_year,
             -- 当年：出库
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_year,
             -- 数量
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                 THEN (row_json->>'MENGE')::numeric ELSE 0 END), 0)     AS inbound_qty_all,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                 THEN -(row_json->>'MENGE')::numeric ELSE 0 END), 0)    AS outbound_qty_all,
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN (row_json->>'MENGE')::numeric ELSE 0 END), 0)     AS inbound_qty_year,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN -(row_json->>'MENGE')::numeric ELSE 0 END), 0)    AS outbound_qty_year
         FROM public.erp_catalog_mb51
@@ -501,9 +503,10 @@ def _build_erp_claim_metrics(gross_inbound: float, reversal: float,
     """
     unclaimed = net_inbound - outbound
     return {
-        "total_inbound_amount": round(gross_inbound / 10000, 2),       # 101收货
-        "reversal_amount": round(reversal / 10000, 2),                  # 冲销金额
-        "net_inbound_amount": round(net_inbound / 10000, 2),            # 净入库
+        "gross_inbound_amount": round(gross_inbound / 10000, 2),       # 101收货(毛入库, 未扣冲销)
+        "total_inbound_amount": round(net_inbound / 10000, 2),         # 入库总额 = 净入库(101+102, 已扣冲销)
+        "reversal_amount": round(reversal / 10000, 2),                  # 冲销金额(102绝对值)
+        "net_inbound_amount": round(net_inbound / 10000, 2),            # 净入库(与 total_inbound_amount 同值, 保留兼容)
         "total_outbound_amount": round(outbound / 10000, 2),
         "total_inbound_quantity": round(inbound_qty, 2),
         "total_outbound_quantity": round(outbound_qty, 2),
@@ -554,7 +557,7 @@ def get_erp_claim_indicators() -> Dict:
             agg.get("inbound_qty_year", 0), agg.get("outbound_qty_year", 0),
         ),
         "erp_inventory": erp_inventory,
-        "note": "ERP数据(erp_catalog_mb51)，入库=101收货，出库=201+221+222+Z61+Z62",
+        "note": "ERP数据(erp_catalog_mb51)，入库=101+102，出库=201+221+Z61（Z62/222为收货退货，不计出库）",
     }
 
 
@@ -576,7 +579,7 @@ def get_erp_claim_monthly(year: Optional[int] = None) -> Dict:
             SUBSTRING(row_json->>'BLDAT', 1, 7) AS doc_month,
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS inbound,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound,
             COUNT(*) AS move_cnt
         FROM public.erp_catalog_mb51

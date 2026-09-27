@@ -83,7 +83,7 @@ const coreKpiList = computed(() => {
         formula: `出库金额 / 净入库 × 100%（${ec.total_outbound_amount?.toFixed(0) ?? 0}万 / ${ec.net_inbound_amount?.toFixed(0) ?? 0}万）`,
         detail: {
           ...kpi.detail,
-          inbound_amount_wan: ec.total_inbound_amount,
+          inbound_amount_wan: ec.gross_inbound_amount,
           net_inbound_amount_wan: ec.net_inbound_amount,
           reversal_amount_wan: ec.reversal_amount,
           claimed_amount_wan: ec.total_outbound_amount,

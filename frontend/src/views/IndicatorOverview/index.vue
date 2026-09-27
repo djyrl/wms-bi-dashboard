@@ -55,7 +55,7 @@ function truncateText(text: string, maxLen = 20): string {
 }
 function erpClaimRange(type: 'year' | 'all'): ErpClaimRange {
   return erpClaim.value?.[type] ?? {
-    total_inbound_amount: 0, reversal_amount: 0, net_inbound_amount: 0,
+    gross_inbound_amount: 0, total_inbound_amount: 0, reversal_amount: 0, net_inbound_amount: 0,
     total_outbound_amount: 0,
     total_inbound_quantity: 0, total_outbound_quantity: 0,
     claim_rate_amount: 0, claim_rate_quantity: 0,
@@ -165,18 +165,21 @@ onMounted(loadAll)
       <section>
         <h3>（二）库存结构指标</h3>
         <div class="kpi-cards">
-          <div class="kpi-card"><div class="kpi-label">4. 当年库存金额</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
-          <div class="kpi-card"><div class="kpi-label">5. 所有库存金额</div><div class="kpi-value">{{ (summary?.total_inventory_amount ?? 0).toFixed(2) }} 万元</div></div>
-          <!-- <div class="kpi-card"><div class="kpi-label">6. 当前库存数量</div><div class="kpi-value">{{ fmtNum(structure?.current_inventory_quantity) }}</div></div> -->
+          <div class="kpi-card"><div class="kpi-label">4. 所有库存金额</div><div class="kpi-value">{{ (summary?.total_inventory_amount ?? 0).toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">5. 当年入库结存</div><div class="kpi-formula">今年进的货，现在还压着多少（批次）</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">6. 当年入库金额</div><div class="kpi-formula">= 今年累计入库</div><div class="kpi-value">{{ structure?.current_year_inbound_amount?.toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">7. 当年入库·已领用</div><div class="kpi-formula">今年进的货被领走多少（批次）</div><div class="kpi-value">{{ structure?.current_year_claimed_amount?.toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">8. 当年净剩金额</div><div class="kpi-formula">= 当年入库批次 − 已领用（＝当年入库结存）</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
+          <div class="kpi-card"><div class="kpi-label">9. 全年项目领用总额</div><div class="kpi-formula">全部项目</div><div class="kpi-value">{{ structure?.year_claim_flow?.total_amount?.toFixed(2) }} 万元</div></div>
         </div>
         <h4>10. 项目库存占比 TOP 10</h4>
         <table class="data-table" v-if="structure?.project_ratios?.length">
-          <thead><tr><th>项目</th><th class="num">库存金额(万)</th><th class="num">占比</th></tr></thead>
+          <thead><tr><th>项目</th><th class="num">库存金额(万)</th><th class="num">库存占比</th></tr></thead>
           <tbody><tr v-for="p in structure.project_ratios.filter(p => p.project_code).slice(0,10)" :key="p.project_code"><td>{{ p.project_name || '-' }}</td><td class="num">{{ fmtWan(p.inventory_amount) }}</td><td class="num">{{ (p.ratio * 100).toFixed(2) }}%</td></tr></tbody>
         </table>
         <h4>11. 提报人库存占比 TOP 10</h4>
         <table class="data-table" v-if="structure?.purchaser_ratios?.length">
-          <thead><tr><th>提报人</th><th class="num">库存金额(万)</th><th class="num">占比</th></tr></thead>
+          <thead><tr><th>提报人</th><th class="num">库存金额(万)</th><th class="num">库存占比</th></tr></thead>
           <tbody><tr v-for="p in structure.purchaser_ratios.slice(0,10)" :key="p.purchaser_name"><td>{{ p.purchaser_name }}</td><td class="num">{{ fmtWan(p.inventory_amount) }}</td><td class="num">{{ (p.ratio * 100).toFixed(2) }}%</td></tr></tbody>
         </table>
       </section>

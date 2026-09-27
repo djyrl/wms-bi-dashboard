@@ -82,7 +82,7 @@ other_indicators.py / kpi_checklist.py / erp_inventory.py 中的指标逻辑，
       字段：werks（工厂，取值 '2635'）、bwart（移动类型）、charg（批次）、
             row_json（JSONB：MATNR物料编码 / DMBTR金额 / MENGE数量 /
                       BLDAT凭证日期 / MAKTX物料名称）
-      移动类型：入库 = 101(收货) + 102(冲销)；出库 = 201/221/222/Z61/Z62
+      移动类型：入库 = 101(收货) + 102(冲销)；出库 = 201/221/Z61
 
 4. ERP 批次生命周期视图 v_batch_lifecycle
       关键字段：best_inventory_amt（最佳库存金额）、wms_inventory_amt（WMS实物库存）、
@@ -2220,7 +2220,7 @@ def get_erp_claim_indicators() -> Dict:
       total_inbound_amount  101收货金额
       reversal_amount       102冲销金额
       net_inbound_amount    净入库（101+102）
-      total_outbound_amount 出库金额（201/221/222/Z61/Z62）
+      total_outbound_amount 出库金额（201/221/Z61）
       claim_rate_amount     领用率 = 出库 / 净入库 × 100%
       unclaimed_amount      未领用金额 = 净入库 - 出库
       erp_inventory         ERP当前库存（v_batch_lifecycle.best_inventory_amt）
@@ -2239,7 +2239,7 @@ def get_erp_claim_indicators() -> Dict:
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS reversal_all,
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS net_inbound_all,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_all,
             COALESCE(SUM(CASE WHEN bwart = '101'
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
@@ -2250,17 +2250,17 @@ def get_erp_claim_indicators() -> Dict:
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0)     AS net_inbound_year,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0)    AS outbound_year,
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                 THEN (row_json->>'MENGE')::numeric ELSE 0 END), 0)     AS inbound_qty_all,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                 THEN -(row_json->>'MENGE')::numeric ELSE 0 END), 0)    AS outbound_qty_all,
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN (row_json->>'MENGE')::numeric ELSE 0 END), 0)     AS inbound_qty_year,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{current_year}'
                 THEN -(row_json->>'MENGE')::numeric ELSE 0 END), 0)    AS outbound_qty_year
         FROM public.erp_catalog_mb51
@@ -2307,7 +2307,7 @@ def get_erp_claim_indicators() -> Dict:
             agg.get("inbound_qty_year", 0), agg.get("outbound_qty_year", 0),
         ),
         "erp_inventory": erp_inventory,
-        "note": "ERP数据(erp_catalog_mb51)，入库=101收货，出库=201+221+222+Z61+Z62",
+        "note": "ERP数据(erp_catalog_mb51)，入库=101收货，出库=201+221+Z61",
     }
 
 

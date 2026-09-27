@@ -217,7 +217,9 @@ def get_kpi_checklist() -> Dict[str, Any]:
     # 「未动用」定义：claimed_amount = 0 且 current_quantity > 0
     unused_weighted = 0.0   # Σ(未动用库存金额 × 库龄)
     unused_total_amt = 0.0  # 未动用库存总金额
-    total_inventory_qty = 0.0  # 库存总数量
+    # 库存总数量 = 批次级当前数量合计（与 WMS 库存口径一致）。
+    # 勿在 inv_rows（项目台账）上累加：部分批次无台账行或台账滞后，会比库存行总额偏小
+    total_inventory_qty = sum(r["current_quantity"] for r in batch_rows)
     min_inbound_date = None
     max_inbound_date = None
     max_outbound_time = None   # 最后出库时间（用于「数据截至」取较新者）
@@ -243,8 +245,6 @@ def get_kpi_checklist() -> Dict[str, Any]:
                 ot = ot.date()
             if max_outbound_time is None or ot > max_outbound_time:
                 max_outbound_time = ot
-
-        total_inventory_qty += r["current_quantity"]
 
         # 未动用：从未领用过且有库存
         if r["claimed_amount"] == 0 and r["current_quantity"] > 0:

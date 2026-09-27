@@ -200,16 +200,16 @@ _BATCH_AMOUNTS_SQL = """
             material_code,
             batch_code,
 
-            -- ★ 三个核心金额 —
-            --   batch_inbound:  入库金额 = 原始数量 × 当前加权均价
-            --   batch_claimed:  领用金额 = 总出库数量 × 当前加权均价
+            -- ★ 三个核心金额（冲销/退货已从入库与领用中剔除）—
+            --   batch_inbound:  净入库金额 = (原始数量 - 冲销 - 退货) × 当前加权均价
+            --   batch_claimed:  净领用金额 = (总出库数量 - 冲销 - 退货) × 当前加权均价
             --   batch_inventory: 库存金额 = total_price（视图 v_total_price）
-            original_quantity * unit_price       AS batch_inbound,
-            total_outbound_quantity * unit_price AS batch_claimed,
+            (original_quantity - reversal_quantity - return_quantity) * unit_price       AS batch_inbound,
+            (total_outbound_quantity - reversal_quantity - return_quantity) * unit_price AS batch_claimed,
             total_price                         AS batch_inventory,
 
             -- ★ 分项出库金额（按出库类型拆分的领用金额）—
-            --   四种出库类型：31=拣货, 34=维修, 35=报废, 36=返修
+            --   四种出库类型：31=拣货(领料), 34=维修, 35=报废, 36=返修
             --   金额 = 各项出库数量 × 当前加权均价
             --   恒等关系：batch_pick + batch_repair + batch_scrap + batch_repaired = batch_claimed
             pick_quantity * unit_price           AS batch_pick,
@@ -217,10 +217,17 @@ _BATCH_AMOUNTS_SQL = """
             scrap_quantity * unit_price          AS batch_scrap,
             repaired_quantity * unit_price       AS batch_repaired,
 
-            -- 数量字段（用于数量级计算和校验）
-            original_quantity                   AS batch_orig_qty,
-            total_outbound_quantity             AS batch_outbound_qty,
-            current_quantity                    AS batch_current_qty,
+            -- 冲销/退货数量（供追溯与口径说明）
+            reversal_quantity                   AS batch_reversal_qty,
+            return_quantity                     AS batch_return_qty,
+
+            -- 数量字段（用于数量级计算和校验，均已剔除冲销/退货）
+            (original_quantity - reversal_quantity - return_quantity)                   AS batch_orig_qty,
+            (total_outbound_quantity - reversal_quantity - return_quantity)             AS batch_outbound_qty,
+            -- 批次级当前数量 = Σ 库存行 current_quantity（视图 inv_current_quantity 列）。
+            -- 勿用未限定的 current_quantity：它指向项目台账 pi.current_quantity，
+            -- 批次无台账行（LEFT JOIN 为 NULL）或台账滞后时会偏小（2026-09 与 WMS 差 30 件的根因）
+            inv_current_quantity                AS batch_current_qty,
             unit_price                          AS batch_unit_price,
             age_days                            AS batch_age_days,
 
@@ -441,6 +448,7 @@ def _get_batch_rows(start_date=None, end_date=None) -> List[Dict]:
       - claimed_amount:    批次领用金额（total_outbound × unit_price）
       - inventory_amount:  批次库存金额（total_price = v_total_price）
       - original_quantity: 原始入库数量
+      - current_quantity:  批次级当前数量（=Σ 库存行 current_quantity，与 WMS 库存口径一致）
       - used_quantity:     总出库数量
       - pick_quantity:     拣货出库数量
       - repair_quantity:   维修出库数量

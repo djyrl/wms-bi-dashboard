@@ -22,3 +22,9 @@ bi-dashboard-src.tar.gz
 # 杂项 / 缓存 / 临时文件
 root@*
 .pnpm-store/
+
+# Docker 镜像导出产物（OCI layout，误解包到仓库根目录）
+/index.json
+/manifest.json
+/oci-layout
+/repositories

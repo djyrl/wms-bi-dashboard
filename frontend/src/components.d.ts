@@ -28,7 +28,6 @@ declare module 'vue' {
     DataDetail: typeof import('./components/inventory/DataDetail.vue')['default']
     DimensionPanel: typeof import('./components/tables/DimensionPanel.vue')['default']
     DonutChart: typeof import('./components/charts/DonutChart.vue')['default']
-    ElAside: typeof import('element-plus/es')['ElAside']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']

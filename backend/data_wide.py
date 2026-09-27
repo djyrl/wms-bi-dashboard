@@ -17,7 +17,7 @@
      · 移动类型 bwart：
          101            = 收货（入库，正）
          102            = 冲销（收货的冲销，负）
-         201/221/222/Z61/Z62 = 出库（负）
+         201/221/Z61 = 出库（负）
   3. v_batch_lifecycle —— 批次生命周期视图（一个批次一行）
      · best_inventory_amt = 最佳估计库存金额（WMS 优先，其次 ERP 账面，不为负）
 
@@ -28,7 +28,7 @@
   · ERP 收货/冲销/净入库/出库 均为「批次级」（同一批次的多项目行会重复同一值），
     项目级 = 批次级 × project_ratio（由调用方按需相乘）
   · 净入库 = 101 + 102（102 天然为负，直接相加即得净额）
-  · 出库 = 201/221/222/Z61/Z62（DMBTR 为负，取 -DMBTR 转成正数）
+  · 出库 = 201/221/Z61（DMBTR 为负，取 -DMBTR 转成正数）
   · 当年 = BLDAT 前 4 位 = 目标年份
 ===============================================================================
 """
@@ -78,8 +78,8 @@ def _erp_batch_wide_cte(year: int) -> str:
             -- 净入库金额：101 + 102（102 天然为负，直接相加即净额）
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0) AS net_in_all,
-            -- 出库金额：201/221/222/Z61/Z62，DMBTR 为负，取 -DMBTR 转成正数
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            -- 出库金额：201/221/Z61，DMBTR 为负，取 -DMBTR 转成正数
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0) AS out_all,
 
             -- —— 当年（BLDAT 前 4 位 = 目标年份）——
@@ -92,7 +92,7 @@ def _erp_batch_wide_cte(year: int) -> str:
             COALESCE(SUM(CASE WHEN bwart IN ('101','102')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{year}'
                 THEN (row_json->>'DMBTR')::numeric ELSE 0 END), 0) AS net_in_year,
-            COALESCE(SUM(CASE WHEN bwart IN ('201','221','222','Z61','Z62')
+            COALESCE(SUM(CASE WHEN bwart IN ('201','221','Z61')
                     AND SUBSTRING(row_json->>'BLDAT', 1, 4) = '{year}'
                 THEN -(row_json->>'DMBTR')::numeric ELSE 0 END), 0) AS out_year
         FROM public.erp_catalog_mb51
@@ -249,11 +249,11 @@ def _build_wide_sql(year: int) -> Tuple[str, str]:
             COALESCE(r.recv_all, 0)                 AS erp_recv_all,        -- 全部历史收货金额(101)
             COALESCE(r.reversal_all, 0)             AS erp_reversal_all,    -- 全部历史冲销金额(102,取绝对值)
             COALESCE(r.net_in_all, 0)               AS erp_net_in_all,      -- 全部历史净入库金额(101+102)
-            COALESCE(r.out_all, 0)                  AS erp_out_all,         -- 全部历史出库金额(201/221/222/Z61/Z62)
+            COALESCE(r.out_all, 0)                  AS erp_out_all,         -- 全部历史出库金额(201/221/Z61)
             COALESCE(r.recv_year, 0)                AS erp_recv_year,       -- 当年收货金额(101)
             COALESCE(r.reversal_year, 0)            AS erp_reversal_year,   -- 当年冲销金额(102,取绝对值)
             COALESCE(r.net_in_year, 0)              AS erp_net_in_year,     -- 当年净入库金额(101+102)
-            COALESCE(r.out_year, 0)                 AS erp_out_year,        -- 当年出库金额(201/221/222/Z61/Z62)
+            COALESCE(r.out_year, 0)                 AS erp_out_year,        -- 当年出库金额(201/221/Z61)
 
             -- ==================== 最佳估计库存 ====================
             -- 来自 v_batch_lifecycle：WMS 有实物库存取 WMS，否则取 ERP 账面（且不为负）

@@ -13,6 +13,7 @@ import { echarts } from '@/utils/echarts'
 export function useECharts() {
   let instance: ReturnType<typeof echarts.init> | null = null
   let observer: ResizeObserver | null = null
+  let rafId: number | null = null
 
   function init(dom: HTMLElement) {
     const existing = echarts.getInstanceByDom(dom)
@@ -21,9 +22,16 @@ export function useECharts() {
 
     // 监听容器尺寸变化自动 resize。flex 布局下 DOM 尺寸是异步（nextTick 后）才更新的，
     // 仅靠 window resize 会读到旧尺寸，导致 canvas 高度滞后、溢出卡片出现滚动条。
+    // 用 rAF 合并同一帧内的多次尺寸抖动，避免 flex 布局稳定前高频 resize 造成闪烁。
     observer?.disconnect()
     if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(() => instance?.resize())
+      observer = new ResizeObserver(() => {
+        if (rafId != null) return
+        rafId = requestAnimationFrame(() => {
+          rafId = null
+          instance?.resize()
+        })
+      })
       observer.observe(dom)
     }
   }
@@ -39,6 +47,10 @@ export function useECharts() {
   function dispose() {
     observer?.disconnect()
     observer = null
+    if (rafId != null) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
     instance?.dispose()
     instance = null
   }

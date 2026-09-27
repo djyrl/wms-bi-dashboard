@@ -143,7 +143,9 @@ def get_kpi_checklist_by_date_range(start_date: str, end_date: str) -> Dict[str,
 
     unused_weighted = 0.0
     unused_total_amt = 0.0
-    total_inventory_qty = 0.0
+    # 库存总数量 = 批次级当前数量合计（与 WMS 库存口径一致）。
+    # 勿在 inv_rows（项目台账）上累加：部分批次无台账行或台账滞后，会比库存行总额偏小
+    total_inventory_qty = sum(r["current_quantity"] for r in batch_rows)
     min_inbound_date = None
     max_inbound_date = None
 
@@ -158,7 +160,6 @@ def get_kpi_checklist_by_date_range(start_date: str, end_date: str) -> Dict[str,
                 min_inbound_date = d
             if max_inbound_date is None or d > max_inbound_date:
                 max_inbound_date = d
-        total_inventory_qty += r["current_quantity"]
         if r["claimed_amount"] == 0 and r["current_quantity"] > 0:
             unused_weighted += inventory * age
             unused_total_amt += inventory

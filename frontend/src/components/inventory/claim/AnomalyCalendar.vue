@@ -28,7 +28,7 @@ const detailRows = computed(() =>
 
 function render() {
   if (!chartRef.value || !props.data.length) return
-  chart.init(chartRef.value)
+  if (!chart.instance) chart.init(chartRef.value)
 
   const anomalyIndices = types.value.map((t, i) => t === 1 ? i : -1).filter(i => i !== -1)
 

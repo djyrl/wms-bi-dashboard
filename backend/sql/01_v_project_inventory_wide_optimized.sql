@@ -21,7 +21,38 @@ inv_agg 只消除了同批次多货位的膨胀，但 LEFT JOIN wms_project_inve
 
 CREATE OR REPLACE VIEW v_project_inventory_wide AS
 WITH
+-- 候选：通过状态/有效货位过滤的物理库存行（全量口径，含移库行）
+inv_candidate AS (
+    SELECT
+        winv.id,
+        winv.tenant_id,
+        winv.material_code,
+        winv.batch_code,
+        winv.erp_inventory,
+        winv.warehouse_code,
+        winv.original_quantity,
+        winv.current_quantity,
+        winv.total_price,
+        winv.unit_price,
+        winv.inbound_date,
+        winv.putaway_date,
+        winv.supplier_code,
+        winv.barcode,
+        winv.inventory_code
+    FROM wms_inventory winv
+    WHERE winv.del_flag = '0' AND winv.status = 1
+    AND EXISTS (
+      SELECT 1 FROM wms_inventory_location iloc
+      INNER JOIN wms_location loc ON iloc.location_id = loc.id AND loc.del_flag = '0'
+      WHERE iloc.inventory_id = winv.id AND iloc.del_flag = '0'
+        AND iloc.status = 1 AND iloc.current_quantity > 0
+        AND loc.warehouse_code = 'A00'
+    )
+),
 -- 物理库存按批次聚合（避免同批次多货位导致行膨胀）
+-- 全量口径：含移库行（RELOCATION_ORDER）。移库是「源行扣减 + 迁移行承载」的拆库存行，
+--           两行不会同时处于活跃状态（status=1 且 current_quantity>0），不存在重复计算；
+--           排除移库行会漏算其承载的真实库存（2026-09 曾导致 135 个物资查不到）
 inv_agg AS (
     SELECT
         tenant_id,
@@ -30,28 +61,20 @@ inv_agg AS (
         erp_inventory,
         SUM(original_quantity)              AS original_quantity,
         SUM(current_quantity)               AS current_quantity,
-        SUM(current_quantity*unit_price)                    AS v_total_price,
-        CASE
+        -- CAST 保持列类型为 numeric(22,10)（与行级列一致），避免 CREATE OR REPLACE VIEW 报类型不匹配
+        CAST(SUM(total_price) AS numeric(22,10))                    AS v_total_price,
+        CAST(CASE
             WHEN SUM(current_quantity) > 0
-            THEN SUM(current_quantity*unit_price) / SUM(current_quantity)
+            THEN SUM(current_quantity * unit_price) / SUM(current_quantity)
             ELSE AVG(unit_price)
-        END                                 AS v_unit_price,
+        END AS numeric(22,10))                                      AS v_unit_price,
         MIN(inbound_date)                   AS inbound_date,
         MAX(putaway_date)                   AS putaway_date,
         MAX(supplier_code)                  AS supplier_code,
         MAX(barcode)                        AS barcode,
         MAX(inventory_code)                 AS inventory_code,
         MAX(warehouse_code)                 AS warehouse_code
-    FROM wms_inventory winv
-    WHERE del_flag = '0' and status = 1 
-    AND business_type <> 'RELOCATION_ORDER' 
-    AND EXISTS (
-      SELECT 1 FROM wms_inventory_location iloc
-      INNER JOIN wms_location loc ON iloc.location_id = loc.id AND loc.del_flag = '0'
-      WHERE iloc.inventory_id = winv.id AND iloc.del_flag = '0'
-        AND iloc.status = 1 AND iloc.current_quantity > 0
-        AND loc.warehouse_code = 'A00'
-    )
+    FROM inv_candidate c
     GROUP BY tenant_id, material_code, batch_code,warehouse_code,erp_inventory
 )
 SELECT
@@ -102,7 +125,9 @@ SELECT
 
     -- ==================== 出库维度（dim_outbound_log_cache PK: tenant_id + material_code + batch_code + erp_inventory）====================
     COALESCE(ol.total_outbound_quantity, 0)                                                     AS total_outbound_quantity, -- 总出库数量
-    COALESCE(ol.pick_quantity, 0)                                                               AS pick_quantity,           -- 拣货数量
+    COALESCE(ol.pick_quantity, 0)                                                               AS pick_quantity,           -- 领料出库数量（真领用）
+    COALESCE(ol.reversal_quantity, 0)                                                           AS reversal_quantity,       -- 收货冲销数量
+    COALESCE(ol.return_quantity, 0)                                                             AS return_quantity,         -- 采购退货数量
     COALESCE(ol.repair_quantity, 0)                                                             AS repair_quantity,         -- 维修数量
     COALESCE(ol.scrap_quantity, 0)                                                              AS scrap_quantity,          -- 报废数量
     COALESCE(ol.repaired_quantity, 0)                                                           AS repaired_quantity,       -- 返修数量

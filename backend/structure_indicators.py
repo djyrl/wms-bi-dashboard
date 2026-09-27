@@ -27,6 +27,44 @@ from utils import (
 )
 
 
+def _get_year_claim_flow(current_year: int) -> Dict:
+    """
+    2026 全年领用流量（含领老批次，区别于「当年入库批次的领用」）。
+
+    因 WMS 于 2026-06-25 上线，全年领用需跨系统分两段拼接：
+      - 上半年（01-01 ~ 06-24）：ERP MB51 项目出库，凭证金额 DMBTR
+      - 下半年（06-25 起）：WMS 台账领料出库（REQUISITION_ORDER），数量 × 台账单价
+
+    ⚠️ 两段金额口径不同（ERP 凭证价 vs 台账单价，约 4 倍差异），
+       合计仅为量级参考，不参与「入库 − 领用」的净剩计算。
+    """
+    # 上半年 ERP 项目领用（真领用 direction='out'，冲销 102 与厂内转移不计入）
+    h1 = query_one(f"""
+        SELECT COALESCE(SUM(ABS(amount)), 0) AS amt
+        FROM v_mb51_ledger_2026
+        WHERE biz_date < '{current_year}-06-25'
+          AND direction = 'out'
+          AND (wbs_code IS NOT NULL OR project_code IS NOT NULL)
+    """)
+    # 下半年 WMS 台账领料（真领用 REQUISITION_ORDER，剔除收货冲销/采购退货）
+    h2 = query_one(f"""
+        SELECT COALESCE(SUM(log.change_quantity * inv.unit_price), 0) AS amt
+        FROM wms_inventory_log log
+        JOIN wms_inventory inv ON inv.id = log.inventory_id
+        WHERE log.del_flag = '0'
+          AND log.change_type = 31
+          AND log.business_type = 'REQUISITION_ORDER'
+          AND log.operation_time >= '{current_year}-06-25'
+    """)
+    h1_amt = _f(h1["amt"])
+    h2_amt = _f(h2["amt"])
+    return {
+        "h1_amount": round(h1_amt / 10000, 2),       # 上半年领用（ERP 凭证金额）
+        "h2_amount": round(h2_amt / 10000, 2),       # 下半年领用（WMS 台账）
+        "total_amount": round((h1_amt + h2_amt) / 10000, 2),  # 全年领用合计
+    }
+
+
 def get_structure_indicators() -> Dict:
     """
     获取库存结构指标。
@@ -58,9 +96,12 @@ def get_structure_indicators() -> Dict:
                 COALESCE(SUM(batch_inventory), 0) AS total_inventory,
                 COALESCE(SUM(batch_inbound), 0)   AS total_inbound,
                 COALESCE(SUM(batch_orig_qty), 0)  AS total_qty,
-                -- 当年入库批次的库存金额
+                -- 当年入库批次的库存金额（存量：今年进的货还剩多少）
                 COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM inbound_date) = {current_year}
-                             THEN batch_inventory ELSE 0 END), 0) AS year_inventory
+                             THEN batch_inventory ELSE 0 END), 0) AS year_inventory,
+                -- 当年入库批次的入库金额（流量：今年累计进了多少）
+                COALESCE(SUM(CASE WHEN EXTRACT(YEAR FROM inbound_date) = {current_year}
+                             THEN batch_inbound ELSE 0 END), 0) AS year_inbound
             FROM batch_amounts
         ),
         -- 项目分配：批次金额 × project_ratio
@@ -99,6 +140,7 @@ def get_structure_indicators() -> Dict:
             (SELECT total_inventory FROM all_totals) AS total_inventory_amt,
             (SELECT total_qty FROM all_totals)       AS total_inventory_qty,
             (SELECT year_inventory FROM all_totals)  AS year_inventory_amt,
+            (SELECT year_inbound FROM all_totals)    AS year_inbound_amt,
             -- 使用 json_agg 将聚合结果打包为 JSON，减少网络传输的往返
             (SELECT json_agg(row_to_json(project_agg.*)
              ORDER BY project_agg.inventory_amount DESC) FROM project_agg) AS project_json,
@@ -114,6 +156,9 @@ def get_structure_indicators() -> Dict:
             "year_end": f"{current_year}-12-31",
             "current_inventory_amount": 0,
             "current_year_inventory_amount": 0,
+            "current_year_inbound_amount": 0,
+            "current_year_claimed_amount": 0,
+            "year_claim_flow": {"h1_amount": 0, "h2_amount": 0, "total_amount": 0},
             "current_inventory_quantity": 0,
             "project_ratios": [],
             "purchaser_ratios": [],
@@ -123,6 +168,8 @@ def get_structure_indicators() -> Dict:
     total_inventory_amt = _f(row["total_inventory_amt"])    # 库存总额（元）
     total_inventory_qty = _f(row["total_inventory_qty"])     # 库存总数量
     year_inventory_amt = _f(row["year_inventory_amt"])       # 当年库存额（元）
+    year_inbound_amt = _f(row["year_inbound_amt"])           # 当年入库额（元）
+    year_claim_flow = _get_year_claim_flow(current_year)     # 全年领用流量（跨系统）
 
     def _parse_json(val):
         """解析 pg json_agg 结果（可能是字符串或已解析的 list）。"""
@@ -167,7 +214,14 @@ def get_structure_indicators() -> Dict:
         "year_end": f"{current_year}-12-31",
         # 汇总金额（万元）
         "current_inventory_amount": round(total_inventory_amt / 10000, 2),
+        # 当年入库结存（存量）= 今年进的货还剩多少
         "current_year_inventory_amount": round(year_inventory_amt / 10000, 2),
+        # 当年入库金额（流量）
+        "current_year_inbound_amount": round(year_inbound_amt / 10000, 2),
+        # 当年领用金额（流量）= 入库 − 结存（含 06-25 前的历史出库，wms_inventory_log 未覆盖）
+        "current_year_claimed_amount": round((year_inbound_amt - year_inventory_amt) / 10000, 2),
+        # 全年领用流量（含领老批次，跨 ERP + WMS 拼接，合计为量级参考）
+        "year_claim_flow": year_claim_flow,
         "current_inventory_quantity": round(total_inventory_qty, 2),
         # 占比
         "project_ratios": project_ratios,

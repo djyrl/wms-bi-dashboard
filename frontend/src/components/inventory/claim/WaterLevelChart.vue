@@ -29,7 +29,7 @@ const detailRows = computed(() =>
 
 function render() {
   if (!chartRef.value || !props.data.length) return
-  chart.init(chartRef.value)
+  if (!chart.instance) chart.init(chartRef.value)
 
   const fullNames = props.data.map(d => d.category)
   const categories = props.data.map(d => shortName(d.category))

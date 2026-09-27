@@ -8,6 +8,13 @@ export interface WmsStructure {
   year_end: string
   current_inventory_amount: number
   current_year_inventory_amount: number
+  current_year_inbound_amount: number
+  current_year_claimed_amount: number
+  year_claim_flow: {
+    h1_amount: number
+    h2_amount: number
+    total_amount: number
+  }
   current_inventory_quantity: number
   project_ratios: {
     project_code: string

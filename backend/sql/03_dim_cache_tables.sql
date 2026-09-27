@@ -66,13 +66,19 @@ CREATE TABLE IF NOT EXISTS dim_outbound_log_cache (
     batch_code              VARCHAR,
     erp_inventory           VARCHAR NOT NULL,
     total_outbound_quantity NUMERIC,
-    pick_quantity           NUMERIC,
+    pick_quantity           NUMERIC,          -- 领料出库数量（REQUISITION_ORDER，真领用）
+    reversal_quantity       NUMERIC,          -- 收货冲销数量（GOODS_RECEIPT_REVERSAL_OUTBOUND_ORDER）
+    return_quantity         NUMERIC,          -- 采购退货数量（PURCHASE_RETURN_ORDER）
     repair_quantity         NUMERIC,
     scrap_quantity          NUMERIC,
     repaired_quantity       NUMERIC,
     last_outbound_time      TIMESTAMP,       -- 最后出库时间（wms_inventory_log.operation_time）
     refreshed_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 已存在表时补充新增列（冲销/退货拆分，兼容旧库升级）
+ALTER TABLE dim_outbound_log_cache ADD COLUMN IF NOT EXISTS reversal_quantity NUMERIC;
+ALTER TABLE dim_outbound_log_cache ADD COLUMN IF NOT EXISTS return_quantity NUMERIC;
 
 -- batch_code 非空时强制四列唯一（允许 NULL 行共存）
 CREATE UNIQUE INDEX IF NOT EXISTS idx_dim_outbound_uniq
@@ -198,16 +204,26 @@ BEGIN
     TRUNCATE TABLE dim_outbound_log_cache;
     INSERT INTO dim_outbound_log_cache (
         tenant_id, material_code, batch_code, erp_inventory,
-        total_outbound_quantity, pick_quantity, repair_quantity,
-        scrap_quantity, repaired_quantity, last_outbound_time
+        total_outbound_quantity, pick_quantity, reversal_quantity, return_quantity,
+        repair_quantity, scrap_quantity, repaired_quantity, last_outbound_time
     )
     SELECT
         inv.tenant_id,
         inv.material_code,
         inv.batch_code,
         inv.erp_inventory,
+        -- 总出库（全部 31/34/35/36）
         SUM(log.change_quantity),
-        SUM(CASE WHEN log.change_type = 31 THEN log.change_quantity ELSE 0 END),
+        -- 领料出库（REQUISITION_ORDER，真领用）
+        SUM(CASE WHEN log.change_type = 31 AND log.business_type = 'REQUISITION_ORDER'
+                 THEN log.change_quantity ELSE 0 END),
+        -- 收货冲销（GOODS_RECEIPT_REVERSAL_OUTBOUND_ORDER，应冲减入库而非计入领用）
+        SUM(CASE WHEN log.change_type = 31 AND log.business_type = 'GOODS_RECEIPT_REVERSAL_OUTBOUND_ORDER'
+                 THEN log.change_quantity ELSE 0 END),
+        -- 采购退货（PURCHASE_RETURN_ORDER，应冲减入库而非计入领用）
+        SUM(CASE WHEN log.change_type = 31 AND log.business_type = 'PURCHASE_RETURN_ORDER'
+                 THEN log.change_quantity ELSE 0 END),
+        -- 维修 / 报废 / 返修
         SUM(CASE WHEN log.change_type = 34 THEN log.change_quantity ELSE 0 END),
         SUM(CASE WHEN log.change_type = 35 THEN log.change_quantity ELSE 0 END),
         SUM(CASE WHEN log.change_type = 36 THEN log.change_quantity ELSE 0 END),

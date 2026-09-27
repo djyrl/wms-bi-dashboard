@@ -185,7 +185,7 @@ onUnmounted(() => {
       <div class="kpi-row">
         <div class="kpi-box" style="border-left-color:#f59e0b">
           <div class="kpi-label">当前库存总额</div>
-          <div class="kpi-num">{{ (erpClaim?.erp_inventory ?? 0).toFixed(2) }} 万</div>
+          <div class="kpi-num">{{ (summary?.total_inventory_amount ?? 0).toFixed(2) }} 万</div>
           <div class="kpi-sub">期末在库物资总金额</div>
         </div>
         <div class="kpi-box" style="border-left-color:#10b981">
