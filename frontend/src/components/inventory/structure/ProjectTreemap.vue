@@ -18,7 +18,8 @@ function render() {
   if (!chartRef.value || !chartData.value.length) return
   chart.init(chartRef.value)
 
-  const usageColor = (r: number) => r < 50 ? '#f43f5e' : r < 70 ? '#f59e0b' : r < 85 ? '#3b82f6' : '#10b981'
+  // 领用率分档：与采购人图统一（<60 红 / 60~75 黄 / ≥75 绿），60% 为 KPI 达标线
+  const usageColor = (r: number) => r < 60 ? '#f43f5e' : r < 75 ? '#f59e0b' : '#10b981'
 
   chart.setOption({
     tooltip: { formatter: (p: { name: string; value: number; data?: { usageRate?: number } }) => `${p.name}<br/>库存金额: <b>¥${Number(p.value).toFixed(2)}万</b><br/>领用率: ${p.data?.usageRate ?? '-'}%` },

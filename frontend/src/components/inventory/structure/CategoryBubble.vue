@@ -22,6 +22,9 @@ function render() {
     inventoryWan: d.inventory,
   }))
 
+  // 领用率分档上色：与项目/采购人图统一（<60 红 / 60~75 黄 / ≥75 绿）
+  const usageColor = (r: number) => r < 60 ? '#f43f5e' : r < 75 ? '#f59e0b' : '#10b981'
+
   chart.setOption({
     tooltip: {
       formatter: (p: { name: string; value: number[] }) =>
@@ -42,23 +45,20 @@ function render() {
     },
     series: [{
       type: 'scatter',
-      data: items.map(d => [d.inventoryWan, d.usageRate, d.skuCount, d.name]),
+      data: items.map(d => ({
+        name: d.name,
+        value: [d.inventoryWan, d.usageRate, d.skuCount, d.name],
+        itemStyle: { color: usageColor(d.usageRate) },
+      })),
       symbolSize: (p: number[]) => {
         // SKU数量映射为气泡大小：5~60px
         const size = 5 + (p[2] / Math.max(...items.map(d => d.skuCount), 1)) * 55
         return size
       },
       itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,0.4)', opacity: 0.8 },
-      label: { show: true, position: 'top', color: '#94a3b8', fontSize: 10, formatter: (p: { data: number[] }) => p.data[3] },
+      label: { show: true, position: 'top', color: '#94a3b8', fontSize: 10, formatter: (p: { name: string }) => p.name },
       emphasis: { scale: 1.5 },
     }],
-    visualMap: {
-      show: false,
-      dimension: 2,       // SKU数
-      min: 0,
-      max: Math.max(...items.map(d => d.skuCount), 1),
-      inRange: { color: ['#3b82f6', '#f59e0b', '#f43f5e'] },
-    },
   })
 }
 

@@ -223,8 +223,8 @@ def get_category_bubble() -> Dict:
             SELECT DISTINCT ON (tenant_id, material_code, batch_code, COALESCE(inventory_code, ''))
                 material_group_code, material_code, batch_code,
                 total_price,
-                original_quantity * unit_price   AS inbound_amt,
-                total_outbound_quantity * unit_price AS claimed_amt
+                (original_quantity - reversal_quantity - return_quantity) * unit_price   AS inbound_amt,
+                (total_outbound_quantity - reversal_quantity - return_quantity) * unit_price AS claimed_amt
             FROM v_project_inventory_wide
         )
         SELECT
@@ -428,7 +428,6 @@ def get_batch_digest() -> Dict:
     rows = _rows_to_float(rows, "inbound_amt", "remain_amt", "avg_age_days")
 
     labels = ['入库月', '+1月', '+2月', '+3月', '+4月', '+5月', '+6月']
-    colors = ['#3b82f6', '#f59e0b', '#f43f5e', '#10b981', '#8b5cf6', '#ec4899']
     series = []
 
     for idx, r in enumerate(rows):
@@ -450,11 +449,19 @@ def get_batch_digest() -> Dict:
             pct = max(0, round(100 - monthly_consume_rate * m, 1))
             data.append(pct)
 
+        # 颜色按剩余占比分档：红色=消化慢（剩余≥50%），黄色=一般（30~50%），绿色=消化好（<30%）
+        if total_remain_pct >= 50:
+            color = '#f43f5e'
+        elif total_remain_pct >= 30:
+            color = '#f59e0b'
+        else:
+            color = '#10b981'
+
         series.append({
             "batch_code": r["batch_code"],
             "inbound_wan": round(inbound / 10000, 2),
             "remain_pct": round(total_remain_pct, 1),
-            "color": colors[idx % len(colors)],
+            "color": color,
             "data": data,
         })
 

@@ -130,7 +130,7 @@ onMounted(() => loadAllData())
         <ChartCard title="👤 采购人库存排行"><template #actions><span class="sub">定位高库存责任主体</span></template><BuyerRanking :data="structureBuyerRank" /></ChartCard>
       </div>
       <div class="grid">
-        <ChartCard title="🏷 物料类别气泡图"><template #actions><span class="sub">气泡=金额，颜色=领用率</span></template><CategoryBubble :data="structureCategoryBubble" /></ChartCard>
+        <ChartCard title="🏷 物料类别气泡图"><template #actions><span class="sub">气泡大小=SKU数，颜色=领用率</span></template><CategoryBubble :data="structureCategoryBubble" /></ChartCard>
         <ChartCard title="📦 批次消化进度"><template #actions><span class="sub">入库后逐月剩余库存占比</span></template><BatchProgress :data="structureBatch" :labels="structureBatchLabels" /></ChartCard>
       </div>
     </template>
