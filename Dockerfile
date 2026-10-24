@@ -29,9 +29,18 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# 👇 7. 为 pip 配置国内源 (你的写法完全正确)
+# 👇 7. 为 pip 配置国内源
+#    优先使用本地预下载的轮子（backend/wheels/，离线可装），
+#    否则回退阿里云源（Tsinghua 源近期不稳定，已弃用）。
 COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir --no-compile -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt \
+COPY wheels/ ./wheels/
+RUN if ls wheels/*.whl >/dev/null 2>&1; then \
+      echo "[pip] 使用本地预下载轮子（离线）"; \
+      pip install --no-cache-dir --no-compile --no-index --find-links=wheels -r requirements.txt; \
+    else \
+      echo "[pip] 使用阿里云 PyPI 源"; \
+      pip install --no-cache-dir --no-compile -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt; \
+    fi \
     && rm -rf /root/.cache/pip /tmp/*
 
 # 👇 8. 复制后端代码
@@ -42,7 +51,7 @@ COPY backend/ ./
 COPY --from=frontend-build /app/frontend/dist ./static
 
 # 👇 10. 清理无用文件
-RUN rm -rf __pycache__ data
+RUN rm -rf __pycache__ data wheels
 
 # 👇 11. 环境变量和启动命令
 ENV PYTHONUNBUFFERED=1

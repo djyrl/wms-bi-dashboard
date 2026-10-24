@@ -121,11 +121,11 @@ def get_structure_indicators() -> Dict:
         -- 按项目聚合
         project_agg AS (
             SELECT
-                owner_project_code,
+                COALESCE(owner_project_code, '') AS owner_project_code,
                 MAX(project_name) AS project_name,
                 SUM(batch_inventory * project_ratio) AS inventory_amount
             FROM wide_with_ratio
-            GROUP BY owner_project_code
+            GROUP BY COALESCE(owner_project_code, '')
         ),
         -- 按采购人（purchaser_name = 申请人）聚合
         purchaser_agg AS (
@@ -160,6 +160,7 @@ def get_structure_indicators() -> Dict:
             "current_year_claimed_amount": 0,
             "year_claim_flow": {"h1_amount": 0, "h2_amount": 0, "total_amount": 0},
             "current_inventory_quantity": 0,
+            "project_total_inventory_amount": 0,
             "project_ratios": [],
             "purchaser_ratios": [],
         }
@@ -208,6 +209,13 @@ def get_structure_indicators() -> Dict:
             "ratio": round(pa / total_inventory_amt, 4) if total_inventory_amt else 0,
         })
 
+    # ── 项目总库存（有效项目：有项目编码且非「非项目物资」，单位：元）──
+    project_total_amt = sum(
+        r["inventory_amount"]
+        for r in project_ratios
+        if r["project_code"] and r["project_name"] != "非项目物资"
+    )
+
     return {
         "current_year": current_year,
         "year_start": f"{current_year}-01-01",
@@ -223,6 +231,8 @@ def get_structure_indicators() -> Dict:
         # 全年领用流量（含领老批次，跨 ERP + WMS 拼接，合计为量级参考）
         "year_claim_flow": year_claim_flow,
         "current_inventory_quantity": round(total_inventory_qty, 2),
+        # 项目总库存（有效项目，万元）
+        "project_total_inventory_amount": round(project_total_amt / 10000, 2),
         # 占比
         "project_ratios": project_ratios,
         "purchaser_ratios": purchaser_ratios,

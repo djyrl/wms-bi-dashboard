@@ -169,7 +169,7 @@ onMounted(loadAll)
           <div class="kpi-card"><div class="kpi-label">5. 当年入库结存</div><div class="kpi-formula">今年进的货，现在还压着多少（批次）</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
           <div class="kpi-card"><div class="kpi-label">6. 当年入库金额</div><div class="kpi-formula">= 今年累计入库</div><div class="kpi-value">{{ structure?.current_year_inbound_amount?.toFixed(2) }} 万元</div></div>
           <div class="kpi-card"><div class="kpi-label">7. 当年入库·已领用</div><div class="kpi-formula">今年进的货被领走多少（批次）</div><div class="kpi-value">{{ structure?.current_year_claimed_amount?.toFixed(2) }} 万元</div></div>
-          <div class="kpi-card"><div class="kpi-label">8. 当年净剩金额</div><div class="kpi-formula">= 当年入库批次 − 已领用（＝当年入库结存）</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div>
+          <!-- <div class="kpi-card"><div class="kpi-label">8. 当年净剩金额</div><div class="kpi-formula">= 当年入库批次 − 已领用（＝当年入库结存）</div><div class="kpi-value">{{ structure?.current_year_inventory_amount?.toFixed(2) }} 万元</div></div> -->
           <div class="kpi-card"><div class="kpi-label">9. 全年项目领用总额</div><div class="kpi-formula">全部项目</div><div class="kpi-value">{{ structure?.year_claim_flow?.total_amount?.toFixed(2) }} 万元</div></div>
         </div>
         <h4>10. 项目库存占比 TOP 10</h4>

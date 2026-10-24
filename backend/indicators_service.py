@@ -694,7 +694,7 @@ def get_structure_indicators() -> Dict:
                 MAX(project_name) AS project_name,
                 SUM(batch_inventory * project_ratio) AS inventory_amount
             FROM wide_with_ratio
-            GROUP BY owner_project_code
+            GROUP BY COALESCE(owner_project_code, '')
         ),
         purchaser_agg AS (
             SELECT

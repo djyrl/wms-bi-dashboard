@@ -28,8 +28,6 @@ const purchaserIndicators = ref<WmsPurchaserIndicator[]>([])
 
 const kpiCards = computed<KpiCardData[]>(() => {
   const s = structure.value
-  const projs = projectIndicators.value
-  const validProjs = (projs || []).filter(p => p.project_code && p.project_name !== '非项目物资')
   const validRatios = (s?.project_ratios || []).filter(p => p.project_code && p.project_name !== '非项目物资')
   return [
     {
@@ -47,6 +45,12 @@ const kpiCards = computed<KpiCardData[]>(() => {
       icon: '📊', label: '项目平均库存金额',
       value: validRatios.length ? s!.current_inventory_amount / validRatios.length : 0, unit: '万',
       change: validRatios.length ? `共 ${validRatios.length} 个项目` : '--', changeType: 'down', color: '#f59e0b',
+    },
+    {
+      icon: '💰', label: '项目总库存',
+      value: s?.project_total_inventory_amount ?? 0, unit: '万',
+      change: s && s.current_inventory_amount ? `占总库存 ${((s.project_total_inventory_amount ?? 0) / s.current_inventory_amount * 100).toFixed(1)}%` : '--',
+      changeType: 'down', color: '#10b981',
     },
   ]
 })

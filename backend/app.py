@@ -67,6 +67,7 @@ from erp_inventory import (
     get_erp_age_indicators,
     get_erp_age_monthly,
 )
+from claim_compare import get_claim_compare
 from data_wide import (
     get_inventory_wide_report as db_get_inventory_wide_report,
     FILTERABLE_COLUMNS as WIDE_FILTERABLE_COLUMNS,
@@ -676,6 +677,16 @@ def api_erp_claim_monthly():
     year = request.args.get("year", type=int)
     try:
         return ok(get_erp_claim_monthly(year))
+    except Exception as e:
+        return jsonify({"code": -1, "msg": str(e)})
+
+
+@app.route("/api/wms/indicators/claim-compare", methods=["GET"])
+def api_claim_compare():
+    """领用率双口径对比（WMS × ERP）：上架月份 / 发生月份。参数：?year=2026"""
+    year = request.args.get("year", type=int)
+    try:
+        return ok(get_claim_compare(year))
     except Exception as e:
         return jsonify({"code": -1, "msg": str(e)})
 

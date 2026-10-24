@@ -46,6 +46,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/claim-compare',
+    name: 'ClaimCompare',
+    component: () => import('@/views/ClaimCompare/index.vue'),
+    meta: {
+      title: '领用率对比',
+      icon: 'TrendCharts',
+    },
+  },
+  {
     path: '/theme2',
     name: 'Theme2',
     component: () => import('@/views/Theme2/index.vue'),

@@ -16,6 +16,7 @@ export interface WmsStructure {
     total_amount: number
   }
   current_inventory_quantity: number
+  project_total_inventory_amount: number
   project_ratios: {
     project_code: string
     project_name: string

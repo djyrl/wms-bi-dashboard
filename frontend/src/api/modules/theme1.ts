@@ -216,3 +216,40 @@ export interface ErpAgeMonthlyRes {
 /** ERP 版月度库龄趋势 */
 export const getErpAgeMonthly = () =>
   request.get<ErpAgeMonthlyRes>('/wms/indicators/erp-age-monthly')
+
+// ---- 领用率双口径对比（WMS × ERP）----
+
+export interface ClaimCompareRow {
+  month: string
+  wms_inbound: number
+  wms_claimed: number
+  wms_rate: number
+  erp_inbound: number
+  erp_claimed: number
+  erp_rate: number
+}
+
+export interface ClaimCompareSummary {
+  wms_inbound: number
+  wms_claimed: number
+  wms_rate: number
+  erp_inbound: number
+  erp_claimed: number
+  erp_rate: number
+}
+
+export interface ClaimCompareScope {
+  months: string[]
+  rows: ClaimCompareRow[]
+  summary: ClaimCompareSummary
+}
+
+export interface ClaimCompareRes {
+  year: number
+  flow: ClaimCompareScope   // 发生月份口径
+  cohort: ClaimCompareScope // 上架月份口径
+}
+
+/** 领用率双口径对比（WMS × ERP），金额单位：万元 */
+export const getClaimCompare = (year?: number) =>
+  request.get<ClaimCompareRes>('/wms/indicators/claim-compare', { params: { year } })

@@ -28,3 +28,9 @@ root@*
 /manifest.json
 /oci-layout
 /repositories
+
+# 预下载的 pip 轮子（离线构建缓存，不入库）
+wheels/*.whl
+
+# Docker 镜像导出压缩包
+*.tar.gz
